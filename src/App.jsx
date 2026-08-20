@@ -306,6 +306,7 @@ function validateMatchScores(format, scoreRows) {
   return usableGames;
 }
 
+
 function expectedScore(rating, opponentRating) {
   return (
     1 /
@@ -322,11 +323,42 @@ function getQualification(matchesPlayed) {
     return "unranked";
   }
 
-  if (matchesPlayed < 3) {
+  if (matchesPlayed < 5) {
     return "provisional";
   }
 
   return "ranked";
+}
+
+function getRatingExchangePoints(
+  differential,
+  higherRatedWon
+) {
+  const spread = Math.abs(
+    Math.round(differential)
+  );
+
+  const rows = [
+    [12, 8, 8],
+    [37, 7, 10],
+    [62, 6, 13],
+    [87, 5, 16],
+    [112, 4, 20],
+    [137, 3, 25],
+    [162, 2, 30],
+    [187, 2, 35],
+    [212, 1, 40],
+    [237, 1, 45],
+    [Infinity, 0, 50],
+  ];
+
+  const row = rows.find(
+    ([max]) => spread <= max
+  );
+
+  return higherRatedWon
+    ? row[1]
+    : row[2];
 }
 
 function calculateLeagueAnalytics(players, matches) {
@@ -387,60 +419,56 @@ function calculateLeagueAnalytics(players, matches) {
     });
 
     const aWon = aGames > bGames;
-    const resultA = aWon ? 1 : 0;
-    const resultB = aWon ? 0 : 1;
-
-    const eloBeforeA = a.rating;
-    const eloBeforeB = b.rating;
-    const powerBeforeA = a.powerRating;
-    const powerBeforeB = b.powerRating;
-
-    const expectedEloA = expectedScore(
-      eloBeforeA,
-      eloBeforeB
+    const ratingBeforeA = a.rating;
+    const ratingBeforeB = b.rating;
+    const expectedA = expectedScore(
+      ratingBeforeA,
+      ratingBeforeB
     );
-    const expectedEloB = 1 - expectedEloA;
+    const expectedB = 1 - expectedA;
 
-    const expectedPowerA = expectedScore(
-      powerBeforeA,
-      powerBeforeB
-    );
-    const expectedPowerB = 1 - expectedPowerA;
+    const differential =
+      Math.abs(
+        ratingBeforeA -
+        ratingBeforeB
+      );
 
-    const totalPoints = aPoints + bPoints;
-    const pointShareA =
-      totalPoints === 0
-        ? 0.5
-        : aPoints / totalPoints;
-    const pointShareB = 1 - pointShareA;
+    let exchange = 0;
 
-    // Power Rating is deliberately different from Elo.
-    // 70% of a match's performance comes from the win/loss result.
-    // 30% comes from the player's share of all points scored.
-    // Opponent strength is already built into expectedPower.
-    const performanceA =
-      0.7 * resultA + 0.3 * pointShareA;
-    const performanceB =
-      0.7 * resultB + 0.3 * pointShareB;
+    if (aWon) {
+      const higherRatedWon =
+        ratingBeforeA >= ratingBeforeB;
 
-    const ELO_K = 32;
-    const POWER_K = 40;
+      exchange =
+        getRatingExchangePoints(
+          differential,
+          higherRatedWon
+        );
 
-    a.rating =
-      eloBeforeA +
-      ELO_K * (resultA - expectedEloA);
-    b.rating =
-      eloBeforeB +
-      ELO_K * (resultB - expectedEloB);
+      a.rating =
+        ratingBeforeA + exchange;
+      b.rating =
+        ratingBeforeB - exchange;
+    } else {
+      const higherRatedWon =
+        ratingBeforeB >= ratingBeforeA;
 
-    a.powerRating =
-      powerBeforeA +
-      POWER_K *
-        (performanceA - expectedPowerA);
-    b.powerRating =
-      powerBeforeB +
-      POWER_K *
-        (performanceB - expectedPowerB);
+      exchange =
+        getRatingExchangePoints(
+          differential,
+          higherRatedWon
+        );
+
+      b.rating =
+        ratingBeforeB + exchange;
+      a.rating =
+        ratingBeforeA - exchange;
+    }
+
+    // Keep the legacy power fields synchronized with the
+    // league rating so older UI/history references remain safe.
+    a.powerRating = a.rating;
+    b.powerRating = b.rating;
 
     a.gamesWon += aGames;
     a.gamesLost += bGames;
@@ -464,6 +492,13 @@ function calculateLeagueAnalytics(players, matches) {
       a.winStreak = 0;
     }
 
+    const totalPoints = aPoints + bPoints;
+    const pointShareA =
+      totalPoints === 0
+        ? 0.5
+        : aPoints / totalPoints;
+    const pointShareB = 1 - pointShareA;
+
     const aSnapshot = {
       matchId: match.id,
       createdAt: match.created_at,
@@ -475,15 +510,20 @@ function calculateLeagueAnalytics(players, matches) {
       pointsAgainst: bPoints,
       pointDifferential: aPoints - bPoints,
       pointShare: pointShareA,
-      eloBefore: eloBeforeA,
+      opponentRatingBefore:
+        ratingBeforeB,
+      eloBefore: ratingBeforeA,
       eloAfter: a.rating,
-      eloChange: a.rating - eloBeforeA,
-      powerBefore: powerBeforeA,
-      powerAfter: a.powerRating,
+      eloChange:
+        a.rating - ratingBeforeA,
+      powerBefore: ratingBeforeA,
+      powerAfter: a.rating,
       powerChange:
-        a.powerRating - powerBeforeA,
-      expectedElo: expectedEloA,
-      expectedPower: expectedPowerA,
+        a.rating - ratingBeforeA,
+      expectedElo: expectedA,
+      expectedPower: expectedA,
+      ratingExchange:
+        aWon ? exchange : -exchange,
     };
 
     const bSnapshot = {
@@ -497,15 +537,20 @@ function calculateLeagueAnalytics(players, matches) {
       pointsAgainst: aPoints,
       pointDifferential: bPoints - aPoints,
       pointShare: pointShareB,
-      eloBefore: eloBeforeB,
+      opponentRatingBefore:
+        ratingBeforeA,
+      eloBefore: ratingBeforeB,
       eloAfter: b.rating,
-      eloChange: b.rating - eloBeforeB,
-      powerBefore: powerBeforeB,
-      powerAfter: b.powerRating,
+      eloChange:
+        b.rating - ratingBeforeB,
+      powerBefore: ratingBeforeB,
+      powerAfter: b.rating,
       powerChange:
-        b.powerRating - powerBeforeB,
-      expectedElo: expectedEloB,
-      expectedPower: expectedPowerB,
+        b.rating - ratingBeforeB,
+      expectedElo: expectedB,
+      expectedPower: expectedB,
+      ratingExchange:
+        !aWon ? exchange : -exchange,
     };
 
     playerHistory[a.id].push(aSnapshot);
@@ -550,11 +595,29 @@ function calculateLeagueAnalytics(players, matches) {
                 1000
             ) / 10;
 
+      const history =
+        playerHistory[player.id] || [];
+
+      const averageOpponentRating =
+        history.length === 0
+          ? null
+          : Math.round(
+              history.reduce(
+                (sum, item) =>
+                  sum +
+                  Number(
+                    item.opponentRatingBefore ||
+                      1000
+                  ),
+                0
+              ) / history.length
+            );
+
       return {
         ...player,
         rating: Math.round(player.rating),
         powerRating: Math.round(
-          player.powerRating
+          player.rating
         ),
         matchesPlayed,
         qualification:
@@ -564,6 +627,7 @@ function calculateLeagueAnalytics(players, matches) {
           player.gamesLost,
         winPercentage,
         pointsWonPercentage,
+        averageOpponentRating,
         pointDifferential:
           player.pointsFor -
           player.pointsAgainst,
@@ -571,48 +635,14 @@ function calculateLeagueAnalytics(players, matches) {
     }
   );
 
-  const eloStandings = [...standings].sort(
-    (a, b) => {
-      // Players who have never played do not take a ranked spot.
-      if (
-        a.matchesPlayed === 0 &&
-        b.matchesPlayed > 0
-      ) {
-        return 1;
-      }
+  const order = {
+    ranked: 0,
+    provisional: 1,
+    unranked: 2,
+  };
 
-      if (
-        b.matchesPlayed === 0 &&
-        a.matchesPlayed > 0
-      ) {
-        return -1;
-      }
-
-      if (b.rating !== a.rating) {
-        return b.rating - a.rating;
-      }
-
-      if (
-        b.matchesPlayed !== a.matchesPlayed
-      ) {
-        return (
-          b.matchesPlayed -
-          a.matchesPlayed
-        );
-      }
-
-      return a.name.localeCompare(b.name);
-    }
-  );
-
-  const powerStandings = [...standings].sort(
-    (a, b) => {
-      const order = {
-        ranked: 0,
-        provisional: 1,
-        unranked: 2,
-      };
-
+  const leagueStandings =
+    [...standings].sort((a, b) => {
       if (
         order[a.qualification] !==
         order[b.qualification]
@@ -623,17 +653,23 @@ function calculateLeagueAnalytics(players, matches) {
         );
       }
 
+      if (b.rating !== a.rating) {
+        return b.rating - a.rating;
+      }
+
       if (
-        b.powerRating !== a.powerRating
+        b.averageOpponentRating !==
+        a.averageOpponentRating
       ) {
         return (
-          b.powerRating -
-          a.powerRating
+          (b.averageOpponentRating || 0) -
+          (a.averageOpponentRating || 0)
         );
       }
 
       if (
-        b.matchesPlayed !== a.matchesPlayed
+        b.matchesPlayed !==
+        a.matchesPlayed
       ) {
         return (
           b.matchesPlayed -
@@ -642,16 +678,295 @@ function calculateLeagueAnalytics(players, matches) {
       }
 
       return a.name.localeCompare(b.name);
-    }
-  );
+    });
+
+  let officialRank = 0;
+
+  const rankedStandings =
+    leagueStandings.map((player) => {
+      if (
+        player.qualification === "ranked"
+      ) {
+        officialRank++;
+
+        return {
+          ...player,
+          officialRank,
+        };
+      }
+
+      return {
+        ...player,
+        officialRank: null,
+      };
+    });
 
   return {
-    standings,
-    eloStandings,
-    powerStandings,
+    standings: rankedStandings,
+    eloStandings: rankedStandings,
+    powerStandings: rankedStandings,
     playerHistory,
     matchAnalytics,
   };
+}
+
+function LeagueLandscapeChart({
+  players,
+  onPlayerClick,
+}) {
+  const plotted = (players || []).filter(
+    (player) => player.is_active
+  );
+
+  if (plotted.length === 0) {
+    return (
+      <div className="league-landscape-empty">
+        Player ratings will appear here once the league has members.
+      </div>
+    );
+  }
+
+  const width = 760;
+  const height = 330;
+  const left = 54;
+  const right = 34;
+  const top = 34;
+  const bottom = 52;
+
+  const maxMatches = Math.max(
+    5,
+    ...plotted.map((player) => player.matchesPlayed || 0)
+  );
+
+  const ratings = plotted.map((player) => player.rating || 1000);
+
+  let minRating = Math.min(...ratings);
+  let maxRating = Math.max(...ratings);
+
+  if (minRating === maxRating) {
+    minRating -= 25;
+    maxRating += 25;
+  } else {
+    minRating -= 15;
+    maxRating += 15;
+  }
+
+  const xFor = (matchesPlayed) =>
+    left +
+    ((matchesPlayed || 0) / maxMatches) *
+      (width - left - right);
+
+  const yFor = (rating) =>
+    top +
+    ((maxRating - rating) / (maxRating - minRating)) *
+      (height - top - bottom);
+
+  const ratingTicks = [
+    maxRating,
+    (maxRating + minRating) / 2,
+    minRating,
+  ];
+
+  function shortName(name, max = 14) {
+    if (!name) return "";
+    return name.length > max
+      ? `${name.slice(0, max - 1)}…`
+      : name;
+  }
+
+  const points = [...plotted]
+    .map((player, index) => ({
+      player,
+      x: xFor(player.matchesPlayed || 0),
+      y: yFor(player.rating || 1000),
+      index,
+    }))
+    .sort((a, b) => a.x - b.x || a.y - b.y);
+
+  const labelPositions = {};
+
+  points.forEach((point, index) => {
+    const edgeRight = point.x > width - right - 110;
+    const closeNeighbor = points.some(
+      (other) =>
+        other.player.id !== point.player.id &&
+        Math.abs(other.x - point.x) < 48 &&
+        Math.abs(other.y - point.y) < 18
+    );
+
+    const offsetY = closeNeighbor
+      ? index % 2 === 0
+        ? -10
+        : 12
+      : 0;
+
+    labelPositions[point.player.id] = {
+      x: edgeRight ? point.x - 10 : point.x + 10,
+      y: point.y + offsetY,
+      anchor: edgeRight ? "end" : "start",
+      dashX: edgeRight ? point.x - 5 : point.x + 5,
+    };
+  });
+
+  return (
+    <div className="league-landscape-wrap">
+      <svg
+        className="league-landscape-chart"
+        viewBox={`0 0 ${width} ${height}`}
+        role="img"
+        aria-label="League rating compared with matches played"
+      >
+        {ratingTicks.map((value, index) => {
+          const y = yFor(value);
+
+          return (
+            <g key={index}>
+              <line
+                className="landscape-grid-line"
+                x1={left}
+                y1={y}
+                x2={width - right}
+                y2={y}
+              />
+              <text
+                className="landscape-axis-text"
+                x={left - 10}
+                y={y + 4}
+                textAnchor="end"
+              >
+                {Math.round(value)}
+              </text>
+            </g>
+          );
+        })}
+
+        <line
+          className="landscape-axis-line"
+          x1={left}
+          y1={height - bottom}
+          x2={width - right}
+          y2={height - bottom}
+        />
+
+        <line
+          className="landscape-axis-line"
+          x1={left}
+          y1={top}
+          x2={left}
+          y2={height - bottom}
+        />
+
+        {[0, Math.ceil(maxMatches / 2), maxMatches].map((value) => {
+          const x = xFor(value);
+
+          return (
+            <g key={value}>
+              <line
+                className="landscape-tick-line"
+                x1={x}
+                y1={height - bottom}
+                x2={x}
+                y2={height - bottom + 5}
+              />
+              <text
+                className="landscape-axis-text"
+                x={x}
+                y={height - bottom + 20}
+                textAnchor="middle"
+              >
+                {value}
+              </text>
+            </g>
+          );
+        })}
+
+        <text
+          className="landscape-axis-label"
+          x={(left + width - right) / 2}
+          y={height - 9}
+          textAnchor="middle"
+        >
+          Matches Played
+        </text>
+
+        <text
+          className="landscape-y-axis-label"
+          x="14"
+          y={(top + height - bottom) / 2}
+          textAnchor="middle"
+          transform={`rotate(-90 14 ${(top + height - bottom) / 2})`}
+        >
+          League Rating
+        </text>
+
+        {plotted.map((player) => {
+          const x = xFor(player.matchesPlayed || 0);
+          const y = yFor(player.rating || 1000);
+          const label = labelPositions[player.id];
+
+          return (
+            <g
+              key={player.id}
+              className={`landscape-player landscape-${player.qualification || "ranked"}`}
+              role="button"
+              tabIndex="0"
+              onClick={() => onPlayerClick?.(player.id)}
+              onKeyDown={(event) => {
+                if (event.key === "Enter" || event.key === " ") {
+                  event.preventDefault();
+                  onPlayerClick?.(player.id);
+                }
+              }}
+            >
+              <circle
+                cx={x}
+                cy={y}
+                r={player.qualification === "ranked" ? 7 : 6}
+              />
+
+              <line
+                className="landscape-name-dash"
+                x1={x}
+                y1={y}
+                x2={label.dashX}
+                y2={label.y}
+              />
+
+              <text
+                className="landscape-player-name"
+                x={label.x}
+                y={label.y + 3}
+                textAnchor={label.anchor}
+              >
+                {shortName(player.name)}
+              </text>
+            </g>
+          );
+        })}
+      </svg>
+
+      <div className="league-landscape-legend">
+        <span>
+          <i className="landscape-legend-dot landscape-legend-ranked" />
+          Ranked (5+ matches)
+        </span>
+
+        <span>
+          <i className="landscape-legend-dot landscape-legend-provisional" />
+          Provisional (1–4)
+        </span>
+
+        <span>
+          <i className="landscape-legend-dot landscape-legend-unranked" />
+          Unranked
+        </span>
+
+        <small>
+          Click any player dot to open their profile.
+        </small>
+      </div>
+    </div>
+  );
 }
 
 function formatSigned(value, digits = 0) {
@@ -1016,6 +1331,9 @@ function App() {
 
   const [playerB, setPlayerB] =
     useState("");
+
+  const [recordMode, setRecordMode] =
+    useState("mine");
 
   const [format, setFormat] =
     useState(1);
@@ -2630,10 +2948,6 @@ if (
       (player) => player.is_active
     );
 
-  const weightedStandings =
-    leagueAnalytics.powerStandings.filter(
-      (player) => player.is_active
-    );
 
   const activePlayers =
     players.filter(
@@ -2649,8 +2963,13 @@ if (
 
   const leader =
     activeStandings.find(
+      (player) =>
+        player.qualification === "ranked"
+    ) ||
+    activeStandings.find(
       (player) => player.matchesPlayed > 0
-    ) || null;
+    ) ||
+    null;
 
   const boardMatchActivity =
     useMemo(() => {
@@ -2746,12 +3065,13 @@ if (
               (pointsFor / totalPoints) *
                 1000
             ) / 10;
-      const powerChange =
+      const ratingChange =
         history.reduce(
           (sum, item) =>
-            sum + item.powerChange,
+            sum + item.eloChange,
           0
         );
+      const powerChange = ratingChange;
       const eloChange = history.reduce(
         (sum, item) =>
           sum + item.eloChange,
@@ -2769,6 +3089,7 @@ if (
         pointsWonPercentage,
         powerChange,
         eloChange,
+        ratingChange,
       };
     }, [selectedPerformanceHistory]);
 
@@ -2966,6 +3287,43 @@ if (
     setEditGameScores(updated);
   }
 
+  useEffect(() => {
+    if (
+      activeTab === "record" &&
+      recordMode === "mine" &&
+      currentPlayer?.id
+    ) {
+      setPlayerA(currentPlayer.id);
+
+      if (
+        playerB === currentPlayer.id
+      ) {
+        setPlayerB("");
+      }
+    }
+  }, [
+    activeTab,
+    recordMode,
+    currentPlayer?.id,
+    playerB,
+  ]);
+
+  function chooseRecordMode(mode) {
+    setRecordMode(mode);
+    setErrorMessage("");
+    resetScores();
+
+    if (mode === "mine") {
+      setPlayerA(
+        currentPlayer?.id || ""
+      );
+      setPlayerB("");
+    } else {
+      setPlayerA("");
+      setPlayerB("");
+    }
+  }
+
   function showBoardDetail(mode) {
     const nextMode =
       boardDetailMode === mode ? null : mode;
@@ -2987,6 +3345,15 @@ if (
   function changeTab(tab) {
     setErrorMessage("");
     setActiveTab(tab);
+
+    if (tab === "record") {
+      setRecordMode("mine");
+      setPlayerA(
+        currentPlayer?.id || ""
+      );
+      setPlayerB("");
+      resetScores();
+    }
 
     if (tab !== "leaderboard") {
       setBoardDetailMode(null);
@@ -3719,7 +4086,11 @@ if (
 
       if (error) throw error;
 
-      setPlayerA("");
+      setPlayerA(
+        recordMode === "mine"
+          ? currentPlayer?.id || ""
+          : ""
+      );
       setPlayerB("");
 
       resetScores();
@@ -5647,261 +6018,147 @@ if (
             <div className="card ranking-card">
               <div className="ranking-card-heading">
                 <div>
-                  <h3>Overall Elo Rankings</h3>
+                  <h3>League Ratings</h3>
                   <p>
-                    Head-to-head skill rating based on wins, losses, and opponent strength.
+                    USATT-inspired head-to-head ratings. Players become officially ranked after five matches.
                   </p>
                 </div>
 
                 <button
                   className="rank-info-button"
-                  onClick={() => setRankInfoMode("elo")}
+                  onClick={() => setRankInfoMode("league")}
                 >
                   How is rank determined?
                 </button>
               </div>
 
-              <div className="table-wrap">
-                <table>
+              <div className="table-wrap board-rating-table-wrap">
+                <table className="league-rating-table">
                   <thead>
                     <tr>
-                      <th>Rank</th>
+                      <th className="board-rank-column">Rank</th>
                       <th>Player</th>
-                      <th>Status</th>
-                      <th>Elo</th>
-                      <th>Win %</th>
-                      <th>Win Streak</th>
-                      <th>Matches</th>
+                      <th>Rating</th>
+                      <th className="board-hide-mobile">Strength</th>
+                      <th>Streak</th>
+                      <th className="board-hide-mobile">Matches</th>
                     </tr>
                   </thead>
 
                   <tbody>
-                    {activeStandings.map((player, index) => {
-                      const hasPlayed = player.matchesPlayed > 0;
+                    {activeStandings.map((player) => {
+                      const officialRank =
+                        player.officialRank;
+
                       const placementClass =
-                        hasPlayed && index === 0
+                        officialRank === 1
                           ? "champion-row"
-                          : hasPlayed && index === 1
+                          : officialRank === 2
                           ? "placement-silver-row"
-                          : hasPlayed && index === 2
+                          : officialRank === 3
                           ? "placement-bronze-row"
                           : "";
 
                       const textClass =
-                        hasPlayed && index === 0
+                        officialRank === 1
                           ? "champion-text"
-                          : hasPlayed && index === 1
+                          : officialRank === 2
                           ? "placement-silver-text"
-                          : hasPlayed && index === 2
+                          : officialRank === 3
                           ? "placement-bronze-text"
                           : "";
+
+                      const rankLabel =
+                        player.qualification === "ranked"
+                          ? officialRank
+                          : player.qualification === "provisional"
+                          ? "P"
+                          : "—";
 
                       return (
                         <tr
                           key={player.id}
                           className={placementClass}
                         >
-                          <td>
-                            <span className={textClass}>
-                              {!hasPlayed ? "Unranked" : index + 1}
-                            </span>
-                          </td>
-
-                          <td>
-                            <button
-                              className="player-profile-link board-player-link"
-                              onClick={() =>
-                                openPlayerProfile(player.id)
-                              }
-                            >
-                              <PlayerAvatar
-                                player={player}
-                                size="small"
-                              />
-
-                              <span className="board-player-copy">
-                                <strong className={textClass}>
-                                  {player.name}
-                                </strong>
-                                <span className="board-player-record">
-                                  <span className="board-player-win">
-                                    W: {player.wins}
-                                  </span>
-                                  <span className="board-player-loss">
-                                    L: {player.losses}
-                                  </span>
-                                </span>
-                              </span>
-                            </button>
-                          </td>
-
-                          <td>
-                            <StatusBadge status={player.play_status} />
-                          </td>
-
-                          <td>
-                            <span className={textClass}>
-                              {player.rating}
-                            </span>
-                          </td>
-
-                          <td>
-                            <span className={textClass}>
-                              {player.winPercentage}%
-                            </span>
-                          </td>
-
-                          <td>
-                            <span className={textClass}>
-                              {player.winStreak > 0 ? `W${player.winStreak}` : "—"}
-                            </span>
-                          </td>
-
-                          <td>
-                            <span className={textClass}>
-                              {player.matchesPlayed}
-                            </span>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-
-            <div className="card weighted-card ranking-card">
-              <div className="ranking-card-heading">
-                <div>
-                  <h3>Power Rankings</h3>
-                  <p>
-                    Combines opponent-adjusted results with point-by-point performance. Three matches are required for an official rank.
-                  </p>
-                </div>
-
-                <button
-                  className="rank-info-button"
-                  onClick={() => setRankInfoMode("power")}
-                >
-                  How is rank determined?
-                </button>
-              </div>
-
-              <div className="table-wrap">
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Rank</th>
-                      <th>Player</th>
-                      <th>Rating Status</th>
-                      <th>Power</th>
-                      <th>Points Won</th>
-                      <th>Point +/-</th>
-                      <th>Win Streak</th>
-                      <th>Matches</th>
-                    </tr>
-                  </thead>
-
-                  <tbody>
-                    {weightedStandings.map((player, index) => {
-                      const officiallyRanked =
-                        player.qualification === "ranked";
-                      const placementClass =
-                        officiallyRanked && index === 0
-                          ? "champion-row"
-                          : officiallyRanked && index === 1
-                          ? "placement-silver-row"
-                          : officiallyRanked && index === 2
-                          ? "placement-bronze-row"
-                          : "";
-                      const textClass =
-                        officiallyRanked && index === 0
-                          ? "champion-text"
-                          : officiallyRanked && index === 1
-                          ? "placement-silver-text"
-                          : officiallyRanked && index === 2
-                          ? "placement-bronze-text"
-                          : "";
-
-                      return (
-                        <tr
-                          key={player.id}
-                          className={placementClass}
-                        >
-                          <td>
-                            <span className={textClass}>
-                              {player.qualification === "unranked"
-                                ? "—"
-                                : player.qualification === "provisional"
-                                ? "PROV."
-                                : index + 1}
-                            </span>
-                          </td>
-
-                          <td>
-                            <button
-                              className="player-profile-link board-player-link"
-                              onClick={() =>
-                                openPlayerProfile(player.id)
-                              }
-                            >
-                              <PlayerAvatar
-                                player={player}
-                                size="small"
-                              />
-                              <span className="board-player-copy">
-                                <strong className={textClass}>
-                                  {player.name}
-                                </strong>
-                                <span className="board-player-record">
-                                  <span className="board-player-win">
-                                    W: {player.wins}
-                                  </span>
-                                  <span className="board-player-loss">
-                                    L: {player.losses}
-                                  </span>
-                                </span>
-                              </span>
-                            </button>
-                          </td>
-
-                          <td>
+                          <td className="board-rank-cell">
                             <span
-                              className={`qualification-pill qualification-${player.qualification}`}
+                              className={textClass}
+                              title={
+                                player.qualification === "provisional"
+                                  ? "Provisional: five matches are required for an official rank."
+                                  : player.qualification === "unranked"
+                                  ? "Unranked: no matches played."
+                                  : `Official league rank ${officialRank}`
+                              }
                             >
-                              {player.qualification === "ranked"
-                                ? "Ranked"
-                                : player.qualification === "provisional"
-                                ? "Provisional"
-                                : "Unranked"}
+                              {rankLabel}
                             </span>
+                          </td>
+
+                          <td>
+                            <button
+                              className="player-profile-link board-player-link"
+                              onClick={() =>
+                                openPlayerProfile(player.id)
+                              }
+                            >
+                              <PlayerAvatar
+                                player={player}
+                                size="small"
+                              />
+
+                              <span className="board-player-copy">
+                                <span className="board-player-name-line">
+                                  <span
+                                    className={`board-status-dot board-status-${player.play_status === "open" ? "open" : "idle"}`}
+                                    title={
+                                      player.play_status === "open"
+                                        ? "Open to Play"
+                                        : "Idle"
+                                    }
+                                  />
+                                  <strong className={textClass}>
+                                    {player.name}
+                                  </strong>
+                                </span>
+
+                                <span className="board-player-record">
+                                  <span className="board-player-win">
+                                    W: {player.wins}
+                                  </span>
+                                  <span className="board-player-loss">
+                                    L: {player.losses}
+                                  </span>
+                                </span>
+
+                                <span className="board-mobile-meta">
+                                  SOS {player.averageOpponentRating ?? "—"} · {player.matchesPlayed} match{player.matchesPlayed === 1 ? "" : "es"}
+                                </span>
+                              </span>
+                            </button>
                           </td>
 
                           <td>
                             <strong className={textClass}>
-                              {player.powerRating}
+                              {player.rating}
                             </strong>
                           </td>
 
-                          <td>
+                          <td className="board-hide-mobile">
                             <span className={textClass}>
-                              {player.pointsWonPercentage}%
+                              {player.averageOpponentRating ?? "—"}
                             </span>
                           </td>
 
                           <td>
                             <span className={textClass}>
-                              {formatSigned(player.pointDifferential)}
+                              {player.winStreak > 0
+                                ? `W${player.winStreak}`
+                                : "—"}
                             </span>
                           </td>
 
-                          <td>
-                            <span className={textClass}>
-                              {player.winStreak > 0 ? `W${player.winStreak}` : "—"}
-                            </span>
-                          </td>
-
-                          <td>
+                          <td className="board-hide-mobile">
                             <span className={textClass}>
                               {player.matchesPlayed}
                             </span>
@@ -5912,6 +6169,27 @@ if (
                   </tbody>
                 </table>
               </div>
+
+              <div className="ranking-footnote">
+                <span><strong>P</strong> = provisional (1–4 matches)</span>
+                <span>5+ matches = officially ranked</span>
+              </div>
+            </div>
+
+            <div className="card league-landscape-card">
+              <div className="ranking-card-heading">
+                <div>
+                  <h3>League Landscape</h3>
+                  <p>
+                    Rating versus matches played. This makes sample size visible alongside skill.
+                  </p>
+                </div>
+              </div>
+
+              <LeagueLandscapeChart
+                players={activeStandings}
+                onPlayerClick={openPlayerProfile}
+              />
             </div>
 
             {boardDetailMode && (
@@ -5966,8 +6244,8 @@ if (
                         </div>
 
                         <div className="board-roster-metrics">
-                          <span>Elo <strong>{player.rating}</strong></span>
-                          <span>Power <strong>{player.powerRating}</strong></span>
+                          <span>Rating <strong>{player.rating}</strong></span>
+                          <span>SOS <strong>{player.averageOpponentRating ?? "—"}</strong></span>
                           <StatusBadge status={player.play_status} />
                         </div>
                       </button>
@@ -6044,7 +6322,7 @@ if (
                         <PlayerAvatar player={leader} size="large" />
 
                         <div className="board-leader-identity">
-                          <span>Current Elo Leader</span>
+                          <span>Current League Leader</span>
                           <h3>{leader.name}</h3>
                           <div className="board-player-record board-leader-record">
                             <span className="board-player-win">
@@ -6058,12 +6336,12 @@ if (
 
                         <div className="board-leader-metrics">
                           <div>
-                            <span>Elo</span>
+                            <span>Rating</span>
                             <strong>{leader.rating}</strong>
                           </div>
                           <div>
-                            <span>Power</span>
-                            <strong>{leader.powerRating}</strong>
+                            <span>Strength</span>
+                            <strong>{leader.averageOpponentRating ?? "—"}</strong>
                           </div>
                           <div>
                             <span>Win Streak</span>
@@ -6114,7 +6392,30 @@ if (
             <h2>Record a Match</h2>
 
             <p>
-              Choose the players and enter each game's final score.
+              Record your own match quickly, or log a match for two other league members.
+            </p>
+
+            <div className="record-mode-switch" role="group" aria-label="Match entry mode">
+              <button
+                type="button"
+                className={recordMode === "mine" ? "record-mode-active" : ""}
+                onClick={() => chooseRecordMode("mine")}
+              >
+                My Match
+              </button>
+              <button
+                type="button"
+                className={recordMode === "others" ? "record-mode-active" : ""}
+                onClick={() => chooseRecordMode("others")}
+              >
+                Other Players
+              </button>
+            </div>
+
+            <p className="record-mode-help">
+              {recordMode === "mine"
+                ? "You are Player 1. Choose your opponent and enter the final scores."
+                : "Use this when you are recording a completed match for two other players."}
             </p>
 
             <form
@@ -6128,39 +6429,44 @@ if (
                     Player 1
                   </label>
 
-                  <select
-                    value={
-                      playerA
-                    }
-                    onChange={(e) =>
-                      setPlayerA(
-                        e.target
-                          .value
-                      )
-                    }
-                  >
-                    <option value="">
-                      Choose player
-                    </option>
+                  {recordMode === "mine" ? (
+                    <div className="record-player-locked">
+                      <PlayerAvatar
+                        player={currentPlayer}
+                        size="small"
+                      />
+                      <div>
+                        <strong>{currentPlayer?.name || "You"}</strong>
+                        <span>Your player profile</span>
+                      </div>
+                    </div>
+                  ) : (
+                    <select
+                      value={playerA}
+                      onChange={(e) =>
+                        setPlayerA(
+                          e.target.value
+                        )
+                      }
+                    >
+                      <option value="">
+                        Choose player
+                      </option>
 
-                    {activePlayers.map(
-                      (
-                        player
-                      ) => (
-                        <option
-                          key={
-                            player.id
-                          }
-                          value={
-                            player.id
-                          }
-                        >
-                          {player.play_status === "open" ? "Open · " : ""}
-                          {player.name}
-                        </option>
-                      )
-                    )}
-                  </select>
+                      {activePlayers.map(
+                        (player) => (
+                          <option
+                            key={player.id}
+                            value={player.id}
+                            disabled={player.id === playerB}
+                          >
+                            {player.play_status === "open" ? "Open · " : ""}
+                            {player.name}
+                          </option>
+                        )
+                      )}
+                    </select>
+                  )}
                 </div>
 
                 <div>
@@ -6169,31 +6475,25 @@ if (
                   </label>
 
                   <select
-                    value={
-                      playerB
-                    }
+                    value={playerB}
                     onChange={(e) =>
                       setPlayerB(
-                        e.target
-                          .value
+                        e.target.value
                       )
                     }
                   >
                     <option value="">
-                      Choose player
+                      {recordMode === "mine"
+                        ? "Choose your opponent"
+                        : "Choose player"}
                     </option>
 
                     {activePlayers.map(
-                      (
-                        player
-                      ) => (
+                      (player) => (
                         <option
-                          key={
-                            player.id
-                          }
-                          value={
-                            player.id
-                          }
+                          key={player.id}
+                          value={player.id}
+                          disabled={player.id === playerA}
                         >
                           {player.play_status === "open" ? "Open · " : ""}
                           {player.name}
@@ -6472,7 +6772,7 @@ if (
                     </div>
 
                     <span className="rating-label">
-                      Elo Rating
+                      League Rating
                     </span>
 
                     <div className="player-stats">
@@ -6502,11 +6802,11 @@ if (
 
                       <div>
                         <strong>
-                          {player.powerRating}
+                          {player.averageOpponentRating ?? "—"}
                         </strong>
 
                         <span>
-                          Power
+                          Avg. Opponent
                         </span>
                       </div>
                     </div>
@@ -6590,16 +6890,15 @@ if (
                 </strong>
 
                 <span>
-                  ELO RATING
+                  LEAGUE RATING
                 </span>
 
                 <div className="profile-rank">
-                  League Rank #
-                  {activeStandings.findIndex(
-                    (player) =>
-                      player.id ===
-                      selectedPlayer.id
-                  ) + 1}
+                  {selectedStats.qualification === "ranked"
+                    ? `League Rank ${selectedStats.officialRank}`
+                    : selectedStats.qualification === "provisional"
+                    ? `Provisional · ${selectedStats.matchesPlayed}/5 matches`
+                    : "Unranked"}
                 </div>
               </div>
             </div>
@@ -6679,11 +6978,11 @@ if (
 
               <div className="profile-stat-card">
                 <span>
-                  Power Rating
+                  Strength of Schedule
                 </span>
 
                 <strong>
-                  {selectedStats.powerRating}
+                  {selectedStats.averageOpponentRating ?? "—"}
                 </strong>
               </div>
 
@@ -6793,9 +7092,9 @@ if (
                   </strong>
                 </div>
                 <div>
-                  <span>Power Change</span>
+                  <span>Rating Change</span>
                   <strong>
-                    {formatSigned(selectedRangeStats.powerChange)}
+                    {formatSigned(selectedRangeStats.ratingChange)}
                   </strong>
                 </div>
               </div>
@@ -6803,12 +7102,12 @@ if (
               <div className="performance-chart-grid">
                 <div className="performance-chart-card">
                   <div className="performance-chart-title">
-                    <h4>Power Rating Trend</h4>
+                    <h4>League Rating Trend</h4>
                     <span>Higher is better</span>
                   </div>
                   <SimpleLineChart
                     data={selectedPerformanceHistory}
-                    valueKey="powerAfter"
+                    valueKey="eloAfter"
                   />
                 </div>
 
@@ -7890,11 +8189,7 @@ if (
             <div className="modal-heading">
               <div>
                 <p className="season-label">RANKING GUIDE</p>
-                <h2>
-                  {rankInfoMode === "elo"
-                    ? "How Elo Rank Is Determined"
-                    : "How Power Rank Is Determined"}
-                </h2>
+                <h2>How League Rating Is Determined</h2>
               </div>
 
               <button
@@ -7906,75 +8201,42 @@ if (
               </button>
             </div>
 
-            {rankInfoMode === "elo" ? (
-              <div className="rank-explainer-copy">
-                <p>
-                  <strong>Elo is the pure head-to-head skill ranking.</strong> Every player begins at 1000. After each match, ratings move based on the result and how strong each opponent was before the match.
-                </p>
-                <div className="rank-rule-grid">
-                  <div>
-                    <strong>Beat a stronger player</strong>
-                    <span>You gain more Elo.</span>
-                  </div>
-                  <div>
-                    <strong>Beat a weaker player</strong>
-                    <span>You still gain Elo, but less.</span>
-                  </div>
-                  <div>
-                    <strong>Lose to a stronger player</strong>
-                    <span>You lose less Elo.</span>
-                  </div>
-                  <div>
-                    <strong>Lose to a weaker player</strong>
-                    <span>You lose more Elo.</span>
-                  </div>
+            <div className="rank-explainer-copy">
+              <p>
+                <strong>The League Rating is inspired by the USATT player-rating system.</strong> Everyone begins at 1000. After each completed match, rating points move from the loser to the winner based on the rating gap entering the match.
+              </p>
+
+              <div className="rank-rule-grid">
+                <div>
+                  <strong>Beat a stronger player</strong>
+                  <span>A bigger upset earns substantially more rating.</span>
                 </div>
-                <p className="rank-note">
-                  Game scores and point margin do not affect Elo. Players with no recorded matches are shown as Unranked and do not take a ranked spot.
-                </p>
+                <div>
+                  <strong>Beat a weaker player</strong>
+                  <span>An expected win earns only a small amount.</span>
+                </div>
+                <div>
+                  <strong>Lose to a stronger player</strong>
+                  <span>An expected loss costs only a small amount.</span>
+                </div>
+                <div>
+                  <strong>Lose to a weaker player</strong>
+                  <span>An upset loss costs substantially more.</span>
+                </div>
+                <div>
+                  <strong>1–4 matches</strong>
+                  <span>Provisional. Your rating is visible but you do not take an official rank.</span>
+                </div>
+                <div>
+                  <strong>5+ matches</strong>
+                  <span>Officially ranked and eligible for the top three placements.</span>
+                </div>
               </div>
-            ) : (
-              <div className="rank-explainer-copy">
-                <p>
-                  <strong>Power Rating measures overall match performance.</strong> Every player begins at 1000, but the rating looks at both the result and the score while adjusting for opponent strength.
-                </p>
-                <div className="power-formula-card">
-                  <div>
-                    <strong>70%</strong>
-                    <span>Win / loss result</span>
-                  </div>
-                  <div>
-                    <strong>30%</strong>
-                    <span>Share of points scored</span>
-                  </div>
-                </div>
-                <div className="rank-rule-grid">
-                  <div>
-                    <strong>Opponent strength matters</strong>
-                    <span>Strong performances against highly rated players are worth more.</span>
-                  </div>
-                  <div>
-                    <strong>Every point matters</strong>
-                    <span>A close loss is treated differently than being blown out.</span>
-                  </div>
-                  <div>
-                    <strong>0 matches</strong>
-                    <span>Unranked.</span>
-                  </div>
-                  <div>
-                    <strong>1–2 matches</strong>
-                    <span>Provisional. Rating is visible but not officially ranked.</span>
-                  </div>
-                  <div>
-                    <strong>3+ matches</strong>
-                    <span>Eligible for the official Power Ranking.</span>
-                  </div>
-                </div>
-                <p className="rank-note">
-                  Playing more does not automatically raise your rating. Matches build confidence in the ranking, while actual performance determines the score.
-                </p>
-              </div>
-            )}
+
+              <p className="rank-note">
+                Match score margin does not change the League Rating. Point differential and game scores are still tracked as separate performance analytics. Strength of Schedule is the average rating of the opponents you have faced at the time you played them.
+              </p>
+            </div>
           </div>
         </div>
       )}
@@ -8016,7 +8278,7 @@ if (
                 selectedMatchAnalytics.winnerId ===
                 selectedMatch.player_a_id;
               const winnerAnalytics = aWon ? a : b;
-              const upset = winnerAnalytics.expectedPower < 0.5;
+              const upset = winnerAnalytics.expectedElo < 0.5;
 
               return (
                 <>
@@ -8050,7 +8312,7 @@ if (
 
                   {upset && (
                     <div className="upset-banner">
-                      ⚡ Upset Win: the winner entered with only {Math.round(winnerAnalytics.expectedPower * 100)}% expected Power performance odds.
+                      Upset Win: the winner entered with only {Math.round(winnerAnalytics.expectedElo * 100)}% expected win probability.
                     </div>
                   )}
 
@@ -8068,8 +8330,7 @@ if (
                       <h3>{getPlayerName(selectedMatch.player_a_id)}</h3>
                       <div><span>Total Points</span><strong>{selectedMatchAnalytics.aPoints}</strong></div>
                       <div><span>Point +/-</span><strong>{formatSigned(a.pointDifferential)}</strong></div>
-                      <div><span>Elo</span><strong>{Math.round(a.eloBefore)} → {Math.round(a.eloAfter)} <small>{formatSigned(a.eloChange)}</small></strong></div>
-                      <div><span>Power</span><strong>{Math.round(a.powerBefore)} → {Math.round(a.powerAfter)} <small>{formatSigned(a.powerChange)}</small></strong></div>
+                      <div><span>League Rating</span><strong>{Math.round(a.eloBefore)} → {Math.round(a.eloAfter)} <small>{formatSigned(a.eloChange)}</small></strong></div>
                       <div><span>Expected Win</span><strong>{Math.round(a.expectedElo * 100)}%</strong></div>
                       <div><span>Points Won</span><strong>{Math.round(a.pointShare * 1000) / 10}%</strong></div>
                     </div>
@@ -8078,8 +8339,7 @@ if (
                       <h3>{getPlayerName(selectedMatch.player_b_id)}</h3>
                       <div><span>Total Points</span><strong>{selectedMatchAnalytics.bPoints}</strong></div>
                       <div><span>Point +/-</span><strong>{formatSigned(b.pointDifferential)}</strong></div>
-                      <div><span>Elo</span><strong>{Math.round(b.eloBefore)} → {Math.round(b.eloAfter)} <small>{formatSigned(b.eloChange)}</small></strong></div>
-                      <div><span>Power</span><strong>{Math.round(b.powerBefore)} → {Math.round(b.powerAfter)} <small>{formatSigned(b.powerChange)}</small></strong></div>
+                      <div><span>League Rating</span><strong>{Math.round(b.eloBefore)} → {Math.round(b.eloAfter)} <small>{formatSigned(b.eloChange)}</small></strong></div>
                       <div><span>Expected Win</span><strong>{Math.round(b.expectedElo * 100)}%</strong></div>
                       <div><span>Points Won</span><strong>{Math.round(b.pointShare * 1000) / 10}%</strong></div>
                     </div>
