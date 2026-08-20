@@ -1,8 +1,137 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import "./App.css";
 import { supabase } from "./lib/supabaseClient";
 
 const APP_URL = `${window.location.origin}${import.meta.env.BASE_URL}`;
+
+function AppIcon({ name, size = 18, className = "" }) {
+  const common = {
+    width: size,
+    height: size,
+    viewBox: "0 0 24 24",
+    fill: "none",
+    stroke: "currentColor",
+    strokeWidth: 1.8,
+    strokeLinecap: "round",
+    strokeLinejoin: "round",
+    className: `app-icon ${className}`.trim(),
+    "aria-hidden": true,
+  };
+
+  const icons = {
+    paddle: (
+      <svg {...common}>
+        <path d="M5.2 5.2a6.1 6.1 0 0 1 8.6 0l.9.9a6.1 6.1 0 0 1 0 8.6l-.8.8-9.5-9.5.8-.8Z" />
+        <path d="m11.9 13.9 6.4 6.4" />
+        <circle cx="18.4" cy="6.1" r="2.1" fill="currentColor" stroke="none" />
+      </svg>
+    ),
+    home: (
+      <svg {...common}>
+        <path d="m3 10 9-7 9 7" />
+        <path d="M5 9.5V21h14V9.5" />
+        <path d="M9 21v-7h6v7" />
+      </svg>
+    ),
+    trophy: (
+      <svg {...common}>
+        <path d="M8 4h8v4.5a4 4 0 0 1-8 0V4Z" />
+        <path d="M8 6H4v1.5A4.5 4.5 0 0 0 8.5 12" />
+        <path d="M16 6h4v1.5a4.5 4.5 0 0 1-4.5 4.5" />
+        <path d="M12 12.5V17" />
+        <path d="M8 21h8" />
+        <path d="M9.5 17h5" />
+      </svg>
+    ),
+    plus: (
+      <svg {...common}>
+        <path d="M12 5v14M5 12h14" />
+      </svg>
+    ),
+    users: (
+      <svg {...common}>
+        <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+        <circle cx="9" cy="7" r="4" />
+        <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+        <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+      </svg>
+    ),
+    user: (
+      <svg {...common}>
+        <circle cx="12" cy="8" r="4" />
+        <path d="M4 21a8 8 0 0 1 16 0" />
+      </svg>
+    ),
+    history: (
+      <svg {...common}>
+        <path d="M3 12a9 9 0 1 0 3-6.7L3 8" />
+        <path d="M3 3v5h5" />
+        <path d="M12 7v5l3 2" />
+      </svg>
+    ),
+    settings: (
+      <svg {...common}>
+        <circle cx="12" cy="12" r="3" />
+        <path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1-2.8 2.8-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.6V21h-4v-.1a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1L4.2 17l.1-.1a1.7 1.7 0 0 0 .3-1.9A1.7 1.7 0 0 0 3 14H3v-4h.1a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9L4.2 7 7 4.2l.1.1a1.7 1.7 0 0 0 1.9.3 1.7 1.7 0 0 0 1-1.6V3h4v.1a1.7 1.7 0 0 0 1 1.6 1.7 1.7 0 0 0 1.9-.3l.1-.1L19.8 7l-.1.1a1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0 1.6 1h.1v4H21a1.7 1.7 0 0 0-1.6 1Z" />
+      </svg>
+    ),
+    chat: (
+      <svg {...common}>
+        <path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4v8Z" />
+        <path d="M8 9h8M8 13h5" />
+      </svg>
+    ),
+    sun: (
+      <svg {...common}>
+        <circle cx="12" cy="12" r="4" />
+        <path d="M12 2v2M12 20v2M4.93 4.93l1.42 1.42M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.42-1.42M17.66 6.34l1.41-1.41" />
+      </svg>
+    ),
+    moon: (
+      <svg {...common}>
+        <path d="M21 12.8A8.5 8.5 0 1 1 11.2 3 6.6 6.6 0 0 0 21 12.8Z" />
+      </svg>
+    ),
+    copy: (
+      <svg {...common}>
+        <rect x="9" y="9" width="11" height="11" rx="2" />
+        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+      </svg>
+    ),
+    chart: (
+      <svg {...common}>
+        <path d="M4 20V10M10 20V4M16 20v-7M22 20H2" />
+      </svg>
+    ),
+  };
+
+  return icons[name] || icons.paddle;
+}
+
+function ThemeControl({ theme, onChange, saving = false }) {
+  return (
+    <div className="theme-control" role="group" aria-label="Display mode">
+      <button
+        type="button"
+        className={theme === "light" ? "theme-option-active" : ""}
+        onClick={() => onChange("light")}
+        disabled={saving}
+      >
+        <AppIcon name="sun" size={16} />
+        Light
+      </button>
+      <button
+        type="button"
+        className={theme === "dark" ? "theme-option-active" : ""}
+        onClick={() => onChange("dark")}
+        disabled={saving}
+      >
+        <AppIcon name="moon" size={16} />
+        Dark
+      </button>
+    </div>
+  );
+}
 
 function PlayerAvatar({ player, size = "medium" }) {
   const initial = player?.name
@@ -163,20 +292,49 @@ function validateMatchScores(format, scoreRows) {
   return usableGames;
 }
 
-function calculateStandings(players, matches) {
+function expectedScore(rating, opponentRating) {
+  return (
+    1 /
+    (1 +
+      Math.pow(
+        10,
+        (opponentRating - rating) / 400
+      ))
+  );
+}
+
+function getQualification(matchesPlayed) {
+  if (matchesPlayed === 0) {
+    return "unranked";
+  }
+
+  if (matchesPlayed < 3) {
+    return "provisional";
+  }
+
+  return "ranked";
+}
+
+function calculateLeagueAnalytics(players, matches) {
   const stats = {};
+  const playerHistory = {};
+  const matchAnalytics = {};
 
   players.forEach((player) => {
     stats[player.id] = {
       ...player,
       rating: 1000,
+      powerRating: 1000,
       wins: 0,
       losses: 0,
       gamesWon: 0,
       gamesLost: 0,
       pointsFor: 0,
       pointsAgainst: 0,
+      winStreak: 0,
     };
+
+    playerHistory[player.id] = [];
   });
 
   const orderedMatches = [...matches].sort(
@@ -214,60 +372,145 @@ function calculateStandings(players, matches) {
       }
     });
 
+    const aWon = aGames > bGames;
+    const resultA = aWon ? 1 : 0;
+    const resultB = aWon ? 0 : 1;
+
+    const eloBeforeA = a.rating;
+    const eloBeforeB = b.rating;
+    const powerBeforeA = a.powerRating;
+    const powerBeforeB = b.powerRating;
+
+    const expectedEloA = expectedScore(
+      eloBeforeA,
+      eloBeforeB
+    );
+    const expectedEloB = 1 - expectedEloA;
+
+    const expectedPowerA = expectedScore(
+      powerBeforeA,
+      powerBeforeB
+    );
+    const expectedPowerB = 1 - expectedPowerA;
+
+    const totalPoints = aPoints + bPoints;
+    const pointShareA =
+      totalPoints === 0
+        ? 0.5
+        : aPoints / totalPoints;
+    const pointShareB = 1 - pointShareA;
+
+    // Power Rating is deliberately different from Elo.
+    // 70% of a match's performance comes from the win/loss result.
+    // 30% comes from the player's share of all points scored.
+    // Opponent strength is already built into expectedPower.
+    const performanceA =
+      0.7 * resultA + 0.3 * pointShareA;
+    const performanceB =
+      0.7 * resultB + 0.3 * pointShareB;
+
+    const ELO_K = 32;
+    const POWER_K = 40;
+
+    a.rating =
+      eloBeforeA +
+      ELO_K * (resultA - expectedEloA);
+    b.rating =
+      eloBeforeB +
+      ELO_K * (resultB - expectedEloB);
+
+    a.powerRating =
+      powerBeforeA +
+      POWER_K *
+        (performanceA - expectedPowerA);
+    b.powerRating =
+      powerBeforeB +
+      POWER_K *
+        (performanceB - expectedPowerB);
+
     a.gamesWon += aGames;
     a.gamesLost += bGames;
-
     b.gamesWon += bGames;
     b.gamesLost += aGames;
 
     a.pointsFor += aPoints;
     a.pointsAgainst += bPoints;
-
     b.pointsFor += bPoints;
     b.pointsAgainst += aPoints;
-
-    const aWon = aGames > bGames;
 
     if (aWon) {
       a.wins++;
       b.losses++;
+      a.winStreak++;
+      b.winStreak = 0;
     } else {
       b.wins++;
       a.losses++;
+      b.winStreak++;
+      a.winStreak = 0;
     }
 
-    const expectedA =
-      1 /
-      (1 +
-        Math.pow(
-          10,
-          (b.rating - a.rating) / 400
-        ));
+    const aSnapshot = {
+      matchId: match.id,
+      createdAt: match.created_at,
+      opponentId: b.id,
+      won: aWon,
+      gamesFor: aGames,
+      gamesAgainst: bGames,
+      pointsFor: aPoints,
+      pointsAgainst: bPoints,
+      pointDifferential: aPoints - bPoints,
+      pointShare: pointShareA,
+      eloBefore: eloBeforeA,
+      eloAfter: a.rating,
+      eloChange: a.rating - eloBeforeA,
+      powerBefore: powerBeforeA,
+      powerAfter: a.powerRating,
+      powerChange:
+        a.powerRating - powerBeforeA,
+      expectedElo: expectedEloA,
+      expectedPower: expectedPowerA,
+    };
 
-    const expectedB =
-      1 /
-      (1 +
-        Math.pow(
-          10,
-          (a.rating - b.rating) / 400
-        ));
+    const bSnapshot = {
+      matchId: match.id,
+      createdAt: match.created_at,
+      opponentId: a.id,
+      won: !aWon,
+      gamesFor: bGames,
+      gamesAgainst: aGames,
+      pointsFor: bPoints,
+      pointsAgainst: aPoints,
+      pointDifferential: bPoints - aPoints,
+      pointShare: pointShareB,
+      eloBefore: eloBeforeB,
+      eloAfter: b.rating,
+      eloChange: b.rating - eloBeforeB,
+      powerBefore: powerBeforeB,
+      powerAfter: b.powerRating,
+      powerChange:
+        b.powerRating - powerBeforeB,
+      expectedElo: expectedEloB,
+      expectedPower: expectedPowerB,
+    };
 
-    const resultA = aWon ? 1 : 0;
-    const resultB = aWon ? 0 : 1;
+    playerHistory[a.id].push(aSnapshot);
+    playerHistory[b.id].push(bSnapshot);
 
-    const k = 32;
-
-    a.rating =
-      a.rating +
-      k * (resultA - expectedA);
-
-    b.rating =
-      b.rating +
-      k * (resultB - expectedB);
+    matchAnalytics[match.id] = {
+      a: aSnapshot,
+      b: bSnapshot,
+      aGames,
+      bGames,
+      aPoints,
+      bPoints,
+      winnerId: aWon ? a.id : b.id,
+      loserId: aWon ? b.id : a.id,
+    };
   });
 
-  return Object.values(stats)
-    .map((player) => {
+  const standings = Object.values(stats).map(
+    (player) => {
       const matchesPlayed =
         player.wins + player.losses;
 
@@ -280,47 +523,335 @@ function calculateStandings(players, matches) {
                 100
             );
 
-      const weightedWinPercentage =
-        Math.round(
-          ((player.wins + 3) /
-            (matchesPlayed + 6)) *
-            100
-        );
+      const totalPoints =
+        player.pointsFor +
+        player.pointsAgainst;
+
+      const pointsWonPercentage =
+        totalPoints === 0
+          ? 0
+          : Math.round(
+              (player.pointsFor /
+                totalPoints) *
+                1000
+            ) / 10;
 
       return {
         ...player,
         rating: Math.round(player.rating),
+        powerRating: Math.round(
+          player.powerRating
+        ),
         matchesPlayed,
+        qualification:
+          getQualification(matchesPlayed),
         gamesPlayed:
           player.gamesWon +
           player.gamesLost,
         winPercentage,
-        weightedWinPercentage,
+        pointsWonPercentage,
         pointDifferential:
           player.pointsFor -
           player.pointsAgainst,
       };
-    })
-    .sort((a, b) => {
+    }
+  );
+
+  const eloStandings = [...standings].sort(
+    (a, b) => {
+      // Players who have never played do not take a ranked spot.
+      if (
+        a.matchesPlayed === 0 &&
+        b.matchesPlayed > 0
+      ) {
+        return 1;
+      }
+
+      if (
+        b.matchesPlayed === 0 &&
+        a.matchesPlayed > 0
+      ) {
+        return -1;
+      }
+
       if (b.rating !== a.rating) {
         return b.rating - a.rating;
       }
 
       if (
-        b.weightedWinPercentage !==
-        a.weightedWinPercentage
+        b.matchesPlayed !== a.matchesPlayed
       ) {
         return (
-          b.weightedWinPercentage -
-          a.weightedWinPercentage
+          b.matchesPlayed -
+          a.matchesPlayed
         );
       }
 
-      return (
-        b.matchesPlayed -
-        a.matchesPlayed
-      );
-    });
+      return a.name.localeCompare(b.name);
+    }
+  );
+
+  const powerStandings = [...standings].sort(
+    (a, b) => {
+      const order = {
+        ranked: 0,
+        provisional: 1,
+        unranked: 2,
+      };
+
+      if (
+        order[a.qualification] !==
+        order[b.qualification]
+      ) {
+        return (
+          order[a.qualification] -
+          order[b.qualification]
+        );
+      }
+
+      if (
+        b.powerRating !== a.powerRating
+      ) {
+        return (
+          b.powerRating -
+          a.powerRating
+        );
+      }
+
+      if (
+        b.matchesPlayed !== a.matchesPlayed
+      ) {
+        return (
+          b.matchesPlayed -
+          a.matchesPlayed
+        );
+      }
+
+      return a.name.localeCompare(b.name);
+    }
+  );
+
+  return {
+    standings,
+    eloStandings,
+    powerStandings,
+    playerHistory,
+    matchAnalytics,
+  };
+}
+
+function formatSigned(value, digits = 0) {
+  const number = Number(value || 0);
+  const rounded =
+    digits > 0
+      ? number.toFixed(digits)
+      : Math.round(number);
+
+  return number > 0
+    ? `+${rounded}`
+    : String(rounded);
+}
+
+function filterHistoryByRange(history, range) {
+  if (!Array.isArray(history)) return [];
+  if (range === "all") return history;
+
+  const now = new Date();
+  const cutoff = new Date(now);
+
+  if (range === "7d") {
+    cutoff.setDate(cutoff.getDate() - 7);
+  } else if (range === "30d") {
+    cutoff.setDate(cutoff.getDate() - 30);
+  } else if (range === "6m") {
+    cutoff.setMonth(cutoff.getMonth() - 6);
+  } else if (range === "1y") {
+    cutoff.setFullYear(cutoff.getFullYear() - 1);
+  }
+
+  return history.filter(
+    (item) =>
+      new Date(item.createdAt) >= cutoff
+  );
+}
+
+function SimpleLineChart({
+  data,
+  valueKey,
+  emptyText,
+}) {
+  if (!data || data.length === 0) {
+    return (
+      <div className="performance-chart-empty">
+        {emptyText || "No matches in this period."}
+      </div>
+    );
+  }
+
+  const width = 760;
+  const height = 220;
+  const paddingX = 32;
+  const paddingY = 28;
+  const values = data.map((item) =>
+    Number(item[valueKey] || 0)
+  );
+  let min = Math.min(...values);
+  let max = Math.max(...values);
+
+  if (min === max) {
+    min -= 10;
+    max += 10;
+  }
+
+  const range = max - min || 1;
+
+  const points = values.map((value, index) => {
+    const x =
+      data.length === 1
+        ? width / 2
+        : paddingX +
+          (index /
+            (data.length - 1)) *
+            (width - paddingX * 2);
+
+    const y =
+      paddingY +
+      ((max - value) / range) *
+        (height - paddingY * 2);
+
+    return { x, y, value };
+  });
+
+  const pointString = points
+    .map((point) => `${point.x},${point.y}`)
+    .join(" ");
+
+  return (
+    <div className="simple-chart-wrap">
+      <svg
+        className="simple-line-chart"
+        viewBox={`0 0 ${width} ${height}`}
+        role="img"
+        aria-label="Performance trend chart"
+      >
+        <line
+          className="chart-grid-line"
+          x1={paddingX}
+          y1={paddingY}
+          x2={width - paddingX}
+          y2={paddingY}
+        />
+        <line
+          className="chart-grid-line"
+          x1={paddingX}
+          y1={height / 2}
+          x2={width - paddingX}
+          y2={height / 2}
+        />
+        <line
+          className="chart-grid-line"
+          x1={paddingX}
+          y1={height - paddingY}
+          x2={width - paddingX}
+          y2={height - paddingY}
+        />
+
+        {points.length > 1 && (
+          <polyline
+            className="chart-trend-line"
+            points={pointString}
+            fill="none"
+          />
+        )}
+
+        {points.map((point, index) => (
+          <circle
+            key={index}
+            className="chart-point"
+            cx={point.x}
+            cy={point.y}
+            r="5"
+          >
+            <title>
+              {Math.round(point.value)} after match {index + 1}
+            </title>
+          </circle>
+        ))}
+      </svg>
+
+      <div className="chart-range-labels">
+        <span>
+          {new Date(
+            data[0].createdAt
+          ).toLocaleDateString()}
+        </span>
+        <strong>
+          {Math.round(
+            data[data.length - 1][valueKey]
+          )}
+        </strong>
+        <span>
+          {new Date(
+            data[data.length - 1].createdAt
+          ).toLocaleDateString()}
+        </span>
+      </div>
+    </div>
+  );
+}
+
+function PointDifferentialChart({ data }) {
+  if (!data || data.length === 0) {
+    return (
+      <div className="performance-chart-empty">
+        No matches in this period.
+      </div>
+    );
+  }
+
+  const maxAbs = Math.max(
+    1,
+    ...data.map((item) =>
+      Math.abs(item.pointDifferential)
+    )
+  );
+
+  return (
+    <div className="point-diff-chart">
+      <div className="point-diff-zero" />
+      <div className="point-diff-bars">
+        {data.map((item, index) => {
+          const value = item.pointDifferential;
+          const height = Math.max(
+            5,
+            (Math.abs(value) / maxAbs) * 82
+          );
+
+          return (
+            <div
+              className="point-diff-column"
+              key={`${item.matchId}-${index}`}
+            >
+              <div className="point-diff-bar-area">
+                <div
+                  className={`point-diff-bar ${
+                    value >= 0
+                      ? "point-diff-positive"
+                      : "point-diff-negative"
+                  }`}
+                  style={{
+                    height: `${height}px`,
+                  }}
+                  title={`${formatSigned(value)} points`}
+                />
+              </div>
+              <span>{formatSigned(value)}</span>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
 }
 
 function App() {
@@ -532,6 +1063,95 @@ function App() {
     setVelocityDraft,
   ] = useState("");
 
+  const [
+    accountProfile,
+    setAccountProfile,
+  ] = useState(null);
+
+  const [
+    accountNameDraft,
+    setAccountNameDraft,
+  ] = useState("");
+
+  const [
+    accountDescriptionDraft,
+    setAccountDescriptionDraft,
+  ] = useState("");
+
+  const [
+    accountHeightDraft,
+    setAccountHeightDraft,
+  ] = useState("");
+
+  const [
+    accountVelocityDraft,
+    setAccountVelocityDraft,
+  ] = useState("");
+
+  const [
+    accountProfileSaving,
+    setAccountProfileSaving,
+  ] = useState(false);
+
+  const [
+    accountAvatarUploading,
+    setAccountAvatarUploading,
+  ] = useState(false);
+
+  const [
+    rankInfoMode,
+    setRankInfoMode,
+  ] = useState(null);
+
+  const [
+    selectedMatch,
+    setSelectedMatch,
+  ] = useState(null);
+
+  const [
+    performanceRange,
+    setPerformanceRange,
+  ] = useState("all");
+
+  const [themeMode, setThemeMode] = useState(() =>
+    window.localStorage.getItem("tttt_theme") || "light"
+  );
+
+  const [themeSaving, setThemeSaving] = useState(false);
+
+  const [chatMessages, setChatMessages] = useState([]);
+  const [chatDraft, setChatDraft] = useState("");
+  const [chatLoading, setChatLoading] = useState(false);
+  const [chatSending, setChatSending] = useState(false);
+  const [chatUnread, setChatUnread] = useState(0);
+
+  const chatEndRef = useRef(null);
+  const activeTabRef = useRef(activeTab);
+
+  useEffect(() => {
+    document.documentElement.dataset.theme = themeMode;
+    window.localStorage.setItem("tttt_theme", themeMode);
+  }, [themeMode]);
+
+  useEffect(() => {
+    activeTabRef.current = activeTab;
+
+    if (activeTab === "chat") {
+      setChatUnread(0);
+    }
+  }, [activeTab]);
+
+  useEffect(() => {
+    if (activeTab === "chat" && chatMessages.length > 0) {
+      window.setTimeout(() => {
+        chatEndRef.current?.scrollIntoView({
+          behavior: "smooth",
+          block: "end",
+        });
+      }, 40);
+    }
+  }, [activeTab, chatMessages.length]);
+
   useEffect(() => {
     let mounted = true;
 
@@ -622,6 +1242,11 @@ if (
           ) {
             resetLeagueState();
             setMemberships([]);
+            setAccountProfile(null);
+            setAccountNameDraft("");
+            setAccountDescriptionDraft("");
+            setAccountHeightDraft("");
+            setAccountVelocityDraft("");
             setAuthMode("login");
             setLoading(false);
             return;
@@ -666,6 +1291,55 @@ if (
   }, [league?.id, user?.id]);
 
   useEffect(() => {
+    if (!league?.id || !currentPlayer?.id) {
+      setChatMessages([]);
+      setChatUnread(0);
+      return;
+    }
+
+    loadChatMessages(league.id).catch(console.error);
+
+    const channel = supabase
+      .channel(`league-chat-${league.id}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "league_messages",
+          filter: `league_id=eq.${league.id}`,
+        },
+        (payload) => {
+          loadChatMessages(league.id).catch(console.error);
+
+          if (
+            payload.new?.player_id !== currentPlayer.id &&
+            activeTabRef.current !== "chat"
+          ) {
+            setChatUnread((count) => count + 1);
+          }
+        }
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "DELETE",
+          schema: "public",
+          table: "league_messages",
+          filter: `league_id=eq.${league.id}`,
+        },
+        () => {
+          loadChatMessages(league.id).catch(console.error);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [league?.id, currentPlayer?.id]);
+
+  useEffect(() => {
     setLeagueDescriptionDraft(
       league?.description || ""
     );
@@ -708,7 +1382,401 @@ if (
     setMatches([]);
     setSelectedPlayerId(null);
     setEditingMatch(null);
+    setSelectedMatch(null);
+    setPerformanceRange("all");
+    setChatMessages([]);
+    setChatDraft("");
+    setChatUnread(0);
     setActiveTab("leaderboard");
+  }
+
+  async function loadAccountProfile(userId) {
+    if (!userId) return null;
+
+    const { data, error } = await supabase
+      .from("account_profiles")
+      .select(`
+        user_id,
+        display_name,
+        avatar_url,
+        profile_description,
+        height_text,
+        avg_ball_velocity,
+        theme_preference,
+        created_at,
+        updated_at
+      `)
+      .eq("user_id", userId)
+      .maybeSingle();
+
+    if (error) throw error;
+
+    const profile = data || {
+      user_id: userId,
+      display_name: "",
+      avatar_url: null,
+      profile_description: "",
+      height_text: "",
+      avg_ball_velocity: null,
+      theme_preference:
+        window.localStorage.getItem("tttt_theme") || "light",
+    };
+
+    setAccountProfile(profile);
+    setAccountNameDraft(
+      profile.display_name || ""
+    );
+    setAccountDescriptionDraft(
+      profile.profile_description || ""
+    );
+    setAccountHeightDraft(
+      profile.height_text || ""
+    );
+    setAccountVelocityDraft(
+      profile.avg_ball_velocity ?? ""
+    );
+
+    const savedTheme =
+      profile.theme_preference ||
+      window.localStorage.getItem("tttt_theme") ||
+      "light";
+    setThemeMode(savedTheme);
+
+    if (profile.display_name) {
+      setJoinName((current) =>
+        current || profile.display_name
+      );
+      setCreateName((current) =>
+        current || profile.display_name
+      );
+    }
+
+    return profile;
+  }
+
+  async function updateThemePreference(nextTheme) {
+    if (!user?.id || !["light", "dark"].includes(nextTheme)) {
+      return;
+    }
+
+    const previousTheme = themeMode;
+    setThemeMode(nextTheme);
+
+    try {
+      setThemeSaving(true);
+
+      const { data, error } = await supabase
+        .from("account_profiles")
+        .upsert(
+          {
+            user_id: user.id,
+            theme_preference: nextTheme,
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: "user_id" }
+        )
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      setAccountProfile(data);
+    } catch (error) {
+      console.error(error);
+      setThemeMode(previousTheme);
+      alert(
+        error.message ||
+          "Could not update your display mode."
+      );
+    } finally {
+      setThemeSaving(false);
+    }
+  }
+
+  async function loadChatMessages(leagueId = league?.id) {
+    if (!leagueId) return [];
+
+    try {
+      setChatLoading(true);
+
+      const { data, error } = await supabase
+        .from("league_messages")
+        .select(`
+          id,
+          league_id,
+          player_id,
+          message,
+          created_at,
+          player:players (
+            id,
+            name,
+            avatar_url,
+            is_active
+          )
+        `)
+        .eq("league_id", leagueId)
+        .order("created_at", { ascending: true })
+        .limit(150);
+
+      if (error) throw error;
+
+      const list = data || [];
+      setChatMessages(list);
+      return list;
+    } catch (error) {
+      console.error(error);
+      return [];
+    } finally {
+      setChatLoading(false);
+    }
+  }
+
+  async function sendChatMessage(event) {
+    event?.preventDefault?.();
+
+    if (!league?.id || !currentPlayer?.id) return;
+
+    const cleanMessage = chatDraft.trim();
+
+    if (!cleanMessage) return;
+
+    if (cleanMessage.length > 500) {
+      alert("Messages must be 500 characters or fewer.");
+      return;
+    }
+
+    try {
+      setChatSending(true);
+
+      const { error } = await supabase.rpc(
+        "send_league_message",
+        {
+          p_league_id: league.id,
+          p_message: cleanMessage,
+        }
+      );
+
+      if (error) throw error;
+
+      setChatDraft("");
+      await loadChatMessages(league.id);
+    } catch (error) {
+      console.error(error);
+      alert(
+        error.message || "Could not send your message."
+      );
+    } finally {
+      setChatSending(false);
+    }
+  }
+
+  async function deleteChatMessage(messageId) {
+    if (!messageId) return;
+
+    const confirmed = window.confirm(
+      "Delete this chat message?"
+    );
+
+    if (!confirmed) return;
+
+    try {
+      const { error } = await supabase.rpc(
+        "delete_league_message",
+        { p_message_id: messageId }
+      );
+
+      if (error) throw error;
+
+      await loadChatMessages(league?.id);
+    } catch (error) {
+      console.error(error);
+      alert(
+        error.message || "Could not delete this message."
+      );
+    }
+  }
+
+  async function saveAccountProfile(event) {
+    event?.preventDefault?.();
+
+    if (!user?.id) return;
+
+    const cleanName = accountNameDraft.trim();
+
+    if (!cleanName) {
+      alert("Enter a display name for your profile.");
+      return;
+    }
+
+    let velocity = null;
+
+    if (String(accountVelocityDraft).trim() !== "") {
+      velocity = Number(accountVelocityDraft);
+
+      if (Number.isNaN(velocity) || velocity < 0) {
+        alert("Enter a valid ball velocity.");
+        return;
+      }
+    }
+
+    try {
+      setAccountProfileSaving(true);
+
+      const { data, error } = await supabase
+        .from("account_profiles")
+        .upsert(
+          {
+            user_id: user.id,
+            display_name: cleanName,
+            avatar_url:
+              accountProfile?.avatar_url || null,
+            profile_description:
+              accountDescriptionDraft,
+            height_text: accountHeightDraft,
+            avg_ball_velocity: velocity,
+            theme_preference: themeMode,
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: "user_id" }
+        )
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      setAccountProfile(data);
+      setJoinName((current) =>
+        current || cleanName
+      );
+      setCreateName((current) =>
+        current || cleanName
+      );
+
+      alert("Account profile saved.");
+    } catch (error) {
+      console.error(error);
+      alert(
+        error.message ||
+          "Could not save your account profile."
+      );
+    } finally {
+      setAccountProfileSaving(false);
+    }
+  }
+
+  async function handleAccountAvatarUpload(event) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+
+    if (!file || !user?.id) return;
+
+    try {
+      setAccountAvatarUploading(true);
+
+      if (!file.type.startsWith("image/")) {
+        throw new Error("Please choose an image file.");
+      }
+
+      if (file.size > 5 * 1024 * 1024) {
+        throw new Error(
+          "Profile photos must be under 5 MB."
+        );
+      }
+
+      const extension =
+        file.name.split(".").pop()?.toLowerCase() ||
+        "jpg";
+
+      const filePath = `${user.id}/account/profile-${Date.now()}.${extension}`;
+
+      const { error: uploadError } =
+        await supabase.storage
+          .from("player-avatars")
+          .upload(filePath, file, {
+            cacheControl: "3600",
+            upsert: false,
+          });
+
+      if (uploadError) throw uploadError;
+
+      const { data: publicUrlData } =
+        supabase.storage
+          .from("player-avatars")
+          .getPublicUrl(filePath);
+
+      const { data, error } = await supabase
+        .from("account_profiles")
+        .upsert(
+          {
+            user_id: user.id,
+            display_name:
+              accountNameDraft.trim() ||
+              accountProfile?.display_name ||
+              "Player",
+            avatar_url: publicUrlData.publicUrl,
+            profile_description:
+              accountDescriptionDraft,
+            height_text: accountHeightDraft,
+            avg_ball_velocity:
+              String(accountVelocityDraft).trim() === ""
+                ? null
+                : Number(accountVelocityDraft),
+            theme_preference: themeMode,
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: "user_id" }
+        )
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      setAccountProfile(data);
+    } catch (error) {
+      console.error(error);
+      alert(
+        error.message ||
+          "Could not upload your profile photo."
+      );
+    } finally {
+      setAccountAvatarUploading(false);
+    }
+  }
+
+  async function syncAccountProfileToPlayer(playerId) {
+    if (!playerId || !accountProfile) return;
+
+    const velocity =
+      accountProfile.avg_ball_velocity == null
+        ? null
+        : Number(accountProfile.avg_ball_velocity);
+
+    const { error: profileError } = await supabase.rpc(
+      "update_my_player_profile_v2",
+      {
+        p_player_id: playerId,
+        p_description:
+          accountProfile.profile_description || "",
+        p_height_text:
+          accountProfile.height_text || "",
+        p_avg_ball_velocity: velocity,
+        p_play_status: "idle",
+      }
+    );
+
+    if (profileError) throw profileError;
+
+    if (accountProfile.avatar_url) {
+      const { error: avatarError } = await supabase.rpc(
+        "update_my_avatar_v2",
+        {
+          p_player_id: playerId,
+          p_avatar_url: accountProfile.avatar_url,
+        }
+      );
+
+      if (avatarError) throw avatarError;
+    }
   }
 
   async function fetchMyLeagues() {
@@ -732,6 +1800,8 @@ if (
     userId
   ) {
     try {
+      await loadAccountProfile(userId);
+
       const list =
         await fetchMyLeagues();
 
@@ -1304,7 +2374,9 @@ if (
         createLeagueName.trim();
 
       const cleanPlayerName =
-        createName.trim();
+        createName.trim() ||
+        accountProfile?.display_name?.trim() ||
+        "";
 
       const cleanCode =
         createLeagueCode
@@ -1363,6 +2435,10 @@ if (
         );
 
       if (membership) {
+        await syncAccountProfileToPlayer(
+          membership.player_id
+        );
+
         await openLeague(
           membership.league_id,
           user.id,
@@ -1391,7 +2467,9 @@ if (
       setErrorMessage("");
 
       const cleanName =
-        joinName.trim();
+        joinName.trim() ||
+        accountProfile?.display_name?.trim() ||
+        "";
 
       const cleanCode =
         joinCode
@@ -1440,6 +2518,8 @@ if (
         );
 
       if (membership) {
+        await syncAccountProfileToPlayer(playerId);
+
         await openLeague(
           membership.league_id,
           user.id,
@@ -1514,48 +2594,26 @@ if (
     });
   }
 
-  const standings = useMemo(
+  const leagueAnalytics = useMemo(
     () =>
-      calculateStandings(
+      calculateLeagueAnalytics(
         players,
         matches
       ),
     [players, matches]
   );
 
+  const standings =
+    leagueAnalytics.standings;
+
   const activeStandings =
-    standings.filter(
-      (player) =>
-        player.is_active
+    leagueAnalytics.eloStandings.filter(
+      (player) => player.is_active
     );
 
   const weightedStandings =
-    [...activeStandings].sort(
-      (a, b) => {
-        if (
-          b.weightedWinPercentage !==
-          a.weightedWinPercentage
-        ) {
-          return (
-            b.weightedWinPercentage -
-            a.weightedWinPercentage
-          );
-        }
-
-        if (
-          b.matchesPlayed !==
-          a.matchesPlayed
-        ) {
-          return (
-            b.matchesPlayed -
-            a.matchesPlayed
-          );
-        }
-
-        return (
-          b.rating - a.rating
-        );
-      }
+    leagueAnalytics.powerStandings.filter(
+      (player) => player.is_active
     );
 
   const activePlayers =
@@ -1571,7 +2629,9 @@ if (
     );
 
   const leader =
-    activeStandings[0];
+    activeStandings.find(
+      (player) => player.matchesPlayed > 0
+    ) || null;
 
   const isAdmin =
     currentPlayer?.member_role ===
@@ -1591,6 +2651,89 @@ if (
         player.id ===
         selectedPlayerId
     );
+
+  const selectedHistory =
+    selectedPlayerId
+      ? leagueAnalytics.playerHistory[
+          selectedPlayerId
+        ] || []
+      : [];
+
+  const selectedPerformanceHistory =
+    useMemo(
+      () =>
+        filterHistoryByRange(
+          selectedHistory,
+          performanceRange
+        ),
+      [
+        selectedHistory,
+        performanceRange,
+      ]
+    );
+
+  const selectedRangeStats =
+    useMemo(() => {
+      const history =
+        selectedPerformanceHistory;
+
+      const wins = history.filter(
+        (item) => item.won
+      ).length;
+      const losses =
+        history.length - wins;
+      const pointsFor = history.reduce(
+        (sum, item) =>
+          sum + item.pointsFor,
+        0
+      );
+      const pointsAgainst =
+        history.reduce(
+          (sum, item) =>
+            sum + item.pointsAgainst,
+          0
+        );
+      const totalPoints =
+        pointsFor + pointsAgainst;
+      const pointsWonPercentage =
+        totalPoints === 0
+          ? 0
+          : Math.round(
+              (pointsFor / totalPoints) *
+                1000
+            ) / 10;
+      const powerChange =
+        history.reduce(
+          (sum, item) =>
+            sum + item.powerChange,
+          0
+        );
+      const eloChange = history.reduce(
+        (sum, item) =>
+          sum + item.eloChange,
+        0
+      );
+
+      return {
+        matches: history.length,
+        wins,
+        losses,
+        pointsFor,
+        pointsAgainst,
+        pointDifferential:
+          pointsFor - pointsAgainst,
+        pointsWonPercentage,
+        powerChange,
+        eloChange,
+      };
+    }, [selectedPerformanceHistory]);
+
+  const selectedMatchAnalytics =
+    selectedMatch
+      ? leagueAnalytics.matchAnalytics[
+          selectedMatch.id
+        ] || null
+      : null;
 
   const myMatches =
     useMemo(() => {
@@ -1808,6 +2951,8 @@ if (
       playerId
     );
 
+    setPerformanceRange("all");
+
     setActiveTab(
       "profile"
     );
@@ -1834,6 +2979,8 @@ if (
     setSelectedPlayerId(
       currentPlayer.id
     );
+
+    setPerformanceRange("all");
 
     setActiveTab(
       "profile"
@@ -1991,6 +3138,37 @@ if (
 
       if (error) throw error;
 
+      const { data: savedAccountProfile, error: accountError } =
+        await supabase
+          .from("account_profiles")
+          .upsert(
+            {
+              user_id: user.id,
+              display_name: cleanName,
+              avatar_url:
+                currentPlayer.avatar_url ||
+                accountProfile?.avatar_url ||
+                null,
+              profile_description:
+                profileDescriptionDraft,
+              height_text: heightDraft,
+              avg_ball_velocity: velocity,
+              theme_preference: themeMode,
+              updated_at: new Date().toISOString(),
+            },
+            { onConflict: "user_id" }
+          )
+          .select()
+          .single();
+
+      if (accountError) throw accountError;
+
+      setAccountProfile(savedAccountProfile);
+      setAccountNameDraft(cleanName);
+      setAccountDescriptionDraft(profileDescriptionDraft);
+      setAccountHeightDraft(heightDraft);
+      setAccountVelocityDraft(velocity ?? "");
+
       await loadLeagueData(
         league.id,
         user.id
@@ -2109,6 +3287,34 @@ if (
       if (profileError) {
         throw profileError;
       }
+
+      const { data: savedAccountProfile, error: accountError } =
+        await supabase
+          .from("account_profiles")
+          .upsert(
+            {
+              user_id: user.id,
+              display_name:
+                profileNameDraft.trim() ||
+                currentPlayer.name,
+              avatar_url: publicUrlData.publicUrl,
+              profile_description:
+                profileDescriptionDraft,
+              height_text: heightDraft,
+              avg_ball_velocity:
+                String(velocityDraft).trim() === ""
+                  ? null
+                  : Number(velocityDraft),
+              theme_preference: themeMode,
+              updated_at: new Date().toISOString(),
+            },
+            { onConflict: "user_id" }
+          )
+          .select()
+          .single();
+
+      if (accountError) throw accountError;
+      setAccountProfile(savedAccountProfile);
 
       await loadLeagueData(
         league.id,
@@ -2906,58 +4112,77 @@ if (
     match,
     showManage = true
   ) {
-    const result =
-      getMatchResult(match);
-
+    const result = getMatchResult(match);
     const canManage =
-      showManage &&
-      canManageMatch(match);
+      showManage && canManageMatch(match);
+    const playerAClass =
+      result.winnerId === match.player_a_id
+        ? "match-winner-name"
+        : "match-loser-name";
+    const playerBClass =
+      result.winnerId === match.player_b_id
+        ? "match-winner-name"
+        : "match-loser-name";
 
     return (
       <div
-        className="match-item"
+        className="match-item match-item-clickable"
         key={match.id}
+        role="button"
+        tabIndex={0}
+        onClick={() => setSelectedMatch(match)}
+        onKeyDown={(event) => {
+          if (
+            event.key === "Enter" ||
+            event.key === " "
+          ) {
+            event.preventDefault();
+            setSelectedMatch(match);
+          }
+        }}
       >
         <div className="match-main-copy">
           <small>
             {new Date(
               match.created_at
-            ).toLocaleString()}{" "}
-            •{" "}
-            {getFormatName(
-              match.format
-            )}
+            ).toLocaleString()} {" "}
+            • {" "}
+            {getFormatName(match.format)}
           </small>
 
           <h3 className="history-player-line">
             <button
-              onClick={() =>
+              className={playerAClass}
+              onClick={(event) => {
+                event.stopPropagation();
                 openPlayerProfile(
                   match.player_a_id
-                )
-              }
+                );
+              }}
             >
               {getPlayerName(
                 match.player_a_id
               )}
             </button>
 
-            <strong>
+            <strong className={playerAClass}>
               {result.aWins}
             </strong>
 
             <span>–</span>
 
-            <strong>
+            <strong className={playerBClass}>
               {result.bWins}
             </strong>
 
             <button
-              onClick={() =>
+              className={playerBClass}
+              onClick={(event) => {
+                event.stopPropagation();
                 openPlayerProfile(
                   match.player_b_id
-                )
-              }
+                );
+              }}
             >
               {getPlayerName(
                 match.player_b_id
@@ -2967,41 +4192,29 @@ if (
 
           <div className="game-results">
             {(match.games || []).map(
-              (
-                game,
-                index
-              ) => (
-                <span
-                  key={
-                    index
-                  }
-                >
-                  G
-                  {index +
-                    1}
-                  :{" "}
-                  {
-                    game.a
-                  }
-                  -
-                  {
-                    game.b
-                  }
+              (game, index) => (
+                <span key={index}>
+                  G{index + 1}: {game.a}-{game.b}
                 </span>
               )
             )}
           </div>
+
+          <div className="match-detail-hint">
+            View match details →
+          </div>
         </div>
 
         {canManage && (
-          <div className="match-actions">
+          <div
+            className="match-actions"
+            onClick={(event) =>
+              event.stopPropagation()
+            }
+          >
             <button
               className="edit-button"
-              onClick={() =>
-                openEditMatch(
-                  match
-                )
-              }
+              onClick={() => openEditMatch(match)}
             >
               Edit Match
             </button>
@@ -3009,9 +4222,7 @@ if (
             <button
               className="delete-button"
               onClick={() =>
-                deleteMatch(
-                  match.id
-                )
+                deleteMatch(match.id)
               }
             >
               Delete
@@ -3026,7 +4237,7 @@ if (
     return (
       <div className="loading-screen">
         <div className="loading-logo">
-          🏓
+          <AppIcon name="paddle" size={48} />
         </div>
 
         <h1>
@@ -3048,7 +4259,7 @@ if (
         <div className="auth-shell">
           <div className="auth-brand">
             <div className="auth-icon">
-              🏓
+              <AppIcon name="paddle" size={48} />
             </div>
 
             <h1>
@@ -3151,7 +4362,7 @@ if (
         <div className="auth-shell">
           <div className="auth-brand">
             <div className="auth-icon">
-              🏓
+              <AppIcon name="paddle" size={48} />
             </div>
 
             <h1>
@@ -3487,8 +4698,8 @@ if (
         <header className="hub-header">
           <div className="hub-header-inner">
             <div className="brand-area">
-              <div className="brand-ball">
-                🏓
+              <div className="brand-ball brand-icon">
+                <AppIcon name="paddle" size={32} />
               </div>
 
               <div>
@@ -3530,6 +4741,17 @@ if (
             </div>
 
             <div className="hub-action-buttons">
+              <button
+                className="secondary-button"
+                onClick={() => {
+                  setHubMode("profile");
+                  setErrorMessage("");
+                }}
+              >
+                <AppIcon name="user" size={16} />
+                My Profile
+              </button>
+
               <button
                 className="secondary-button"
                 onClick={() => {
@@ -3590,7 +4812,7 @@ if (
                             />
                           ) : (
                             <div className="hub-league-fallback">
-                              🏓
+                              <AppIcon name="paddle" size={28} />
                             </div>
                           )}
 
@@ -3635,7 +4857,7 @@ if (
               ) : (
                 <div className="empty-leagues-card">
                   <div className="empty-leagues-icon">
-                    🏓
+                    <AppIcon name="paddle" size={42} />
                   </div>
 
                   <h3>
@@ -3864,6 +5086,158 @@ if (
               </form>
             </div>
           )}
+
+          {hubMode === "profile" && (
+            <div className="hub-form-card account-profile-hub-card">
+              <button
+                className="back-button"
+                onClick={() => {
+                  setHubMode("list");
+                  setErrorMessage("");
+                }}
+              >
+                ← My Leagues
+              </button>
+
+              <div className="account-profile-hub-heading">
+                <div>
+                  <p className="season-label">MY ACCOUNT</p>
+                  <h2>My Profile</h2>
+                  <p>
+                    Set up your player profile before you join a league. These details become your defaults when you join or create one.
+                  </p>
+                </div>
+
+                <PlayerAvatar
+                  player={{
+                    name:
+                      accountNameDraft ||
+                      accountProfile?.display_name ||
+                      "Player",
+                    avatar_url:
+                      accountProfile?.avatar_url || null,
+                  }}
+                  size="xlarge"
+                />
+              </div>
+
+              <div className="account-profile-photo-row">
+                <label className="avatar-upload-button">
+                  {accountAvatarUploading
+                    ? "Uploading..."
+                    : accountProfile?.avatar_url
+                    ? "Change Photo"
+                    : "Add Photo"}
+
+                  <input
+                    className="avatar-file-input"
+                    type="file"
+                    accept="image/*"
+                    onChange={handleAccountAvatarUpload}
+                    disabled={accountAvatarUploading}
+                  />
+                </label>
+              </div>
+
+              <form onSubmit={saveAccountProfile}>
+                <label>Display Name</label>
+                <input
+                  value={accountNameDraft}
+                  onChange={(e) =>
+                    setAccountNameDraft(e.target.value)
+                  }
+                  maxLength="80"
+                  placeholder="Your player name"
+                />
+
+                <label>Player Description</label>
+                <textarea
+                  rows="4"
+                  maxLength="500"
+                  value={accountDescriptionDraft}
+                  onChange={(e) =>
+                    setAccountDescriptionDraft(
+                      e.target.value
+                    )
+                  }
+                  placeholder="Tell the league a little about yourself or your playing style..."
+                />
+
+                <div className="profile-edit-grid">
+                  <div>
+                    <label>Height</label>
+                    <input
+                      type="text"
+                      maxLength="30"
+                      value={accountHeightDraft}
+                      onChange={(e) =>
+                        setAccountHeightDraft(
+                          e.target.value
+                        )
+                      }
+                      placeholder={`6'1"`}
+                    />
+                  </div>
+
+                  <div>
+                    <label>Average Ball Velocity</label>
+                    <div className="velocity-input">
+                      <input
+                        type="number"
+                        min="0"
+                        max="500"
+                        step="0.1"
+                        value={accountVelocityDraft}
+                        onChange={(e) =>
+                          setAccountVelocityDraft(
+                            e.target.value
+                          )
+                        }
+                        placeholder="63.7"
+                      />
+                      <span>MPH</span>
+                    </div>
+                  </div>
+                </div>
+
+                <p className="velocity-disclaimer">
+                  Ball velocity is self-reported and has undergone absolutely no independent verification.
+                </p>
+
+                <button
+                  className="primary-button big-button"
+                  disabled={accountProfileSaving}
+                >
+                  {accountProfileSaving
+                    ? "Saving..."
+                    : "Save Profile"}
+                </button>
+              </form>
+
+              <div className="display-settings-card">
+                <div>
+                  <p className="season-label">DISPLAY</p>
+                  <h3>Appearance</h3>
+                  <p>Choose how Table Talk looks on this account.</p>
+                </div>
+                <ThemeControl
+                  theme={themeMode}
+                  onChange={updateThemePreference}
+                  saving={themeSaving}
+                />
+              </div>
+
+              <div className="account-hub-security">
+                <button
+                  className="secondary-button"
+                  onClick={sendMyPasswordReset}
+                  disabled={saving}
+                >
+                  Send Password Reset Email
+                </button>
+              </div>
+            </div>
+          )}
         </main>
       </div>
     );
@@ -3883,8 +5257,8 @@ if (
                 alt=""
               />
             ) : (
-              <div className="brand-ball">
-                🏓
+              <div className="brand-ball brand-icon">
+                <AppIcon name="paddle" size={32} />
               </div>
             )}
 
@@ -3910,10 +5284,8 @@ if (
                   copyLeagueCode
                 }
               >
-                {
-                  league.join_code
-                }{" "}
-                📋
+                {league.join_code}
+                <AppIcon name="copy" size={14} />
               </button>
             </div>
 
@@ -3934,7 +5306,7 @@ if (
               goToMyLeagues
             }
           >
-            🏠 My Leagues
+            <AppIcon name="home" size={17} /> My Leagues
           </button>
 
           <button
@@ -3950,7 +5322,7 @@ if (
               )
             }
           >
-            🏆 Leaderboard
+            <AppIcon name="trophy" size={17} /> Leaderboard
           </button>
 
           <button
@@ -3966,7 +5338,7 @@ if (
               )
             }
           >
-            🏓 Record Match
+            <AppIcon name="plus" size={17} /> Record Match
           </button>
 
           <button
@@ -3986,7 +5358,7 @@ if (
               )
             }
           >
-            👥 Players
+            <AppIcon name="users" size={17} /> Players
           </button>
 
           <button
@@ -4002,7 +5374,7 @@ if (
               openMyProfile
             }
           >
-            👤 My Profile
+            <AppIcon name="user" size={17} /> My Profile
           </button>
 
           <button
@@ -4018,7 +5390,7 @@ if (
               )
             }
           >
-            🎮 My Matches
+            <AppIcon name="history" size={17} /> My Matches
           </button>
 
           <button
@@ -4034,7 +5406,20 @@ if (
               )
             }
           >
-            📜 Match History
+            <AppIcon name="history" size={17} /> Match History
+          </button>
+
+          <button
+            className={activeTab === "chat" ? "nav-active" : ""}
+            onClick={() => changeTab("chat")}
+          >
+            <AppIcon name="chat" size={17} />
+            League Chat
+            {chatUnread > 0 && (
+              <span className="nav-unread-badge">
+                {chatUnread > 99 ? "99+" : chatUnread}
+              </span>
+            )}
           </button>
 
           {isAdmin && (
@@ -4051,7 +5436,7 @@ if (
                 )
               }
             >
-              ⚙️ Admin
+              <AppIcon name="settings" size={17} /> Admin
             </button>
           )}
         </nav>
@@ -4149,319 +5534,265 @@ if (
               </div>
             </div>
 
-            <div className="card">
-              <h3>
-                🏆 Overall Elo Rankings
-              </h3>
+            <div className="card ranking-card">
+              <div className="ranking-card-heading">
+                <div>
+                  <h3>Overall Elo Rankings</h3>
+                  <p>
+                    Head-to-head skill rating based on wins, losses, and opponent strength.
+                  </p>
+                </div>
 
-              <p>
-                Rewards wins while also accounting for the strength of your opponent.
-              </p>
+                <button
+                  className="rank-info-button"
+                  onClick={() => setRankInfoMode("elo")}
+                >
+                  How is rank determined?
+                </button>
+              </div>
 
               <div className="table-wrap">
                 <table>
                   <thead>
                     <tr>
-                      <th>
-                        Rank
-                      </th>
-
-                      <th>
-                        Player
-                      </th>
-
-                      <th>
-                        Status
-                      </th>
-
-                      <th>
-                        Elo
-                      </th>
-
-                      <th>
-                        Record
-                      </th>
-
-                      <th>
-                        Win %
-                      </th>
-
-                      <th>
-                        Matches
-                      </th>
+                      <th>Rank</th>
+                      <th>Player</th>
+                      <th>Status</th>
+                      <th>Elo</th>
+                      <th>Record</th>
+                      <th>Win %</th>
+                      <th>Win Streak</th>
+                      <th>Matches</th>
                     </tr>
                   </thead>
 
                   <tbody>
-                    {activeStandings.map(
-                      (
-                        player,
-                        index
-                      ) => (
+                    {activeStandings.map((player, index) => {
+                      const hasPlayed = player.matchesPlayed > 0;
+                      const placementClass =
+                        hasPlayed && index === 0
+                          ? "champion-row"
+                          : hasPlayed && index === 1
+                          ? "placement-silver-row"
+                          : hasPlayed && index === 2
+                          ? "placement-bronze-row"
+                          : "";
+
+                      const textClass =
+                        hasPlayed && index === 0
+                          ? "champion-text"
+                          : hasPlayed && index === 1
+                          ? "placement-silver-text"
+                          : hasPlayed && index === 2
+                          ? "placement-bronze-text"
+                          : "";
+
+                      return (
                         <tr
-                          key={
-                            player.id
-                          }
-                          className={
-                            index === 0
-                              ? "champion-row"
-                              : ""
-                          }
+                          key={player.id}
+                          className={placementClass}
                         >
                           <td>
-                            {index ===
-                            0
-                              ? "🥇"
-                              : index ===
-                                1
-                              ? "🥈"
-                              : index ===
-                                2
-                              ? "🥉"
-                              : `#${
-                                  index +
-                                  1
-                                }`}
+                            <span className={textClass}>
+                              {!hasPlayed ? "Unranked" : `#${index + 1}`}
+                            </span>
                           </td>
 
                           <td>
                             <button
                               className="player-profile-link"
                               onClick={() =>
-                                openPlayerProfile(
-                                  player.id
-                                )
+                                openPlayerProfile(player.id)
                               }
                             >
                               <PlayerAvatar
-                                player={
-                                  player
-                                }
+                                player={player}
                                 size="small"
                               />
 
-                              <strong
-                                className={
-                                  index ===
-                                  0
-                                    ? "champion-text"
-                                    : ""
-                                }
-                              >
-                                {index ===
-                                  0 &&
-                                  "👑 "}
-                                {
-                                  player.name
-                                }
+                              <strong className={textClass}>
+                                {player.name}
                               </strong>
                             </button>
                           </td>
 
                           <td>
-                            <StatusBadge
-                              status={
-                                player.play_status
-                              }
-                            />
+                            <StatusBadge status={player.play_status} />
                           </td>
 
                           <td>
-                            <span
-                              className={
-                                index ===
-                                0
-                                  ? "champion-text"
-                                  : ""
-                              }
-                            >
-                              {
-                                player.rating
-                              }
+                            <span className={textClass}>
+                              {player.rating}
                             </span>
                           </td>
 
                           <td>
-                            <span
-                              className={
-                                index ===
-                                0
-                                  ? "champion-text"
-                                  : ""
-                              }
-                            >
-                              {
-                                player.wins
-                              }
-                              -
-                              {
-                                player.losses
-                              }
+                            <span className={textClass}>
+                              {player.wins}-{player.losses}
                             </span>
                           </td>
 
                           <td>
-                            <span
-                              className={
-                                index ===
-                                0
-                                  ? "champion-text"
-                                  : ""
-                              }
-                            >
-                              {
-                                player.winPercentage
-                              }
-                              %
+                            <span className={textClass}>
+                              {player.winPercentage}%
                             </span>
                           </td>
 
                           <td>
-                            <span
-                              className={
-                                index ===
-                                0
-                                  ? "champion-text"
-                                  : ""
-                              }
-                            >
-                              {
-                                player.matchesPlayed
-                              }
+                            <span className={textClass}>
+                              {player.winStreak > 0 ? `W${player.winStreak}` : "—"}
+                            </span>
+                          </td>
+
+                          <td>
+                            <span className={textClass}>
+                              {player.matchesPlayed}
                             </span>
                           </td>
                         </tr>
-                      )
-                    )}
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
             </div>
 
-            <div className="card weighted-card">
-              <h3>
-                📊 Weighted Performance
-              </h3>
+            <div className="card weighted-card ranking-card">
+              <div className="ranking-card-heading">
+                <div>
+                  <h3>Power Rankings</h3>
+                  <p>
+                    Combines opponent-adjusted results with point-by-point performance. Three matches are required for an official rank.
+                  </p>
+                </div>
 
-              <p>
-                Gives more credibility to strong records built over more matches.
-              </p>
+                <button
+                  className="rank-info-button"
+                  onClick={() => setRankInfoMode("power")}
+                >
+                  How is rank determined?
+                </button>
+              </div>
 
               <div className="table-wrap">
                 <table>
                   <thead>
                     <tr>
-                      <th>
-                        Rank
-                      </th>
-
-                      <th>
-                        Player
-                      </th>
-
-                      <th>
-                        Record
-                      </th>
-
-                      <th>
-                        Raw Win %
-                      </th>
-
-                      <th>
-                        Matches
-                      </th>
-
-                      <th>
-                        Weighted %
-                      </th>
+                      <th>Rank</th>
+                      <th>Player</th>
+                      <th>Rating Status</th>
+                      <th>Power</th>
+                      <th>Record</th>
+                      <th>Points Won</th>
+                      <th>Point +/-</th>
+                      <th>Win Streak</th>
+                      <th>Matches</th>
                     </tr>
                   </thead>
 
                   <tbody>
-                    {weightedStandings.map(
-                      (
-                        player,
-                        index
-                      ) => (
+                    {weightedStandings.map((player, index) => {
+                      const officiallyRanked =
+                        player.qualification === "ranked";
+                      const placementClass =
+                        officiallyRanked && index === 0
+                          ? "champion-row"
+                          : officiallyRanked && index === 1
+                          ? "placement-silver-row"
+                          : officiallyRanked && index === 2
+                          ? "placement-bronze-row"
+                          : "";
+                      const textClass =
+                        officiallyRanked && index === 0
+                          ? "champion-text"
+                          : officiallyRanked && index === 1
+                          ? "placement-silver-text"
+                          : officiallyRanked && index === 2
+                          ? "placement-bronze-text"
+                          : "";
+
+                      return (
                         <tr
-                          key={
-                            player.id
-                          }
+                          key={player.id}
+                          className={placementClass}
                         >
                           <td>
-                            {index ===
-                            0
-                              ? "🥇"
-                              : index ===
-                                1
-                              ? "🥈"
-                              : index ===
-                                2
-                              ? "🥉"
-                              : `#${
-                                  index +
-                                  1
-                                }`}
+                            <span className={textClass}>
+                              {player.qualification === "unranked"
+                                ? "—"
+                                : player.qualification === "provisional"
+                                ? "PROV."
+                                : `#${index + 1}`}
+                            </span>
                           </td>
 
                           <td>
                             <button
                               className="player-profile-link"
                               onClick={() =>
-                                openPlayerProfile(
-                                  player.id
-                                )
+                                openPlayerProfile(player.id)
                               }
                             >
                               <PlayerAvatar
-                                player={
-                                  player
-                                }
+                                player={player}
                                 size="small"
                               />
-
-                              <strong>
-                                {
-                                  player.name
-                                }
+                              <strong className={textClass}>
+                                {player.name}
                               </strong>
                             </button>
                           </td>
 
                           <td>
-                            {
-                              player.wins
-                            }
-                            -
-                            {
-                              player.losses
-                            }
+                            <span
+                              className={`qualification-pill qualification-${player.qualification}`}
+                            >
+                              {player.qualification === "ranked"
+                                ? "Ranked"
+                                : player.qualification === "provisional"
+                                ? "Provisional"
+                                : "Unranked"}
+                            </span>
                           </td>
 
                           <td>
-                            {
-                              player.winPercentage
-                            }
-                            %
-                          </td>
-
-                          <td>
-                            {
-                              player.matchesPlayed
-                            }
-                          </td>
-
-                          <td>
-                            <strong>
-                              {
-                                player.weightedWinPercentage
-                              }
-                              %
+                            <strong className={textClass}>
+                              {player.powerRating}
                             </strong>
                           </td>
+
+                          <td>
+                            <span className={textClass}>
+                              {player.wins}-{player.losses}
+                            </span>
+                          </td>
+
+                          <td>
+                            <span className={textClass}>
+                              {player.pointsWonPercentage}%
+                            </span>
+                          </td>
+
+                          <td>
+                            <span className={textClass}>
+                              {formatSigned(player.pointDifferential)}
+                            </span>
+                          </td>
+
+                          <td>
+                            <span className={textClass}>
+                              {player.winStreak > 0 ? `W${player.winStreak}` : "—"}
+                            </span>
+                          </td>
+
+                          <td>
+                            <span className={textClass}>
+                              {player.matchesPlayed}
+                            </span>
+                          </td>
                         </tr>
-                      )
-                    )}
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
@@ -4472,9 +5803,7 @@ if (
         {activeTab ===
           "record" && (
           <div className="card">
-            <h2>
-              🏓 Record a Match
-            </h2>
+            <h2>Record a Match</h2>
 
             <p>
               Choose the players and enter each game's final score.
@@ -4518,13 +5847,8 @@ if (
                             player.id
                           }
                         >
-                          {player.play_status ===
-                          "open"
-                            ? "🟢 "
-                            : ""}
-                          {
-                            player.name
-                          }
+                          {player.play_status === "open" ? "Open · " : ""}
+                          {player.name}
                         </option>
                       )
                     )}
@@ -4563,13 +5887,8 @@ if (
                             player.id
                           }
                         >
-                          {player.play_status ===
-                          "open"
-                            ? "🟢 "
-                            : ""}
-                          {
-                            player.name
-                          }
+                          {player.play_status === "open" ? "Open · " : ""}
+                          {player.name}
                         </option>
                       )
                     )}
@@ -4762,7 +6081,7 @@ if (
                       statusUpdating
                     }
                   >
-                    🟢 Open to Play
+                    Open to Play
                   </button>
 
                   <button
@@ -4875,14 +6194,11 @@ if (
 
                       <div>
                         <strong>
-                          {
-                            player.weightedWinPercentage
-                          }
-                          %
+                          {player.powerRating}
                         </strong>
 
                         <span>
-                          Weighted
+                          Power
                         </span>
                       </div>
                     </div>
@@ -5055,14 +6371,11 @@ if (
 
               <div className="profile-stat-card">
                 <span>
-                  Weighted
+                  Power Rating
                 </span>
 
                 <strong>
-                  {
-                    selectedStats.weightedWinPercentage
-                  }
-                  %
+                  {selectedStats.powerRating}
                 </strong>
               </div>
 
@@ -5100,14 +6413,106 @@ if (
                 </span>
 
                 <strong>
-                  {selectedStats.pointDifferential >
-                  0
-                    ? "+"
-                    : ""}
-                  {
-                    selectedStats.pointDifferential
-                  }
+                  {selectedStats.pointDifferential > 0 ? "+" : ""}
+                  {selectedStats.pointDifferential}
                 </strong>
+              </div>
+
+              <div className="profile-stat-card">
+                <span>Win Streak</span>
+                <strong>
+                  {selectedStats.winStreak > 0
+                    ? `${selectedStats.winStreak} Win${selectedStats.winStreak === 1 ? "" : "s"}`
+                    : "—"}
+                </strong>
+              </div>
+            </div>
+
+            <div className="card performance-card">
+              <div className="performance-heading">
+                <div>
+                  <p className="season-label">PERFORMANCE</p>
+                  <h3>Performance Over Time</h3>
+                  <p>
+                    Follow rating movement and point performance as this player competes.
+                  </p>
+                  <span className="performance-period-count">
+                    {selectedPerformanceHistory.length} {selectedPerformanceHistory.length === 1 ? "match" : "matches"} in this period
+                  </span>
+                </div>
+
+                <div className="performance-range-tabs">
+                  {[
+                    ["7d", "7 Days"],
+                    ["30d", "30 Days"],
+                    ["6m", "6 Months"],
+                    ["1y", "1 Year"],
+                    ["all", "All Time"],
+                  ].map(([value, label]) => (
+                    <button
+                      key={value}
+                      type="button"
+                      className={
+                        performanceRange === value
+                          ? "performance-range-active"
+                          : ""
+                      }
+                      onClick={() => setPerformanceRange(value)}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="performance-summary-grid">
+                <div>
+                  <span>Record</span>
+                  <strong>
+                    {selectedRangeStats.wins}-{selectedRangeStats.losses}
+                  </strong>
+                </div>
+                <div>
+                  <span>Point +/-</span>
+                  <strong>
+                    {formatSigned(selectedRangeStats.pointDifferential)}
+                  </strong>
+                </div>
+                <div>
+                  <span>Points Won</span>
+                  <strong>
+                    {selectedRangeStats.pointsWonPercentage}%
+                  </strong>
+                </div>
+                <div>
+                  <span>Power Change</span>
+                  <strong>
+                    {formatSigned(selectedRangeStats.powerChange)}
+                  </strong>
+                </div>
+              </div>
+
+              <div className="performance-chart-grid">
+                <div className="performance-chart-card">
+                  <div className="performance-chart-title">
+                    <h4>Power Rating Trend</h4>
+                    <span>Higher is better</span>
+                  </div>
+                  <SimpleLineChart
+                    data={selectedPerformanceHistory}
+                    valueKey="powerAfter"
+                  />
+                </div>
+
+                <div className="performance-chart-card">
+                  <div className="performance-chart-title">
+                    <h4>Point Differential by Match</h4>
+                    <span>Points scored minus points allowed</span>
+                  </div>
+                  <PointDifferentialChart
+                    data={selectedPerformanceHistory}
+                  />
+                </div>
               </div>
             </div>
 
@@ -5170,7 +6575,7 @@ if (
                         }
                         type="button"
                       >
-                        🟢 Open to Play
+                        Open to Play
                       </button>
 
                       <button
@@ -5323,6 +6728,18 @@ if (
                     Your login email stays private and is not displayed to other league members.
                   </p>
 
+                  <div className="profile-display-setting">
+                    <div>
+                      <strong>Display Mode</strong>
+                      <span>Switch between light and dark mode.</span>
+                    </div>
+                    <ThemeControl
+                      theme={themeMode}
+                      onChange={updateThemePreference}
+                      saving={themeSaving}
+                    />
+                  </div>
+
                   <div className="account-security-actions">
                     <button
                       className="secondary-button"
@@ -5360,9 +6777,7 @@ if (
 
             <div className="profile-two-column">
               <div className="card">
-                <h3>
-                  ⚔️ Head-to-Head
-                </h3>
+                <h3>Head-to-Head</h3>
 
                 {headToHead.length ===
                 0 ? (
@@ -5432,9 +6847,7 @@ if (
               </div>
 
               <div className="card">
-                <h3>
-                  🕒 Recent Matches
-                </h3>
+                <h3>Recent Matches</h3>
 
                 {selectedRecentMatches.length ===
                 0 ? (
@@ -5565,7 +6978,7 @@ if (
               0 ? (
                 <div className="empty-state">
                   <div>
-                    🏓
+                    <AppIcon name="paddle" size={42} />
                   </div>
 
                   <h3>
@@ -5606,7 +7019,7 @@ if (
           "history" && (
           <div className="card">
             <h2>
-              📜 Match History
+              <AppIcon name="history" size={17} /> Match History
             </h2>
 
             <p>
@@ -5632,6 +7045,125 @@ if (
           </div>
         )}
 
+        {activeTab === "chat" && (
+          <>
+            <div className="page-heading-row chat-page-heading">
+              <div>
+                <p className="season-label">LEAGUE</p>
+                <h2>League Chat</h2>
+                <p>
+                  A private conversation for active members of {league.name}.
+                </p>
+              </div>
+            </div>
+
+            <div className="card chat-card">
+              <div className="chat-card-header">
+                <div>
+                  <strong>{league.name}</strong>
+                  <span>{activePlayers.length} active players</span>
+                </div>
+                <div className="chat-live-pill">
+                  <span className="chat-live-dot" />
+                  Live
+                </div>
+              </div>
+
+              <div className="chat-message-list">
+                {chatLoading && chatMessages.length === 0 ? (
+                  <div className="chat-empty-state">Loading chat...</div>
+                ) : chatMessages.length === 0 ? (
+                  <div className="chat-empty-state">
+                    <AppIcon name="chat" size={34} />
+                    <h3>Start the conversation</h3>
+                    <p>No messages have been sent in this league yet.</p>
+                  </div>
+                ) : (
+                  chatMessages.map((item) => {
+                    const isMine = item.player_id === currentPlayer?.id;
+                    const canDelete = isMine || isAdmin;
+                    const messagePlayer = item.player || {
+                      name: "Player",
+                      avatar_url: null,
+                    };
+
+                    return (
+                      <div
+                        className={`chat-message-row ${isMine ? "chat-message-mine" : ""}`}
+                        key={item.id}
+                      >
+                        <PlayerAvatar player={messagePlayer} size="small" />
+
+                        <div className="chat-message-content">
+                          <div className="chat-message-meta">
+                            <strong>{messagePlayer.name || "Player"}</strong>
+                            <span>
+                              {new Date(item.created_at).toLocaleString([], {
+                                month: "short",
+                                day: "numeric",
+                                hour: "numeric",
+                                minute: "2-digit",
+                              })}
+                            </span>
+                          </div>
+
+                          <div className="chat-message-bubble">
+                            <p>{item.message}</p>
+                            {canDelete && (
+                              <button
+                                type="button"
+                                className="chat-delete-button"
+                                onClick={() => deleteChatMessage(item.id)}
+                              >
+                                Delete
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+                <div ref={chatEndRef} />
+              </div>
+
+              <form className="chat-composer" onSubmit={sendChatMessage}>
+                <textarea
+                  rows="2"
+                  maxLength="500"
+                  value={chatDraft}
+                  onChange={(event) => setChatDraft(event.target.value)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter" && !event.shiftKey) {
+                      event.preventDefault();
+                      if (!chatSending && chatDraft.trim()) {
+                        sendChatMessage(event);
+                      }
+                    }
+                  }}
+                  placeholder="Message the league..."
+                />
+
+                <div className="chat-composer-footer">
+                  <div>
+                    <span>{chatDraft.length}/500</span>
+                    <small>
+                      Profanity is automatically masked before a message is saved.
+                    </small>
+                  </div>
+
+                  <button
+                    className="primary-button chat-send-button"
+                    disabled={chatSending || !chatDraft.trim()}
+                  >
+                    {chatSending ? "Sending..." : "Send"}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </>
+        )}
+
         {activeTab ===
           "admin" &&
           isAdmin && (
@@ -5643,7 +7175,7 @@ if (
                 </p>
 
                 <h2>
-                  ⚙️ Admin
+                  <AppIcon name="settings" size={17} /> Admin
                 </h2>
 
                 <p>
@@ -5978,6 +7510,293 @@ if (
           </>
         )}
       </main>
+
+      <nav className="mobile-bottom-nav" aria-label="Mobile navigation">
+        <button
+          className={activeTab === "leaderboard" ? "mobile-nav-active" : ""}
+          onClick={() => changeTab("leaderboard")}
+        >
+          <AppIcon name="trophy" size={20} />
+          <small>Rank</small>
+        </button>
+
+        <button
+          className={activeTab === "history" ? "mobile-nav-active" : ""}
+          onClick={() => changeTab("history")}
+        >
+          <AppIcon name="history" size={20} />
+          <small>Matches</small>
+        </button>
+
+        <button
+          className={`mobile-record-button ${
+            activeTab === "record" ? "mobile-nav-active" : ""
+          }`}
+          onClick={() => changeTab("record")}
+        >
+          <span className="mobile-record-icon">
+            <AppIcon name="plus" size={25} />
+          </span>
+          <small>Record</small>
+        </button>
+
+        <button
+          className={activeTab === "chat" ? "mobile-nav-active" : ""}
+          onClick={() => changeTab("chat")}
+        >
+          <span className="mobile-nav-icon-wrap">
+            <AppIcon name="chat" size={20} />
+            {chatUnread > 0 && (
+              <span className="mobile-unread-badge">
+                {chatUnread > 9 ? "9+" : chatUnread}
+              </span>
+            )}
+          </span>
+          <small>Chat</small>
+        </button>
+
+        <button
+          className={
+            activeTab === "profile" &&
+            selectedPlayerId === currentPlayer?.id
+              ? "mobile-nav-active"
+              : ""
+          }
+          onClick={openMyProfile}
+        >
+          <AppIcon name="user" size={20} />
+          <small>Me</small>
+        </button>
+      </nav>
+
+      {rankInfoMode && (
+        <div
+          className="modal-backdrop"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) {
+              setRankInfoMode(null);
+            }
+          }}
+        >
+          <div className="rank-info-modal">
+            <div className="modal-heading">
+              <div>
+                <p className="season-label">RANKING GUIDE</p>
+                <h2>
+                  {rankInfoMode === "elo"
+                    ? "How Elo Rank Is Determined"
+                    : "How Power Rank Is Determined"}
+                </h2>
+              </div>
+
+              <button
+                className="modal-close"
+                type="button"
+                onClick={() => setRankInfoMode(null)}
+              >
+                ×
+              </button>
+            </div>
+
+            {rankInfoMode === "elo" ? (
+              <div className="rank-explainer-copy">
+                <p>
+                  <strong>Elo is the pure head-to-head skill ranking.</strong> Every player begins at 1000. After each match, ratings move based on the result and how strong each opponent was before the match.
+                </p>
+                <div className="rank-rule-grid">
+                  <div>
+                    <strong>Beat a stronger player</strong>
+                    <span>You gain more Elo.</span>
+                  </div>
+                  <div>
+                    <strong>Beat a weaker player</strong>
+                    <span>You still gain Elo, but less.</span>
+                  </div>
+                  <div>
+                    <strong>Lose to a stronger player</strong>
+                    <span>You lose less Elo.</span>
+                  </div>
+                  <div>
+                    <strong>Lose to a weaker player</strong>
+                    <span>You lose more Elo.</span>
+                  </div>
+                </div>
+                <p className="rank-note">
+                  Game scores and point margin do not affect Elo. Players with no recorded matches are shown as Unranked and do not take a ranked spot.
+                </p>
+              </div>
+            ) : (
+              <div className="rank-explainer-copy">
+                <p>
+                  <strong>Power Rating measures overall match performance.</strong> Every player begins at 1000, but the rating looks at both the result and the score while adjusting for opponent strength.
+                </p>
+                <div className="power-formula-card">
+                  <div>
+                    <strong>70%</strong>
+                    <span>Win / loss result</span>
+                  </div>
+                  <div>
+                    <strong>30%</strong>
+                    <span>Share of points scored</span>
+                  </div>
+                </div>
+                <div className="rank-rule-grid">
+                  <div>
+                    <strong>Opponent strength matters</strong>
+                    <span>Strong performances against highly rated players are worth more.</span>
+                  </div>
+                  <div>
+                    <strong>Every point matters</strong>
+                    <span>A close loss is treated differently than being blown out.</span>
+                  </div>
+                  <div>
+                    <strong>0 matches</strong>
+                    <span>Unranked.</span>
+                  </div>
+                  <div>
+                    <strong>1–2 matches</strong>
+                    <span>Provisional. Rating is visible but not officially ranked.</span>
+                  </div>
+                  <div>
+                    <strong>3+ matches</strong>
+                    <span>Eligible for the official Power Ranking.</span>
+                  </div>
+                </div>
+                <p className="rank-note">
+                  Playing more does not automatically raise your rating. Matches build confidence in the ranking, while actual performance determines the score.
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {selectedMatch && selectedMatchAnalytics && (
+        <div
+          className="modal-backdrop"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) {
+              setSelectedMatch(null);
+            }
+          }}
+        >
+          <div className="match-detail-modal">
+            <div className="modal-heading">
+              <div>
+                <p className="season-label">MATCH DETAILS</p>
+                <h2>
+                  {getPlayerName(selectedMatch.player_a_id)} vs. {getPlayerName(selectedMatch.player_b_id)}
+                </h2>
+                <p>
+                  {new Date(selectedMatch.created_at).toLocaleString()} • {getFormatName(selectedMatch.format)}
+                </p>
+              </div>
+
+              <button
+                className="modal-close"
+                type="button"
+                onClick={() => setSelectedMatch(null)}
+              >
+                ×
+              </button>
+            </div>
+
+            {(() => {
+              const a = selectedMatchAnalytics.a;
+              const b = selectedMatchAnalytics.b;
+              const aWon =
+                selectedMatchAnalytics.winnerId ===
+                selectedMatch.player_a_id;
+              const winnerAnalytics = aWon ? a : b;
+              const upset = winnerAnalytics.expectedPower < 0.5;
+
+              return (
+                <>
+                  <div className="match-detail-scoreboard">
+                    <button
+                      className={aWon ? "match-winner-name" : "match-loser-name"}
+                      onClick={() => {
+                        setSelectedMatch(null);
+                        openPlayerProfile(selectedMatch.player_a_id);
+                      }}
+                    >
+                      {getPlayerName(selectedMatch.player_a_id)}
+                    </button>
+                    <strong className={aWon ? "match-winner-name" : "match-loser-name"}>
+                      {selectedMatchAnalytics.aGames}
+                    </strong>
+                    <span>–</span>
+                    <strong className={!aWon ? "match-winner-name" : "match-loser-name"}>
+                      {selectedMatchAnalytics.bGames}
+                    </strong>
+                    <button
+                      className={!aWon ? "match-winner-name" : "match-loser-name"}
+                      onClick={() => {
+                        setSelectedMatch(null);
+                        openPlayerProfile(selectedMatch.player_b_id);
+                      }}
+                    >
+                      {getPlayerName(selectedMatch.player_b_id)}
+                    </button>
+                  </div>
+
+                  {upset && (
+                    <div className="upset-banner">
+                      ⚡ Upset Win: the winner entered with only {Math.round(winnerAnalytics.expectedPower * 100)}% expected Power performance odds.
+                    </div>
+                  )}
+
+                  <div className="match-game-detail-grid">
+                    {(selectedMatch.games || []).map((game, index) => (
+                      <div key={index}>
+                        <span>Game {index + 1}</span>
+                        <strong>{game.a} – {game.b}</strong>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="match-comparison-grid">
+                    <div className="match-player-analysis">
+                      <h3>{getPlayerName(selectedMatch.player_a_id)}</h3>
+                      <div><span>Total Points</span><strong>{selectedMatchAnalytics.aPoints}</strong></div>
+                      <div><span>Point +/-</span><strong>{formatSigned(a.pointDifferential)}</strong></div>
+                      <div><span>Elo</span><strong>{Math.round(a.eloBefore)} → {Math.round(a.eloAfter)} <small>{formatSigned(a.eloChange)}</small></strong></div>
+                      <div><span>Power</span><strong>{Math.round(a.powerBefore)} → {Math.round(a.powerAfter)} <small>{formatSigned(a.powerChange)}</small></strong></div>
+                      <div><span>Expected Win</span><strong>{Math.round(a.expectedElo * 100)}%</strong></div>
+                      <div><span>Points Won</span><strong>{Math.round(a.pointShare * 1000) / 10}%</strong></div>
+                    </div>
+
+                    <div className="match-player-analysis">
+                      <h3>{getPlayerName(selectedMatch.player_b_id)}</h3>
+                      <div><span>Total Points</span><strong>{selectedMatchAnalytics.bPoints}</strong></div>
+                      <div><span>Point +/-</span><strong>{formatSigned(b.pointDifferential)}</strong></div>
+                      <div><span>Elo</span><strong>{Math.round(b.eloBefore)} → {Math.round(b.eloAfter)} <small>{formatSigned(b.eloChange)}</small></strong></div>
+                      <div><span>Power</span><strong>{Math.round(b.powerBefore)} → {Math.round(b.powerAfter)} <small>{formatSigned(b.powerChange)}</small></strong></div>
+                      <div><span>Expected Win</span><strong>{Math.round(b.expectedElo * 100)}%</strong></div>
+                      <div><span>Points Won</span><strong>{Math.round(b.pointShare * 1000) / 10}%</strong></div>
+                    </div>
+                  </div>
+
+                  {canManageMatch(selectedMatch) && (
+                    <div className="match-detail-actions">
+                      <button
+                        className="edit-button"
+                        onClick={() => {
+                          const match = selectedMatch;
+                          setSelectedMatch(null);
+                          openEditMatch(match);
+                        }}
+                      >
+                        Edit Match
+                      </button>
+                    </div>
+                  )}
+                </>
+              );
+            })()}
+          </div>
+        </div>
+      )}
 
       {editingMatch && (
         <div
