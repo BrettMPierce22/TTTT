@@ -1118,6 +1118,11 @@ function App() {
   ] = useState(null);
 
   const [
+    boardDetailMode,
+    setBoardDetailMode,
+  ] = useState(null);
+
+  const [
     selectedMatch,
     setSelectedMatch,
   ] = useState(null);
@@ -2647,6 +2652,31 @@ if (
       (player) => player.matchesPlayed > 0
     ) || null;
 
+  const boardMatchActivity =
+    useMemo(() => {
+      const now = Date.now();
+      const dayMs = 24 * 60 * 60 * 1000;
+      const todayStart = new Date();
+      todayStart.setHours(0, 0, 0, 0);
+
+      const countSince = (days) =>
+        matches.filter((match) => {
+          const created = new Date(match.created_at).getTime();
+          return created >= now - days * dayMs;
+        }).length;
+
+      return {
+        today: matches.filter(
+          (match) =>
+            new Date(match.created_at).getTime() >=
+            todayStart.getTime()
+        ).length,
+        last7: countSince(7),
+        last30: countSince(30),
+        latest: matches[0] || null,
+      };
+    }, [matches]);
+
   const isAdmin =
     currentPlayer?.member_role ===
       "admin" &&
@@ -2936,9 +2966,31 @@ if (
     setEditGameScores(updated);
   }
 
+  function showBoardDetail(mode) {
+    const nextMode =
+      boardDetailMode === mode ? null : mode;
+
+    setBoardDetailMode(nextMode);
+
+    if (nextMode) {
+      window.setTimeout(() => {
+        document
+          .getElementById("board-detail-panel")
+          ?.scrollIntoView({
+            behavior: "smooth",
+            block: "start",
+          });
+      }, 60);
+    }
+  }
+
   function changeTab(tab) {
     setErrorMessage("");
     setActiveTab(tab);
+
+    if (tab !== "leaderboard") {
+      setBoardDetailMode(null);
+    }
 
     if (tab !== "profile") {
       setSelectedPlayerId(null);
@@ -5491,7 +5543,11 @@ if (
       </header>
 
       {league.banner_url && (
-        <div className="league-banner">
+        <div
+          className={`league-banner ${
+            activeTab === "leaderboard" ? "board-league-banner" : ""
+          }`}
+        >
           <img
             src={
               league.banner_url
@@ -5506,7 +5562,9 @@ if (
           activeTab !==
             "admin" &&
           activeTab !==
-            "profile" && (
+            "profile" &&
+          activeTab !==
+            "leaderboard" && (
             <div className="league-description">
               {
                 league.description
@@ -5517,69 +5575,73 @@ if (
         {activeTab ===
           "leaderboard" && (
           <>
-            <div className="page-heading-row">
+            <div className="page-heading-row board-heading-row">
               <div>
-                <p className="season-label">
-                  TABLE TALK LEAGUE
-                </p>
-
-                <h2>
-                  Leaderboard
-                </h2>
-
-                <p>
-                  See who's ruling the table.
-                </p>
+                <h2>Board</h2>
+                <p>League rankings and performance.</p>
               </div>
 
-              <button
-                className="primary-button"
-                onClick={() =>
-                  changeTab(
-                    "record"
-                  )
-                }
-              >
-                + Record Match
-              </button>
+              <div className="board-heading-actions">
+                <button
+                  className="secondary-button board-players-button"
+                  onClick={() => changeTab("players")}
+                >
+                  <AppIcon name="users" size={17} />
+                  Players
+                </button>
+
+                <button
+                  className="primary-button board-record-button"
+                  onClick={() => changeTab("record")}
+                >
+                  <AppIcon name="plus" size={17} />
+                  Record Match
+                </button>
+              </div>
             </div>
 
-            <div className="stats">
-              <div className="stat-card">
-                <span>
-                  Active Players
-                </span>
+            <div className="board-quick-stats" aria-label="League snapshot">
+              <button
+                type="button"
+                className={
+                  boardDetailMode === "players"
+                    ? "board-quick-stat board-quick-stat-active"
+                    : "board-quick-stat"
+                }
+                onClick={() => showBoardDetail("players")}
+              >
+                <span>Active Players</span>
+                <strong>{activePlayers.length}</strong>
+                <small>View roster</small>
+              </button>
 
-                <strong>
-                  {
-                    activePlayers.length
-                  }
-                </strong>
-              </div>
+              <button
+                type="button"
+                className={
+                  boardDetailMode === "matches"
+                    ? "board-quick-stat board-quick-stat-active"
+                    : "board-quick-stat"
+                }
+                onClick={() => showBoardDetail("matches")}
+              >
+                <span>Matches Played</span>
+                <strong>{matches.length}</strong>
+                <small>View activity</small>
+              </button>
 
-              <div className="stat-card">
-                <span>
-                  Matches Played
-                </span>
-
-                <strong>
-                  {
-                    matches.length
-                  }
-                </strong>
-              </div>
-
-              <div className="stat-card">
-                <span>
-                  Current Leader
-                </span>
-
-                <strong>
-                  {leader
-                    ? leader.name
-                    : "—"}
-                </strong>
-              </div>
+              <button
+                type="button"
+                className={
+                  boardDetailMode === "leader"
+                    ? "board-quick-stat board-quick-stat-active"
+                    : "board-quick-stat"
+                }
+                onClick={() => showBoardDetail("leader")}
+              >
+                <span>Current Leader</span>
+                <strong>{leader ? leader.name : "—"}</strong>
+                <small>View leader</small>
+              </button>
             </div>
 
             <div className="card ranking-card">
@@ -5607,7 +5669,6 @@ if (
                       <th>Player</th>
                       <th>Status</th>
                       <th>Elo</th>
-                      <th>Record</th>
                       <th>Win %</th>
                       <th>Win Streak</th>
                       <th>Matches</th>
@@ -5642,13 +5703,13 @@ if (
                         >
                           <td>
                             <span className={textClass}>
-                              {!hasPlayed ? "Unranked" : `#${index + 1}`}
+                              {!hasPlayed ? "Unranked" : index + 1}
                             </span>
                           </td>
 
                           <td>
                             <button
-                              className="player-profile-link"
+                              className="player-profile-link board-player-link"
                               onClick={() =>
                                 openPlayerProfile(player.id)
                               }
@@ -5658,9 +5719,19 @@ if (
                                 size="small"
                               />
 
-                              <strong className={textClass}>
-                                {player.name}
-                              </strong>
+                              <span className="board-player-copy">
+                                <strong className={textClass}>
+                                  {player.name}
+                                </strong>
+                                <span className="board-player-record">
+                                  <span className="board-player-win">
+                                    W: {player.wins}
+                                  </span>
+                                  <span className="board-player-loss">
+                                    L: {player.losses}
+                                  </span>
+                                </span>
+                              </span>
                             </button>
                           </td>
 
@@ -5671,12 +5742,6 @@ if (
                           <td>
                             <span className={textClass}>
                               {player.rating}
-                            </span>
-                          </td>
-
-                          <td>
-                            <span className={textClass}>
-                              {player.wins}-{player.losses}
                             </span>
                           </td>
 
@@ -5730,7 +5795,6 @@ if (
                       <th>Player</th>
                       <th>Rating Status</th>
                       <th>Power</th>
-                      <th>Record</th>
                       <th>Points Won</th>
                       <th>Point +/-</th>
                       <th>Win Streak</th>
@@ -5770,13 +5834,13 @@ if (
                                 ? "—"
                                 : player.qualification === "provisional"
                                 ? "PROV."
-                                : `#${index + 1}`}
+                                : index + 1}
                             </span>
                           </td>
 
                           <td>
                             <button
-                              className="player-profile-link"
+                              className="player-profile-link board-player-link"
                               onClick={() =>
                                 openPlayerProfile(player.id)
                               }
@@ -5785,9 +5849,19 @@ if (
                                 player={player}
                                 size="small"
                               />
-                              <strong className={textClass}>
-                                {player.name}
-                              </strong>
+                              <span className="board-player-copy">
+                                <strong className={textClass}>
+                                  {player.name}
+                                </strong>
+                                <span className="board-player-record">
+                                  <span className="board-player-win">
+                                    W: {player.wins}
+                                  </span>
+                                  <span className="board-player-loss">
+                                    L: {player.losses}
+                                  </span>
+                                </span>
+                              </span>
                             </button>
                           </td>
 
@@ -5807,12 +5881,6 @@ if (
                             <strong className={textClass}>
                               {player.powerRating}
                             </strong>
-                          </td>
-
-                          <td>
-                            <span className={textClass}>
-                              {player.wins}-{player.losses}
-                            </span>
                           </td>
 
                           <td>
@@ -5845,6 +5913,198 @@ if (
                 </table>
               </div>
             </div>
+
+            {boardDetailMode && (
+              <div
+                id="board-detail-panel"
+                className="card board-detail-panel"
+              >
+                <div className="board-detail-heading">
+                  <div>
+                    <p className="season-label">LEAGUE SNAPSHOT</p>
+                    <h3>
+                      {boardDetailMode === "players"
+                        ? "Active Players"
+                        : boardDetailMode === "matches"
+                        ? "Match Activity"
+                        : "Current Leader"}
+                    </h3>
+                  </div>
+
+                  <button
+                    type="button"
+                    className="board-detail-close"
+                    onClick={() => setBoardDetailMode(null)}
+                  >
+                    Close
+                  </button>
+                </div>
+
+                {boardDetailMode === "players" && (
+                  <div className="board-roster-list">
+                    {activeStandings.map((player) => (
+                      <button
+                        type="button"
+                        className="board-roster-row"
+                        key={player.id}
+                        onClick={() => openPlayerProfile(player.id)}
+                      >
+                        <div className="board-roster-player">
+                          <PlayerAvatar player={player} size="small" />
+                          <div>
+                            <strong>{player.name}</strong>
+                            <span>
+                              <span className="board-player-win">
+                                W: {player.wins}
+                              </span>
+                              {" · "}
+                              <span className="board-player-loss">
+                                L: {player.losses}
+                              </span>
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="board-roster-metrics">
+                          <span>Elo <strong>{player.rating}</strong></span>
+                          <span>Power <strong>{player.powerRating}</strong></span>
+                          <StatusBadge status={player.play_status} />
+                        </div>
+                      </button>
+                    ))}
+
+                    <button
+                      type="button"
+                      className="secondary-button board-view-all-players"
+                      onClick={() => changeTab("players")}
+                    >
+                      <AppIcon name="users" size={16} />
+                      Open Full Players Page
+                    </button>
+                  </div>
+                )}
+
+                {boardDetailMode === "matches" && (
+                  <div className="board-match-activity">
+                    <div className="board-detail-stat-grid">
+                      <div>
+                        <span>Today</span>
+                        <strong>{boardMatchActivity.today}</strong>
+                      </div>
+                      <div>
+                        <span>Last 7 Days</span>
+                        <strong>{boardMatchActivity.last7}</strong>
+                      </div>
+                      <div>
+                        <span>Last 30 Days</span>
+                        <strong>{boardMatchActivity.last30}</strong>
+                      </div>
+                      <div>
+                        <span>All Time</span>
+                        <strong>{matches.length}</strong>
+                      </div>
+                    </div>
+
+                    {boardMatchActivity.latest ? (
+                      <div className="board-latest-match">
+                        <span>Most Recent Match</span>
+                        <strong>
+                          {getPlayerName(boardMatchActivity.latest.player_a_id)}
+                          {" "}
+                          {getMatchResult(boardMatchActivity.latest).aWins}
+                          {" – "}
+                          {getMatchResult(boardMatchActivity.latest).bWins}
+                          {" "}
+                          {getPlayerName(boardMatchActivity.latest.player_b_id)}
+                        </strong>
+                        <small>
+                          {new Date(
+                            boardMatchActivity.latest.created_at
+                          ).toLocaleString()}
+                        </small>
+                      </div>
+                    ) : (
+                      <p className="muted-copy">No matches recorded yet.</p>
+                    )}
+
+                    <button
+                      type="button"
+                      className="secondary-button"
+                      onClick={() => changeTab("history")}
+                    >
+                      Open Match History
+                    </button>
+                  </div>
+                )}
+
+                {boardDetailMode === "leader" && (
+                  <>
+                    {leader ? (
+                      <div className="board-leader-detail">
+                        <PlayerAvatar player={leader} size="large" />
+
+                        <div className="board-leader-identity">
+                          <span>Current Elo Leader</span>
+                          <h3>{leader.name}</h3>
+                          <div className="board-player-record board-leader-record">
+                            <span className="board-player-win">
+                              W: {leader.wins}
+                            </span>
+                            <span className="board-player-loss">
+                              L: {leader.losses}
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="board-leader-metrics">
+                          <div>
+                            <span>Elo</span>
+                            <strong>{leader.rating}</strong>
+                          </div>
+                          <div>
+                            <span>Power</span>
+                            <strong>{leader.powerRating}</strong>
+                          </div>
+                          <div>
+                            <span>Win Streak</span>
+                            <strong>
+                              {leader.winStreak > 0
+                                ? `W${leader.winStreak}`
+                                : "—"}
+                            </strong>
+                          </div>
+                          <div>
+                            <span>Point +/-</span>
+                            <strong>
+                              {formatSigned(leader.pointDifferential)}
+                            </strong>
+                          </div>
+                        </div>
+
+                        <button
+                          type="button"
+                          className="primary-button"
+                          onClick={() => openPlayerProfile(leader.id)}
+                        >
+                          View Player Profile
+                        </button>
+                      </div>
+                    ) : (
+                      <p className="muted-copy">
+                        The league will have a leader once matches are recorded.
+                      </p>
+                    )}
+                  </>
+                )}
+              </div>
+            )}
+
+            {league.description && (
+              <div className="board-about-strip">
+                <strong>About this league</strong>
+                <span>{league.description}</span>
+              </div>
+            )}
           </>
         )}
 
@@ -7098,7 +7358,7 @@ if (
             <div className="page-heading-row chat-page-heading">
               <div>
                 <p className="season-label">LEAGUE</p>
-                <h2>League Chat</h2>
+                <h2>Welcome to the Locker Room</h2>
                 <p>
                   A private conversation for active members of {league.name}.
                 </p>
