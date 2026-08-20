@@ -2744,6 +2744,57 @@ th {
   border-color: var(--border);
 }
 
+
+/* =========================================================
+   MOBILE HEADER MENU + DARK PERFORMANCE POLISH
+   ========================================================= */
+
+.mobile-header-menu {
+  display: none;
+}
+
+:root[data-theme="dark"] .performance-summary-grid > div,
+:root[data-theme="dark"] .performance-chart-card {
+  background: var(--surface);
+  border-color: var(--border);
+}
+
+:root[data-theme="dark"] .performance-summary-grid strong,
+:root[data-theme="dark"] .performance-chart-title h4,
+:root[data-theme="dark"] .chart-range-labels strong {
+  color: var(--text);
+}
+
+:root[data-theme="dark"] .performance-summary-grid span,
+:root[data-theme="dark"] .performance-chart-title span,
+:root[data-theme="dark"] .chart-range-labels {
+  color: var(--muted);
+}
+
+:root[data-theme="dark"] .chart-grid-line {
+  stroke: #46546a;
+}
+
+:root[data-theme="dark"] .chart-point {
+  fill: var(--surface);
+}
+
+:root[data-theme="dark"] .point-diff-zero {
+  background: #46546a;
+}
+
+:root[data-theme="dark"] .performance-range-tabs button {
+  background: var(--surface-muted);
+  color: var(--text);
+  border-color: var(--border);
+}
+
+:root[data-theme="dark"] .performance-range-tabs button.performance-range-active {
+  background: #0b111d;
+  color: #ffffff;
+  border-color: #4e6079;
+}
+
 /* =========================================================
    RESPONSIVE
    ========================================================= */
@@ -2772,7 +2823,99 @@ th {
     padding: 22px 20px;
   }
 
-  .header-inner,
+  .app header .header-inner {
+    position: relative;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+  }
+
+  .app header .brand-area {
+    min-width: 0;
+    flex: 1;
+  }
+
+  .app header .brand-area > div:last-child {
+    min-width: 0;
+  }
+
+  .app header .brand-area h1,
+  .app header .brand-area p {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .app header .header-right {
+    display: none;
+  }
+
+  .mobile-header-menu {
+    position: relative;
+    display: block;
+    flex-shrink: 0;
+  }
+
+  .mobile-header-menu summary {
+    width: 42px;
+    height: 42px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    border: 1px solid #526078;
+    border-radius: 12px;
+    background: #26324a;
+    color: white;
+    cursor: pointer;
+    list-style: none;
+  }
+
+  .mobile-header-menu summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .mobile-header-menu-panel {
+    position: absolute;
+    z-index: 9200;
+    top: calc(100% + 9px);
+    right: 0;
+    width: min(290px, calc(100vw - 40px));
+    padding: 7px;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    background: var(--surface);
+    color: var(--text);
+    box-shadow: 0 18px 45px rgba(0, 0, 0, 0.24);
+  }
+
+  .mobile-header-menu-panel button {
+    width: 100%;
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: 10px;
+    padding: 12px;
+    border-radius: 9px;
+    background: transparent;
+    color: var(--text);
+    text-align: left;
+  }
+
+  .mobile-header-menu-panel button:hover {
+    background: var(--surface-muted);
+  }
+
+  .mobile-header-menu-panel button strong {
+    color: var(--muted);
+    font-size: 11px;
+  }
+
+  .mobile-header-menu-panel .mobile-menu-signout {
+    color: var(--red);
+  }
+
   .hub-header-inner,
   .page-heading-row,
   .players-heading,

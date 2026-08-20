@@ -98,6 +98,20 @@ function AppIcon({ name, size = 18, className = "" }) {
         <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
       </svg>
     ),
+    more: (
+      <svg {...common}>
+        <circle cx="5" cy="12" r="1.35" fill="currentColor" stroke="none" />
+        <circle cx="12" cy="12" r="1.35" fill="currentColor" stroke="none" />
+        <circle cx="19" cy="12" r="1.35" fill="currentColor" stroke="none" />
+      </svg>
+    ),
+    logout: (
+      <svg {...common}>
+        <path d="M10 5H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h5" />
+        <path d="m14 8 4 4-4 4" />
+        <path d="M18 12H9" />
+      </svg>
+    ),
     chart: (
       <svg {...common}>
         <path d="M4 20V10M10 20V4M16 20v-7M22 20H2" />
@@ -5298,6 +5312,40 @@ if (
               Sign Out
             </button>
           </div>
+
+          <details className="mobile-header-menu">
+            <summary aria-label="Open league menu">
+              <AppIcon name="more" size={22} />
+            </summary>
+
+            <div className="mobile-header-menu-panel">
+              <button
+                type="button"
+                onClick={goToMyLeagues}
+              >
+                <AppIcon name="home" size={17} />
+                <span>My Leagues</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={copyLeagueCode}
+              >
+                <AppIcon name="copy" size={17} />
+                <span>Copy League Code</span>
+                <strong>{league.join_code}</strong>
+              </button>
+
+              <button
+                type="button"
+                className="mobile-menu-signout"
+                onClick={signOut}
+              >
+                <AppIcon name="logout" size={17} />
+                <span>Sign Out</span>
+              </button>
+            </div>
+          </details>
         </div>
 
         <nav>
@@ -7517,7 +7565,7 @@ if (
           onClick={() => changeTab("leaderboard")}
         >
           <AppIcon name="trophy" size={20} />
-          <small>Rank</small>
+          <small>Board</small>
         </button>
 
         <button
