@@ -4240,7 +4240,7 @@ th {
 
 
 /* =========================================================
-   LEAGUE LANDSCAPE â€” NAMES ONLY
+   LEAGUE LANDSCAPE Ã¢â‚¬â€ NAMES ONLY
    ========================================================= */
 
 .landscape-y-axis-label {
@@ -4292,5 +4292,281 @@ th {
   .landscape-player-name {
     font-size: 7.6px;
     stroke-width: 2px;
+  }
+}
+
+
+/* =========================================================
+   LEADERBOARD + MOBILE READABILITY REFINEMENT
+   ========================================================= */
+
+.board-swipe-hint {
+  display: none;
+  margin: -4px 0 10px;
+  color: var(--muted);
+  font-size: 9px;
+  font-weight: 750;
+  letter-spacing: 0.02em;
+}
+
+.board-rating-table-wrap {
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+.league-rating-table {
+  min-width: 1080px;
+}
+
+.league-rating-table .board-rank-column,
+.league-rating-table .board-rank-cell {
+  width: 48px;
+  text-align: center;
+}
+
+.league-rating-table .board-player-cell {
+  min-width: 210px;
+}
+
+.league-rating-table th:not(:nth-child(2)),
+.league-rating-table td:not(:nth-child(2)) {
+  white-space: nowrap;
+}
+
+.board-player-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.board-player-link > .board-status-dot {
+  flex: 0 0 auto;
+  margin: 0 -1px 0 0;
+}
+
+.board-player-name-line {
+  display: block;
+  max-width: 100%;
+}
+
+.board-player-record {
+  margin-top: 2px;
+}
+
+@media (max-width: 800px) {
+  .app header {
+    padding: 14px 12px;
+  }
+
+  .app header .header-inner {
+    gap: 8px;
+  }
+
+  .app header .brand-area {
+    gap: 8px;
+  }
+
+  .app header .brand-icon,
+  .app header .league-logo {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+  }
+
+  .app header .brand-area h1 {
+    overflow: visible;
+    text-overflow: clip;
+    white-space: nowrap;
+    font-size: 17px;
+    line-height: 1.05;
+    letter-spacing: -0.02em;
+  }
+
+  .app header .brand-area p {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    margin-top: 3px;
+    font-size: 10.5px;
+  }
+
+  .mobile-header-menu summary {
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+  }
+
+  .board-ranking-card {
+    padding: 18px 12px;
+  }
+
+  .board-ranking-card .ranking-card-heading {
+    margin-bottom: 10px;
+  }
+
+  .board-ranking-card .ranking-card-heading h3 {
+    font-size: 18px;
+  }
+
+  .board-ranking-card .ranking-card-heading p {
+    font-size: 11px;
+  }
+
+  .board-swipe-hint {
+    display: block;
+  }
+
+  .board-rating-table-wrap {
+    overflow-x: auto;
+    margin-right: -12px;
+    margin-left: -12px;
+    padding-right: 12px;
+    padding-left: 12px;
+  }
+
+  .league-rating-table {
+    min-width: 980px;
+    table-layout: auto;
+  }
+
+  .league-rating-table th,
+  .league-rating-table td {
+    padding: 12px 8px;
+  }
+
+  .league-rating-table th {
+    font-size: 9.5px;
+    letter-spacing: 0.045em;
+  }
+
+  .league-rating-table .board-rank-column,
+  .league-rating-table .board-rank-cell {
+    width: 32px;
+    min-width: 32px;
+    padding-right: 3px;
+    padding-left: 3px;
+  }
+
+  .league-rating-table .board-player-cell {
+    width: 190px;
+    min-width: 190px;
+  }
+
+  .board-player-link {
+    width: auto;
+    min-width: 0;
+    gap: 7px;
+  }
+
+  .board-player-link > .board-status-dot {
+    width: 7px;
+    height: 7px;
+    flex-basis: 7px;
+  }
+
+  .board-player-link .player-avatar-small {
+    width: 32px;
+    height: 32px;
+    flex-basis: 32px;
+  }
+
+  .board-player-copy {
+    max-width: 135px;
+  }
+
+  .board-player-name-line {
+    width: auto;
+  }
+
+  .board-player-name-line strong {
+    display: block;
+    max-width: 135px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 13px;
+  }
+
+  .board-player-record {
+    gap: 7px;
+    font-size: 9px;
+  }
+
+  .board-mobile-meta {
+    display: none;
+  }
+
+  .league-landscape-card {
+    padding: 18px 12px;
+  }
+
+  .league-landscape-card .ranking-card-heading {
+    margin-bottom: 8px;
+  }
+
+  .league-landscape-wrap {
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .league-landscape-chart {
+    width: 640px;
+    min-width: 640px;
+    max-width: none;
+  }
+
+  .league-landscape-legend {
+    min-width: 640px;
+    flex-direction: row;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .league-landscape-legend small {
+    width: 100%;
+    margin-left: 0;
+  }
+
+  .landscape-player-name {
+    font-size: 8.5px;
+  }
+}
+
+@media (max-width: 430px) {
+  .app header .brand-area h1 {
+    font-size: 15.5px;
+  }
+
+  .app header .brand-icon,
+  .app header .league-logo {
+    width: 34px;
+    height: 34px;
+  }
+
+  .mobile-header-menu summary {
+    width: 36px;
+    height: 36px;
+  }
+
+  .league-rating-table {
+    min-width: 950px;
+  }
+
+  .league-rating-table .board-player-cell {
+    width: 178px;
+    min-width: 178px;
+  }
+
+  .board-player-copy,
+  .board-player-name-line strong {
+    max-width: 123px;
+  }
+
+  .league-landscape-chart,
+  .league-landscape-legend {
+    width: 610px;
+    min-width: 610px;
   }
 }

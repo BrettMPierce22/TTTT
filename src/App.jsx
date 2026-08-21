@@ -6015,7 +6015,7 @@ if (
               </button>
             </div>
 
-            <div className="card ranking-card">
+            <div className="card ranking-card board-ranking-card">
               <div className="ranking-card-heading">
                 <div>
                   <h3>League Ratings</h3>
@@ -6032,6 +6032,10 @@ if (
                 </button>
               </div>
 
+              <div className="board-swipe-hint">
+                Swipe for more stats →
+              </div>
+
               <div className="table-wrap board-rating-table-wrap">
                 <table className="league-rating-table">
                   <thead>
@@ -6039,9 +6043,14 @@ if (
                       <th className="board-rank-column">Rank</th>
                       <th>Player</th>
                       <th>Rating</th>
-                      <th className="board-hide-mobile">Strength</th>
+                      <th>Win %</th>
                       <th>Streak</th>
-                      <th className="board-hide-mobile">Matches</th>
+                      <th>Games W-L</th>
+                      <th>Pts For</th>
+                      <th>Pts Against</th>
+                      <th>Pts Won %</th>
+                      <th>Pts Against %</th>
+                      <th>Point +/-</th>
                     </tr>
                   </thead>
 
@@ -6095,13 +6104,27 @@ if (
                             </span>
                           </td>
 
-                          <td>
+                          <td className="board-player-cell">
                             <button
                               className="player-profile-link board-player-link"
                               onClick={() =>
                                 openPlayerProfile(player.id)
                               }
                             >
+                              <span
+                                className={`board-status-dot board-status-${player.play_status === "open" ? "open" : "idle"}`}
+                                title={
+                                  player.play_status === "open"
+                                    ? "Open to Play"
+                                    : "Idle"
+                                }
+                                aria-label={
+                                  player.play_status === "open"
+                                    ? "Open to Play"
+                                    : "Idle"
+                                }
+                              />
+
                               <PlayerAvatar
                                 player={player}
                                 size="small"
@@ -6109,14 +6132,6 @@ if (
 
                               <span className="board-player-copy">
                                 <span className="board-player-name-line">
-                                  <span
-                                    className={`board-status-dot board-status-${player.play_status === "open" ? "open" : "idle"}`}
-                                    title={
-                                      player.play_status === "open"
-                                        ? "Open to Play"
-                                        : "Idle"
-                                    }
-                                  />
                                   <strong className={textClass}>
                                     {player.name}
                                   </strong>
@@ -6130,10 +6145,6 @@ if (
                                     L: {player.losses}
                                   </span>
                                 </span>
-
-                                <span className="board-mobile-meta">
-                                  SOS {player.averageOpponentRating ?? "—"} · {player.matchesPlayed} match{player.matchesPlayed === 1 ? "" : "es"}
-                                </span>
                               </span>
                             </button>
                           </td>
@@ -6144,9 +6155,9 @@ if (
                             </strong>
                           </td>
 
-                          <td className="board-hide-mobile">
+                          <td>
                             <span className={textClass}>
-                              {player.averageOpponentRating ?? "—"}
+                              {player.winPercentage}%
                             </span>
                           </td>
 
@@ -6158,9 +6169,41 @@ if (
                             </span>
                           </td>
 
-                          <td className="board-hide-mobile">
+                          <td>
                             <span className={textClass}>
-                              {player.matchesPlayed}
+                              {player.gamesWon}-{player.gamesLost}
+                            </span>
+                          </td>
+
+                          <td>
+                            <span className={textClass}>
+                              {player.pointsFor}
+                            </span>
+                          </td>
+
+                          <td>
+                            <span className={textClass}>
+                              {player.pointsAgainst}
+                            </span>
+                          </td>
+
+                          <td>
+                            <span className={textClass}>
+                              {player.pointsWonPercentage}%
+                            </span>
+                          </td>
+
+                          <td>
+                            <span className={textClass}>
+                              {Math.round(
+                                (100 - player.pointsWonPercentage) * 10
+                              ) / 10}%
+                            </span>
+                          </td>
+
+                          <td>
+                            <span className={textClass}>
+                              {formatSigned(player.pointDifferential)}
                             </span>
                           </td>
                         </tr>
