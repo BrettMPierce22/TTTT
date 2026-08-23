@@ -1,5 +1,6 @@
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import "./App.css";
+import tableTalkMark from "./assets/table-talk-mark.png";
 import { supabase } from "./lib/supabaseClient";
 
 const TableLocator = lazy(() =>
@@ -10,6 +11,14 @@ const TableLocator = lazy(() =>
 // from capacitor://localhost, which is not a valid email callback URL.
 const APP_URL =
   import.meta.env.VITE_APP_URL || "https://tabletalktabletennis.com";
+
+function BrandMark({ className = "" }) {
+  return (
+    <span className={`brand-mark-shell ${className}`.trim()} aria-hidden="true">
+      <img src={tableTalkMark} alt="" />
+    </span>
+  );
+}
 
 function AppIcon({ name, size = 18, className = "" }) {
   const common = {
@@ -4687,7 +4696,7 @@ if (
     return (
       <div className="loading-screen">
         <div className="loading-logo">
-          <AppIcon name="paddle" size={48} />
+          <BrandMark className="brand-mark-large" />
         </div>
 
         <h1>
@@ -4708,9 +4717,7 @@ if (
       <div className="auth-page">
         <div className="auth-shell">
           <div className="auth-brand">
-            <div className="auth-icon">
-              <AppIcon name="paddle" size={48} />
-            </div>
+            <BrandMark className="auth-icon" />
 
             <h1>
               Table Talk Table Tennis
@@ -4811,9 +4818,7 @@ if (
       <div className="auth-page">
         <div className="auth-shell">
           <div className="auth-brand">
-            <div className="auth-icon">
-              <AppIcon name="paddle" size={48} />
-            </div>
+            <BrandMark className="auth-icon" />
 
             <h1>
               Table Talk Table Tennis
@@ -5148,9 +5153,7 @@ if (
         <header className="hub-header">
           <div className="hub-header-inner">
             <div className="brand-area">
-              <div className="brand-ball brand-icon">
-                <AppIcon name="paddle" size={32} />
-              </div>
+              <BrandMark className="brand-icon" />
 
               <div>
                 <h1>
@@ -5707,9 +5710,7 @@ if (
                 alt=""
               />
             ) : (
-              <div className="brand-ball brand-icon">
-                <AppIcon name="paddle" size={32} />
-              </div>
+              <BrandMark className="brand-icon" />
             )}
 
             <div>
