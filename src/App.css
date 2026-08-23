@@ -60,7 +60,7 @@ header,
 .hub-header {
   background: var(--navy);
   color: white;
-  padding: 28px 40px;
+  padding: calc(28px + env(safe-area-inset-top)) 40px 28px;
 }
 
 .header-inner,
@@ -2820,7 +2820,7 @@ th {
 @media (max-width: 800px) {
   header,
   .hub-header {
-    padding: 22px 20px;
+    padding: calc(22px + env(safe-area-inset-top)) 20px 22px;
   }
 
   .app header .header-inner {

@@ -1,8 +1,15 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import "./App.css";
 import { supabase } from "./lib/supabaseClient";
 
-const APP_URL = `${window.location.origin}${import.meta.env.BASE_URL}`;
+const TableLocator = lazy(() =>
+  import("./features/table-locator/TableLocator")
+);
+
+// Authentication emails must open a real HTTPS page. A Capacitor build runs
+// from capacitor://localhost, which is not a valid email callback URL.
+const APP_URL =
+  import.meta.env.VITE_APP_URL || "https://tabletalktabletennis.com";
 
 function AppIcon({ name, size = 18, className = "" }) {
   const common = {
@@ -31,6 +38,12 @@ function AppIcon({ name, size = 18, className = "" }) {
         <path d="m3 10 9-7 9 7" />
         <path d="M5 9.5V21h14V9.5" />
         <path d="M9 21v-7h6v7" />
+      </svg>
+    ),
+    location: (
+      <svg {...common}>
+        <path d="M20 10c0 5-8 11-8 11S4 15 4 10a8 8 0 1 1 16 0Z" />
+        <circle cx="12" cy="10" r="2.5" />
       </svg>
     ),
     trophy: (
@@ -5881,6 +5894,13 @@ if (
           </button>
 
           <button
+            className={activeTab === "tables" ? "nav-active" : ""}
+            onClick={() => changeTab("tables")}
+          >
+            <AppIcon name="location" size={17} /> Find Tables
+          </button>
+
+          <button
             className={activeTab === "chat" ? "nav-active" : ""}
             onClick={() => changeTab("chat")}
           >
@@ -5935,7 +5955,9 @@ if (
           activeTab !==
             "profile" &&
           activeTab !==
-            "leaderboard" && (
+            "leaderboard" &&
+          activeTab !==
+            "tables" && (
             <div className="league-description">
               {
                 league.description
@@ -6427,6 +6449,12 @@ if (
               </div>
             )}
           </>
+        )}
+
+        {activeTab === "tables" && (
+          <Suspense fallback={<div className="card">Loading table map…</div>}>
+            <TableLocator userId={user?.id} />
+          </Suspense>
         )}
 
         {activeTab ===
@@ -8171,11 +8199,11 @@ if (
         </button>
 
         <button
-          className={activeTab === "history" ? "mobile-nav-active" : ""}
-          onClick={() => changeTab("history")}
+          className={activeTab === "tables" ? "mobile-nav-active" : ""}
+          onClick={() => changeTab("tables")}
         >
-          <AppIcon name="history" size={20} />
-          <small>Matches</small>
+          <AppIcon name="location" size={20} />
+          <small>Tables</small>
         </button>
 
         <button
