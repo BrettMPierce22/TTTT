@@ -27,8 +27,9 @@ requirements can be reviewed together.
 
 ## Required before App Store submission
 
-- Add an in-app account deletion flow that removes the Supabase Auth user and
-  associated user-generated content.
+- Deploy and test the included `delete-account` Edge Function with disposable
+  accounts. The in-app flow removes the Auth user and associated content while
+  anonymizing player history.
 - Publish a privacy policy, terms of use, community standards, and support
   contact page.
 - Document the moderation response process and test it with realistic reports.

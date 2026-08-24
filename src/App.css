@@ -1388,6 +1388,72 @@ th {
   margin-top: 20px;
 }
 
+.account-deletion-card {
+  display: grid;
+  gap: 18px;
+  margin-top: 22px;
+  padding: 20px;
+  background: color-mix(in srgb, var(--red-light) 72%, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--red) 28%, var(--border));
+  border-radius: 14px;
+}
+
+.account-deletion-card h3 {
+  margin: 4px 0 7px;
+}
+
+.account-deletion-card p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.55;
+}
+
+.account-deletion-card > .danger-outline-button {
+  width: fit-content;
+}
+
+.account-deletion-confirmation {
+  display: grid;
+  gap: 12px;
+}
+
+.account-deletion-confirmation label {
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 750;
+}
+
+.account-deletion-confirmation input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 12px;
+  color: var(--text);
+  background: var(--input-bg);
+  border: 1px solid color-mix(in srgb, var(--red) 35%, var(--border));
+  border-radius: 10px;
+  font: inherit;
+}
+
+.account-deletion-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.delete-account-button {
+  padding: 11px 16px;
+  color: white;
+  background: var(--red);
+  border: 1px solid var(--red);
+  border-radius: 10px;
+  font-weight: 800;
+}
+
+.delete-account-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
 /* =========================================================
    MATCH HISTORY / MY MATCHES
    ========================================================= */
@@ -3877,6 +3943,19 @@ th {
 
   .board-quick-stat strong {
     font-size: 12px;
+  }
+}
+
+@media (max-width: 620px) {
+  .account-deletion-card > .danger-outline-button,
+  .account-deletion-actions,
+  .account-deletion-actions button {
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .account-deletion-confirmation input {
+    font-size: 16px;
   }
 }
 
