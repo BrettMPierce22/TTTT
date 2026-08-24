@@ -42,7 +42,6 @@ final class TableTalkTabBarController: UITabBarController, UITabBarControllerDel
         viewControllers = definitions.enumerated().map { index, definition in
             let host = UIViewController()
             host.view.backgroundColor = .clear
-            host.view.isUserInteractionEnabled = false
             host.restorationIdentifier = definition.name
             host.tabBarItem = UITabBarItem(
                 title: definition.title,
