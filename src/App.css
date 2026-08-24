@@ -4336,7 +4336,7 @@ th {
   .auth-page {
     min-height: 100dvh;
     padding:
-      calc(34px + env(safe-area-inset-top))
+      max(64px, calc(34px + env(safe-area-inset-top)))
       18px
       calc(30px + env(safe-area-inset-bottom));
     background:

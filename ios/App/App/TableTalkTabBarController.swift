@@ -19,12 +19,6 @@ final class TableTalkTabBarController: UITabBarController, UITabBarControllerDel
     private let bridgeController = TableTalkViewController()
     weak var nativeShellPlugin: NativeShellPlugin?
 
-#if DEBUG
-    private let forceTabsForVisualTesting = ProcessInfo.processInfo.arguments.contains("-showNativeTabs")
-#else
-    private let forceTabsForVisualTesting = false
-#endif
-
     override func viewDidLoad() {
         super.viewDidLoad()
 
@@ -81,7 +75,7 @@ final class TableTalkTabBarController: UITabBarController, UITabBarControllerDel
     }
 
     func setTabsVisible(_ visible: Bool) {
-        tabBar.isHidden = forceTabsForVisualTesting ? false : !visible
+        tabBar.isHidden = !visible
         view.setNeedsLayout()
     }
 
