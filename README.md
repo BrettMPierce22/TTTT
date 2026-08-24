@@ -78,6 +78,19 @@ two active league players and adds reporting and blocking controls.
 
 See `docs/TOURNAMENTS_AND_CHAT.md` for the feature and release-test checklist.
 
+## Unified moderator queue
+
+Apply `supabase/migrations/202608240006_unified_moderator_queue.sql` only after
+the earlier table-locator and chat migrations. Existing trusted members of
+`table_locator_moderators` become application moderators; no service-role key
+is used by the client.
+
+The **Moderator Queue** navigation item is visible only to those trusted
+accounts. It combines pending table locations, pending ratings, location
+reports, and league/direct-message reports. Queue reads and moderation actions
+are authorized again inside security-definer database functions so hiding the
+navigation item is never the security boundary.
+
 ## Account deletion setup
 
 1. Apply `supabase/migrations/202608240005_account_deletion.sql`.

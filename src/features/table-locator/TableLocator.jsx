@@ -159,7 +159,6 @@ function formatRegionSearchTerms(value) {
 function TableLocator({ userId }) {
   const [locations, setLocations] = useState([]);
   const [reviews, setReviews] = useState([]);
-  const [reports, setReports] = useState([]);
   const [blockedUserIds, setBlockedUserIds] = useState([]);
   const [isModerator, setIsModerator] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -217,7 +216,7 @@ function TableLocator({ userId }) {
     setLoading(true);
     setErrorMessage("");
 
-    const [moderatorResult, locationResult, reviewResult, reportResult, blockResult] =
+    const [moderatorResult, locationResult, reviewResult, blockResult] =
       await Promise.all([
         supabase
           .from("table_locator_moderators")
@@ -237,12 +236,6 @@ function TableLocator({ userId }) {
           )
           .order("created_at", { ascending: false }),
         supabase
-          .from("table_location_reports")
-          .select(
-            "id,location_id,review_id,reporter_id,reason,details,status,created_at"
-          )
-          .order("created_at", { ascending: false }),
-        supabase
           .from("table_locator_blocks")
           .select("blocked_user_id")
           .eq("blocker_id", userId),
@@ -252,7 +245,6 @@ function TableLocator({ userId }) {
       locationResult.error ||
       reviewResult.error ||
       moderatorResult.error ||
-      reportResult.error ||
       blockResult.error;
 
     if (firstError) {
@@ -292,7 +284,6 @@ function TableLocator({ userId }) {
     setLocations(nextLocations);
     setPhotoUrlsByPath(nextPhotoUrls);
     setReviews(reviewResult.data || []);
-    setReports(reportResult.data || []);
     setBlockedUserIds(
       (blockResult.data || []).map((item) => item.blocked_user_id)
     );
@@ -406,21 +397,6 @@ function TableLocator({ userId }) {
           location.submitted_by === userId && location.status === "pending"
       ),
     [locations, userId]
-  );
-
-  const pendingLocations = useMemo(
-    () => locations.filter((location) => location.status === "pending"),
-    [locations]
-  );
-
-  const pendingReviews = useMemo(
-    () => reviews.filter((review) => review.status === "pending"),
-    [reviews]
-  );
-
-  const openReports = useMemo(
-    () => reports.filter((report) => report.status === "open"),
-    [reports]
   );
 
   function updateLocationForm(field, value) {
@@ -1038,71 +1014,6 @@ function TableLocator({ userId }) {
 
     setBlockedUserIds((current) => [...new Set([...current, review.user_id])]);
     setNotice("Reviewer blocked.");
-  }
-
-  async function moderateLocation(locationId, status) {
-    setSaving(true);
-    const now = new Date().toISOString();
-    const { error } = await supabase
-      .from("table_locations")
-      .update({
-        status,
-        moderated_by: userId,
-        moderated_at: now,
-        last_verified_at: status === "approved" ? now : null,
-      })
-      .eq("id", locationId);
-
-    if (error) {
-      console.error("Could not moderate location", error);
-      setErrorMessage("The location moderation update failed.");
-    } else {
-      setNotice(`Location ${status}.`);
-      await loadLocatorData();
-    }
-    setSaving(false);
-  }
-
-  async function moderateReview(reviewId, status) {
-    setSaving(true);
-    const { error } = await supabase
-      .from("table_location_reviews")
-      .update({
-        status,
-        moderated_by: userId,
-        moderated_at: new Date().toISOString(),
-      })
-      .eq("id", reviewId);
-
-    if (error) {
-      console.error("Could not moderate review", error);
-      setErrorMessage("The review moderation update failed.");
-    } else {
-      setNotice(`Review ${status}.`);
-      await loadLocatorData();
-    }
-    setSaving(false);
-  }
-
-  async function resolveReport(reportId) {
-    setSaving(true);
-    const { error } = await supabase
-      .from("table_location_reports")
-      .update({
-        status: "resolved",
-        resolved_by: userId,
-        resolved_at: new Date().toISOString(),
-      })
-      .eq("id", reportId);
-
-    if (error) {
-      console.error("Could not resolve report", error);
-      setErrorMessage("The report could not be resolved.");
-    } else {
-      setNotice("Report resolved.");
-      await loadLocatorData();
-    }
-    setSaving(false);
   }
 
   if (loading) {
@@ -1908,128 +1819,6 @@ function TableLocator({ userId }) {
         </section>
       )}
 
-      {isModerator && (
-        <section className="locator-moderation-panel">
-          <div className="locator-section-heading">
-            <div>
-              <p className="locator-kicker">SAFETY TOOLS</p>
-              <h3>Moderation queue</h3>
-            </div>
-            <span>
-              {pendingLocations.length + pendingReviews.length + openReports.length} open items
-            </span>
-          </div>
-
-          <h4>Pending locations</h4>
-          {pendingLocations.length === 0 ? (
-            <p>Nothing waiting.</p>
-          ) : (
-            pendingLocations.map((location) => (
-              <div className="locator-moderation-row" key={location.id}>
-                {location.photo_path && photoUrlsByPath[location.photo_path] && (
-                  <img
-                    className="locator-moderation-photo"
-                    src={photoUrlsByPath[location.photo_path]}
-                    alt={`Submitted table at ${location.name}`}
-                  />
-                )}
-                <div className="locator-moderation-copy">
-                  <strong>{location.name}</strong>
-                  <span>{location.address}, {location.city}, {location.region}</span>
-                </div>
-                <div>
-                  <button
-                    type="button"
-                    className="locator-approve-button"
-                    onClick={() => moderateLocation(location.id, "approved")}
-                    disabled={saving}
-                  >
-                    Approve
-                  </button>
-                  <button
-                    type="button"
-                    className="locator-reject-button"
-                    onClick={() => moderateLocation(location.id, "rejected")}
-                    disabled={saving}
-                  >
-                    Reject
-                  </button>
-                  <button
-                    type="button"
-                    className="locator-edit-management-button"
-                    onClick={() => startEditingLocation(location)}
-                    disabled={saving}
-                  >
-                    Edit
-                  </button>
-                  <button
-                    type="button"
-                    className="locator-delete-management-button"
-                    onClick={() => deleteLocation(location)}
-                    disabled={saving}
-                  >
-                    Delete
-                  </button>
-                </div>
-              </div>
-            ))
-          )}
-
-          <h4>Pending ratings</h4>
-          {pendingReviews.length === 0 ? (
-            <p>Nothing waiting.</p>
-          ) : (
-            pendingReviews.map((review) => (
-              <div className="locator-moderation-row" key={review.id}>
-                <div>
-                  <strong>{review.rating} ★ {review.title || "Untitled rating"}</strong>
-                  <span>{review.body || "No written review"}</span>
-                </div>
-                <div>
-                  <button
-                    type="button"
-                    className="locator-approve-button"
-                    onClick={() => moderateReview(review.id, "approved")}
-                    disabled={saving}
-                  >
-                    Approve
-                  </button>
-                  <button
-                    type="button"
-                    className="locator-reject-button"
-                    onClick={() => moderateReview(review.id, "rejected")}
-                    disabled={saving}
-                  >
-                    Reject
-                  </button>
-                </div>
-              </div>
-            ))
-          )}
-
-          <h4>Open reports</h4>
-          {openReports.length === 0 ? (
-            <p>Nothing waiting.</p>
-          ) : (
-            openReports.map((report) => (
-              <div className="locator-moderation-row" key={report.id}>
-                <div>
-                  <strong>{report.reason.replaceAll("_", " ")}</strong>
-                  <span>{report.details || "No additional details"}</span>
-                </div>
-                <button
-                  type="button"
-                  className="locator-approve-button"
-                  onClick={() => resolveReport(report.id)}
-                  disabled={saving}
-                >
-                  Resolve
-                </button>
-              </div>
-            ))
-          )}
-        </section>
-      )}
     </section>
   );
 }

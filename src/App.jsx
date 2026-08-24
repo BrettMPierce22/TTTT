@@ -10,6 +10,9 @@ const TournamentCenter = lazy(() =>
   import("./features/tournaments/TournamentCenter")
 );
 const ChatCenter = lazy(() => import("./features/chat/ChatCenter"));
+const ModeratorQueue = lazy(() =>
+  import("./features/moderation/ModeratorQueue")
+);
 const LegalCenter = lazy(() => import("./features/legal/LegalCenter"));
 
 // Authentication emails must open a real HTTPS page. A Capacitor build runs
@@ -1335,6 +1338,9 @@ function App() {
   const [activeTab, setActiveTab] =
     useState("leaderboard");
 
+  const [isAppModerator, setIsAppModerator] =
+    useState(false);
+
   const [
     selectedPlayerId,
     setSelectedPlayerId,
@@ -1716,6 +1722,32 @@ if (
       subscription.unsubscribe();
     };
   }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadModeratorRole() {
+      if (!user?.id) {
+        setIsAppModerator(false);
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from("table_locator_moderators")
+        .select("user_id")
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      if (!cancelled) {
+        setIsAppModerator(!error && Boolean(data));
+      }
+    }
+
+    loadModeratorRole();
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.id]);
 
   useEffect(() => {
     if (!league?.id || !user?.id) {
@@ -5963,6 +5995,16 @@ if (
                 <span>Support & Safety</span>
               </button>
 
+              {isAppModerator && (
+                <button
+                  type="button"
+                  onClick={() => changeTab("moderation")}
+                >
+                  <AppIcon name="settings" size={17} />
+                  <span>Moderator Queue</span>
+                </button>
+              )}
+
               <button
                 type="button"
                 className="mobile-menu-signout"
@@ -6111,6 +6153,15 @@ if (
             )}
           </button>
 
+          {isAppModerator && (
+            <button
+              className={activeTab === "moderation" ? "nav-active" : ""}
+              onClick={() => changeTab("moderation")}
+            >
+              <AppIcon name="settings" size={17} /> Moderator Queue
+            </button>
+          )}
+
           {isAdmin && (
             <button
               className={
@@ -6159,7 +6210,9 @@ if (
           activeTab !==
             "tournaments" &&
           activeTab !==
-            "chat" && (
+            "chat" &&
+          activeTab !==
+            "moderation" && (
             <div className="league-description">
               {
                 league.description
@@ -6656,6 +6709,12 @@ if (
         {activeTab === "tables" && (
           <Suspense fallback={<div className="card">Loading table map…</div>}>
             <TableLocator userId={user?.id} />
+          </Suspense>
+        )}
+
+        {activeTab === "moderation" && isAppModerator && (
+          <Suspense fallback={<div className="card">Loading moderator queue…</div>}>
+            <ModeratorQueue />
           </Suspense>
         )}
 

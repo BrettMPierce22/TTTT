@@ -23,6 +23,9 @@ function ChatCenter({ league, currentPlayer, players, isAdmin, resetSignal = 0 }
   const [sending, setSending] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [notice, setNotice] = useState("");
+  const [reportTarget, setReportTarget] = useState(null);
+  const [reportReason, setReportReason] = useState("harassment");
+  const [reportDetails, setReportDetails] = useState("");
   const endRef = useRef(null);
 
   const activePlayers = useMemo(
@@ -240,18 +243,26 @@ function ChatCenter({ league, currentPlayer, players, isAdmin, resetSignal = 0 }
     }
   }
 
-  async function reportMessage(message, type) {
-    if (!window.confirm("Report this message to the league moderators?")) return;
+  function openReport(message, type) {
+    setReportTarget({ message, type });
+    setReportReason("harassment");
+    setReportDetails("");
+  }
+
+  async function reportMessage(event) {
+    event.preventDefault();
+    if (!reportTarget) return;
     try {
       const { error } = await supabase.rpc("report_chat_message", {
         p_league_id: league.id,
-        p_league_message_id: type === "league" ? message.id : null,
-        p_direct_message_id: type === "direct" ? message.id : null,
-        p_reason: "harassment",
-        p_details: null,
+        p_league_message_id: reportTarget.type === "league" ? reportTarget.message.id : null,
+        p_direct_message_id: reportTarget.type === "direct" ? reportTarget.message.id : null,
+        p_reason: reportReason,
+        p_details: reportDetails.trim() || null,
       });
       if (error) throw error;
-      setNotice("Message reported. A league admin can review it.");
+      setReportTarget(null);
+      setNotice("Message reported. A moderator will review it.");
     } catch (error) {
       setErrorMessage(error.message || "Could not report that message.");
     }
@@ -318,7 +329,7 @@ function ChatCenter({ league, currentPlayer, players, isAdmin, resetSignal = 0 }
                 {(mine || (mode === "league" && isAdmin)) && (
                   <button type="button" onClick={() => deleteMessage(message, mode)}>Delete</button>
                 )}
-                {!mine && <button type="button" onClick={() => reportMessage(message, mode)}>Report</button>}
+                {!mine && <button type="button" onClick={() => openReport(message, mode)}>Report</button>}
               </div>
             </div>
           </div>
@@ -401,6 +412,37 @@ function ChatCenter({ league, currentPlayer, players, isAdmin, resetSignal = 0 }
           )}
         </section>
       </div>
+
+      {reportTarget && (
+        <div className="chat-report-backdrop" onMouseDown={(event) => {
+          if (event.target === event.currentTarget) setReportTarget(null);
+        }}>
+          <form className="chat-report-dialog" onSubmit={reportMessage}>
+            <p className="season-label">SAFETY REPORT</p>
+            <h3>Report message</h3>
+            <blockquote>{reportTarget.message.message}</blockquote>
+            <label>
+              Reason
+              <select value={reportReason} onChange={(event) => setReportReason(event.target.value)}>
+                <option value="harassment">Harassment or bullying</option>
+                <option value="spam">Spam</option>
+                <option value="hate">Hate speech</option>
+                <option value="threat">Threat or violence</option>
+                <option value="other">Something else</option>
+              </select>
+            </label>
+            <label>
+              Details <span>optional</span>
+              <textarea rows="4" maxLength="800" value={reportDetails} onChange={(event) => setReportDetails(event.target.value)} placeholder="Tell the moderator what happened." />
+              <small>{reportDetails.length}/800</small>
+            </label>
+            <div className="chat-report-actions">
+              <button type="button" onClick={() => setReportTarget(null)}>Cancel</button>
+              <button type="submit" className="chat-report-submit">Send report</button>
+            </div>
+          </form>
+        </div>
+      )}
     </div>
   );
 }
