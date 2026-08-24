@@ -1464,6 +1464,12 @@ function App() {
     setAccountAvatarUploading,
   ] = useState(false);
 
+  const [showDeleteAccount, setShowDeleteAccount] = useState(false);
+  const [deleteAccountConfirmation, setDeleteAccountConfirmation] =
+    useState("");
+  const [accountDeleting, setAccountDeleting] = useState(false);
+  const [accountDeletionError, setAccountDeletionError] = useState("");
+
   const [
     rankInfoMode,
     setRankInfoMode,
@@ -2616,6 +2622,77 @@ if (
         error.message ||
           "Could not sign out."
       );
+    }
+  }
+
+  async function deleteMyAccount() {
+    if (deleteAccountConfirmation !== "DELETE") {
+      setAccountDeletionError(
+        "Type DELETE exactly to confirm permanent account deletion."
+      );
+      return;
+    }
+
+    const confirmed = window.confirm(
+      "Final confirmation: permanently delete your Table Talk account? This cannot be undone."
+    );
+    if (!confirmed) return;
+
+    try {
+      setAccountDeleting(true);
+      setAccountDeletionError("");
+
+      const { data, error } = await supabase.functions.invoke(
+        "delete-account",
+        { body: { confirmation: "DELETE" } }
+      );
+
+      let failure = data;
+      if (error?.context?.json) {
+        try {
+          failure = await error.context.json();
+        } catch {
+          // Keep the standard function error when there is no JSON response.
+        }
+      }
+
+      if (error || !data?.deleted) {
+        if (failure?.code === "owned_leagues") {
+          const leagueNames = (failure.leagues || [])
+            .map((ownedLeague) => ownedLeague.name)
+            .join(", ");
+          throw new Error(
+            `Before deleting your account, transfer or permanently delete the leagues you own${
+              leagueNames ? `: ${leagueNames}` : "."
+            }`
+          );
+        }
+
+        throw new Error(
+          failure?.message ||
+            error?.message ||
+            "Your account could not be deleted."
+        );
+      }
+
+      window.localStorage.removeItem("tttt_last_league_id");
+      window.localStorage.removeItem("tttt_theme");
+
+      try {
+        await supabase.auth.signOut({ scope: "local" });
+      } catch {
+        // The server has already invalidated this deleted account.
+      }
+
+      window.location.reload();
+    } catch (error) {
+      console.error("Could not delete account", error);
+      setAccountDeletionError(
+        error.message ||
+          "Your account could not be deleted. Contact support for help."
+      );
+    } finally {
+      setAccountDeleting(false);
     }
   }
 
@@ -5596,6 +5673,88 @@ if (
                 >
                   Send Password Reset Email
                 </button>
+              </div>
+
+              <div className="account-deletion-card">
+                <div>
+                  <p className="season-label">DANGER ZONE</p>
+                  <h3>Delete Account</h3>
+                  <p>
+                    Permanently remove your login, profile, messages, table
+                    submissions, ratings, and uploaded account photos. Match
+                    history keeps an anonymous “Deleted Player” entry so league
+                    records remain accurate.
+                  </p>
+                </div>
+
+                {!showDeleteAccount ? (
+                  <button
+                    type="button"
+                    className="danger-outline-button"
+                    onClick={() => {
+                      setShowDeleteAccount(true);
+                      setAccountDeletionError("");
+                    }}
+                  >
+                    Delete My Account
+                  </button>
+                ) : (
+                  <div className="account-deletion-confirmation">
+                    <p>
+                      This cannot be undone. If you own a league, transfer its
+                      ownership or delete the league first.
+                    </p>
+                    <label htmlFor="delete-account-confirmation">
+                      Type <strong>DELETE</strong> to confirm
+                    </label>
+                    <input
+                      id="delete-account-confirmation"
+                      value={deleteAccountConfirmation}
+                      onChange={(event) => {
+                        setDeleteAccountConfirmation(event.target.value);
+                        setAccountDeletionError("");
+                      }}
+                      autoCapitalize="characters"
+                      autoComplete="off"
+                      spellCheck="false"
+                      disabled={accountDeleting}
+                    />
+
+                    {accountDeletionError && (
+                      <div className="error-message">
+                        {accountDeletionError}
+                      </div>
+                    )}
+
+                    <div className="account-deletion-actions">
+                      <button
+                        type="button"
+                        className="delete-account-button"
+                        onClick={deleteMyAccount}
+                        disabled={
+                          accountDeleting ||
+                          deleteAccountConfirmation !== "DELETE"
+                        }
+                      >
+                        {accountDeleting
+                          ? "Deleting Account…"
+                          : "Permanently Delete Account"}
+                      </button>
+                      <button
+                        type="button"
+                        className="secondary-button"
+                        onClick={() => {
+                          setShowDeleteAccount(false);
+                          setDeleteAccountConfirmation("");
+                          setAccountDeletionError("");
+                        }}
+                        disabled={accountDeleting}
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           )}

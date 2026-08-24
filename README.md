@@ -77,3 +77,15 @@ The direct-message migration keeps one-to-one conversations private to their
 two active league players and adds reporting and blocking controls.
 
 See `docs/TOURNAMENTS_AND_CHAT.md` for the feature and release-test checklist.
+
+## Account deletion setup
+
+1. Apply `supabase/migrations/202608240005_account_deletion.sql`.
+2. Deploy the authenticated Edge Function in
+   `supabase/functions/delete-account`.
+3. Test the complete flow with a disposable account before release.
+
+The function performs its own server-side JWT verification, and
+`supabase/config.toml` disables only Supabase's legacy gateway check so modern
+publishable-key sessions work. Never place the Supabase service-role key in the
+React app or any `VITE_` environment variable.
