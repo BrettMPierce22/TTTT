@@ -1,0 +1,12 @@
+{
+  "appId": "com.tabletalktabletennis.app",
+  "appName": "Table Talk Table Tennis",
+  "webDir": "dist",
+  "plugins": {
+    "StatusBar": {
+      "overlaysWebView": true,
+      "style": "DARK",
+      "backgroundColor": "#4b8caf"
+    }
+  }
+}

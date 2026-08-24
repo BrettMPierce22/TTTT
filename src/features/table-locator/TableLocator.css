@@ -1,0 +1,938 @@
+.table-locator-page {
+  display: grid;
+  gap: 24px;
+}
+
+.locator-heading-row,
+.locator-section-heading,
+.locator-detail-heading,
+.locator-toolbar,
+.locator-coordinate-box,
+.locator-form-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.locator-heading-row h2,
+.locator-section-heading h3,
+.locator-detail-heading h3,
+.locator-report-form h3,
+.locator-pending-panel h3,
+.locator-moderation-panel h3 {
+  margin: 3px 0 5px;
+}
+
+.locator-heading-row p,
+.locator-section-heading p,
+.locator-detail-heading p,
+.locator-report-form p,
+.locator-coordinate-box p,
+.locator-empty-state p {
+  margin: 0;
+  color: var(--muted);
+}
+
+.locator-kicker {
+  margin: 0;
+  color: var(--sport-blue, #168fd3) !important;
+  font-size: 11px;
+  font-weight: 850;
+  letter-spacing: 0.12em;
+}
+
+.locator-add-button {
+  white-space: nowrap;
+}
+
+.locator-alert {
+  padding: 13px 16px;
+  border: 1px solid;
+  border-radius: 10px;
+  font-weight: 650;
+}
+
+.locator-error {
+  color: var(--red);
+  background: var(--red-light);
+  border-color: color-mix(in srgb, var(--red) 28%, transparent);
+}
+
+.locator-success {
+  color: var(--green);
+  background: var(--green-light);
+  border-color: color-mix(in srgb, var(--green) 28%, transparent);
+}
+
+.locator-loading,
+.locator-submission-form,
+.locator-detail-card,
+.locator-report-form,
+.locator-pending-panel,
+.locator-moderation-panel {
+  padding: 24px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  box-shadow: 0 10px 26px var(--shadow);
+}
+
+.locator-submission-form,
+.locator-report-form {
+  display: grid;
+  gap: 20px;
+}
+
+.locator-section-heading > span {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 650;
+}
+
+.locator-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.locator-address-field {
+  position: relative;
+  display: grid;
+  gap: 7px;
+  min-width: 0;
+}
+
+.locator-address-suggestions {
+  position: absolute;
+  z-index: 1100;
+  top: calc(100% + 5px);
+  right: 0;
+  left: 0;
+  overflow: hidden;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: 0 16px 34px var(--shadow);
+}
+
+.locator-address-suggestions p {
+  margin: 0;
+  padding: 13px 14px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 650;
+}
+
+.locator-address-suggestions button {
+  width: 100%;
+  display: grid;
+  gap: 3px;
+  padding: 11px 14px;
+  text-align: left;
+  color: var(--text);
+  background: var(--surface);
+  border: 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.locator-address-suggestions button:last-child {
+  border-bottom: 0;
+}
+
+.locator-address-suggestions button:hover,
+.locator-address-suggestions button:focus-visible {
+  background: var(--blue-soft);
+}
+
+.locator-address-suggestions button strong {
+  font-size: 14px;
+}
+
+.locator-address-suggestions button span {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.locator-submission-form label,
+.locator-report-form label,
+.locator-review-form label,
+.locator-search {
+  display: grid;
+  gap: 7px;
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.locator-submission-form input,
+.locator-submission-form select,
+.locator-submission-form textarea,
+.locator-report-form select,
+.locator-report-form textarea,
+.locator-review-form input,
+.locator-review-form select,
+.locator-review-form textarea,
+.locator-search input {
+  width: 100%;
+  box-sizing: border-box;
+  color: var(--text);
+  background: var(--input-bg);
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  padding: 11px 12px;
+  font: inherit;
+}
+
+.locator-submission-form textarea,
+.locator-report-form textarea,
+.locator-review-form textarea {
+  min-height: 94px;
+  resize: vertical;
+}
+
+.locator-wide-field {
+  width: 100%;
+}
+
+.locator-photo-picker {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px 18px;
+  padding: 16px;
+  background: var(--surface-alt);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+
+.locator-photo-picker strong {
+  display: block;
+  margin-bottom: 4px;
+}
+
+.locator-photo-picker p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.locator-photo-picker img {
+  width: 120px;
+  height: 90px;
+  grid-row: span 2;
+  object-fit: cover;
+  border-radius: 10px;
+}
+
+.locator-photo-picker label {
+  width: fit-content;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.locator-photo-picker input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  opacity: 0;
+}
+
+.locator-remove-photo {
+  width: fit-content;
+  padding: 0;
+  color: var(--red);
+  background: transparent;
+  border: 0;
+  text-decoration: underline;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.locator-coordinate-box {
+  padding: 16px;
+  background: var(--blue-soft);
+  border: 1px solid var(--border);
+  border-radius: 11px;
+}
+
+.locator-coordinate-box strong {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--text);
+}
+
+.locator-coordinate-fields {
+  max-width: 620px;
+}
+
+.locator-pin-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 9px;
+}
+
+.locator-pin-map-shell {
+  overflow: hidden;
+  background: var(--surface-alt);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+}
+
+.locator-pin-map {
+  width: 100%;
+  height: 300px;
+  z-index: 0;
+}
+
+.locator-pin-map-shell > p {
+  margin: 0;
+  padding: 11px 14px;
+  color: var(--muted);
+  border-top: 1px solid var(--border);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.locator-pin-map-shell > .locator-pin-status-ready {
+  color: var(--green);
+}
+
+.locator-check-row {
+  display: grid;
+  gap: 11px;
+}
+
+.locator-check-row label {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  font-weight: 600;
+}
+
+.locator-check-row input {
+  width: 17px;
+  height: 17px;
+  margin-top: 1px;
+}
+
+.locator-toolbar {
+  padding: 15px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+
+.locator-search {
+  width: min(520px, 100%);
+}
+
+.locator-search span {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+}
+
+.locator-layout {
+  display: grid;
+  grid-template-columns: 1fr;
+  overflow: hidden;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  box-shadow: 0 10px 26px var(--shadow);
+}
+
+.locator-results {
+  padding: 14px;
+  border-top: 1px solid var(--border);
+}
+
+.locator-results-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.locator-results-count {
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+  padding: 6px 6px 13px;
+  color: var(--muted);
+}
+
+.locator-results-count strong {
+  color: var(--text);
+  font-size: 20px;
+}
+
+.locator-result-card {
+  width: 100%;
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 15px;
+  text-align: left;
+  color: var(--text);
+  background: var(--surface-alt);
+  border: 1px solid var(--border);
+  border-radius: 11px;
+}
+
+.locator-result-card:hover,
+.locator-result-card-selected {
+  background: var(--blue-soft);
+  border-color: var(--sport-blue, #168fd3);
+}
+
+.locator-result-card p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.locator-result-card-topline {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.locator-result-card-topline > span {
+  white-space: nowrap;
+  color: var(--sport-blue-deep, #1d5679);
+  font-size: 12px;
+  font-weight: 750;
+}
+
+.locator-card-meta,
+.locator-detail-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.locator-card-meta span,
+.locator-detail-tags span,
+.locator-pending-badge {
+  padding: 5px 8px;
+  color: var(--muted);
+  background: var(--surface-muted);
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 750;
+}
+
+.locator-map-panel,
+.locator-map {
+  min-height: 430px;
+  width: 100%;
+}
+
+.locator-map {
+  z-index: 0;
+}
+
+.table-map-marker-shell {
+  background: transparent;
+  border: 0;
+}
+
+.table-map-marker {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  background: var(--sport-navy, #143246);
+  border: 3px solid white;
+  border-radius: 13px 13px 13px 3px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.26);
+  transform: rotate(-45deg);
+  font-size: 20px;
+}
+
+.table-map-marker::first-letter {
+  transform: rotate(45deg);
+}
+
+.locator-empty-state {
+  display: grid;
+  justify-items: center;
+  padding: 52px 18px;
+  text-align: center;
+}
+
+.locator-empty-state > span {
+  font-size: 42px;
+}
+
+.locator-empty-state h3 {
+  margin: 12px 0 6px;
+}
+
+.locator-detail-card {
+  display: grid;
+  gap: 20px;
+}
+
+.locator-selection-prompt {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 13px 16px;
+  color: var(--muted);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: 0 8px 20px var(--shadow);
+}
+
+.locator-selection-prompt span {
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.locator-selection-prompt strong {
+  color: var(--text);
+  font-size: 13px;
+}
+
+.locator-detail-heading-actions {
+  display: grid;
+  gap: 8px;
+  min-width: 170px;
+}
+
+.locator-detail-photo {
+  width: 100%;
+  max-height: 390px;
+  object-fit: cover;
+  border-radius: 13px;
+  border: 1px solid var(--border);
+}
+
+.locator-directions-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.locator-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.locator-detail-grid > div {
+  display: grid;
+  gap: 6px;
+  padding: 14px;
+  background: var(--surface-alt);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+
+.locator-detail-grid span {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 750;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+}
+
+.locator-notes {
+  margin: 0;
+  color: var(--text);
+  line-height: 1.6;
+}
+
+.locator-detail-actions,
+.locator-review-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 14px;
+}
+
+.locator-detail-actions a,
+.locator-text-button,
+.locator-review-actions button {
+  padding: 0;
+  color: var(--sport-blue-deep, #1d5679);
+  background: transparent;
+  border: 0;
+  text-decoration: underline;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.locator-na {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 650;
+}
+
+.locator-report-button,
+.locator-review-actions button:last-child,
+.locator-delete-button {
+  color: var(--red);
+}
+
+.locator-edit-button {
+  color: var(--sport-blue-deep, #1d5679);
+}
+
+.locator-review-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+  gap: 22px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border);
+}
+
+.locator-review-form {
+  display: grid;
+  align-content: start;
+  gap: 12px;
+}
+
+.locator-review-form h4,
+.locator-community-reviews h4,
+.locator-moderation-panel h4 {
+  margin: 0 0 6px;
+}
+
+.locator-review-form small,
+.locator-community-reviews > p,
+.locator-moderation-panel > p {
+  color: var(--muted);
+}
+
+.locator-community-reviews {
+  display: grid;
+  align-content: start;
+  gap: 11px;
+}
+
+.locator-review {
+  padding: 14px;
+  background: var(--surface-alt);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+
+.locator-review > div:first-child {
+  display: flex;
+  justify-content: space-between;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.locator-review h5 {
+  margin: 9px 0 4px;
+  color: var(--text);
+  font-size: 14px;
+}
+
+.locator-review p {
+  margin: 5px 0 10px;
+  color: var(--text);
+  line-height: 1.45;
+}
+
+.locator-report-form {
+  border-color: color-mix(in srgb, var(--red) 25%, var(--border));
+}
+
+.locator-form-actions {
+  justify-content: flex-start;
+}
+
+.locator-pending-panel,
+.locator-moderation-panel {
+  display: grid;
+  gap: 13px;
+}
+
+.locator-moderation-panel h4 {
+  margin-top: 12px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+
+.locator-moderation-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 13px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.locator-moderation-copy {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.locator-moderation-photo {
+  width: 88px;
+  height: 66px;
+  flex: 0 0 auto;
+  object-fit: cover;
+  border-radius: 9px;
+  border: 1px solid var(--border);
+}
+
+.locator-moderation-row span {
+  color: var(--muted);
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+
+.locator-moderation-row > div:last-child {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.locator-approve-button,
+.locator-reject-button,
+.locator-edit-management-button,
+.locator-delete-management-button {
+  padding: 8px 11px;
+  border: 1px solid;
+}
+
+.locator-approve-button {
+  color: var(--green);
+  background: var(--green-light);
+  border-color: color-mix(in srgb, var(--green) 30%, transparent);
+}
+
+.locator-reject-button {
+  color: var(--red);
+  background: var(--red-light);
+  border-color: color-mix(in srgb, var(--red) 30%, transparent);
+}
+
+.locator-edit-management-button {
+  color: var(--sport-blue-deep, #1d5679);
+  background: var(--blue-soft);
+  border-color: color-mix(in srgb, var(--sport-blue, #168fd3) 30%, transparent);
+}
+
+.locator-delete-management-button {
+  color: var(--red);
+  background: transparent;
+  border-color: color-mix(in srgb, var(--red) 35%, transparent);
+}
+
+.locator-pending-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 9px;
+}
+
+@media (max-width: 860px) {
+  .locator-map-panel,
+  .locator-map {
+    min-height: 380px;
+  }
+
+  .locator-review-grid,
+  .locator-detail-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 620px) {
+  .table-locator-page {
+    gap: 17px;
+  }
+
+  .locator-heading-row,
+  .locator-section-heading,
+  .locator-detail-heading,
+  .locator-toolbar,
+  .locator-coordinate-box {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .locator-add-button,
+  .locator-toolbar button,
+  .locator-directions-link {
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .locator-photo-picker {
+    grid-template-columns: 1fr;
+  }
+
+  .locator-photo-picker img {
+    width: 100%;
+    height: 190px;
+    grid-row: auto;
+  }
+
+  .locator-photo-picker label,
+  .locator-photo-picker .secondary-button,
+  .locator-detail-heading-actions,
+  .locator-detail-heading-actions button {
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .locator-selection-prompt {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .locator-pin-actions,
+  .locator-pin-actions button {
+    width: 100%;
+  }
+
+  .locator-pin-map {
+    height: 270px;
+  }
+
+  .locator-form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .locator-loading,
+  .locator-submission-form,
+  .locator-detail-card,
+  .locator-report-form,
+  .locator-pending-panel,
+  .locator-moderation-panel {
+    padding: 18px;
+  }
+
+  .locator-layout {
+    min-height: 0;
+  }
+
+  .locator-results-list {
+    grid-template-columns: 1fr;
+  }
+
+  .locator-map-panel,
+  .locator-map {
+    min-height: 320px;
+  }
+
+  .locator-moderation-row {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .locator-moderation-row > div:last-child,
+  .locator-moderation-row > button {
+    width: 100%;
+  }
+
+  .locator-pending-actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .locator-moderation-row > div:last-child button {
+    flex: 1;
+  }
+}
+
+/* iOS glass treatment: keep glass on controls and grouped surfaces while the
+   map remains visually crisp and readable. */
+@media (max-width: 800px) {
+  .locator-submission-form input,
+  .locator-submission-form select,
+  .locator-submission-form textarea,
+  .locator-report-form select,
+  .locator-report-form textarea,
+  .locator-review-form input,
+  .locator-review-form select,
+  .locator-review-form textarea,
+  .locator-search input {
+    font-size: 16px;
+  }
+
+  .locator-address-suggestions {
+    border-color: var(--ios-glass-border);
+    border-radius: 16px;
+    background: var(--surface);
+    box-shadow: 0 18px 38px var(--ios-glass-shadow);
+  }
+
+  .locator-address-suggestions button {
+    min-height: 54px;
+    background: transparent;
+  }
+
+  .locator-kicker {
+    color: var(--ios-accent-strong) !important;
+  }
+
+  .locator-loading,
+  .locator-submission-form,
+  .locator-detail-card,
+  .locator-report-form,
+  .locator-pending-panel,
+  .locator-moderation-panel,
+  .locator-toolbar {
+    border-color: var(--ios-glass-border);
+    border-radius: 22px;
+    background: var(--ios-glass);
+    box-shadow:
+      0 16px 38px var(--ios-glass-shadow),
+      inset 0 1px 0 rgba(255, 255, 255, 0.22);
+    -webkit-backdrop-filter: saturate(155%) blur(22px);
+    backdrop-filter: saturate(155%) blur(22px);
+  }
+
+  .locator-layout {
+    border-color: var(--ios-glass-border);
+    border-radius: 24px;
+    box-shadow: 0 18px 42px var(--ios-glass-shadow);
+  }
+
+  .locator-coordinate-box {
+    border-color: rgba(111, 152, 180, 0.22);
+    border-radius: 18px;
+    background: rgba(170, 200, 223, 0.2);
+  }
+
+  .locator-pin-map-shell {
+    border-color: var(--ios-glass-border);
+    border-radius: 18px;
+  }
+
+  .locator-alert {
+    border-radius: 16px;
+  }
+
+  .locator-approve-button,
+  .locator-reject-button,
+  .locator-directions-link {
+    min-height: 42px;
+    border-radius: 14px;
+  }
+}

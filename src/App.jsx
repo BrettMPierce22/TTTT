@@ -1,8 +1,28 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import "./App.css";
+import tableTalkMark from "./assets/table-talk-mark.png";
 import { supabase } from "./lib/supabaseClient";
 
-const APP_URL = `${window.location.origin}${import.meta.env.BASE_URL}`;
+const TableLocator = lazy(() =>
+  import("./features/table-locator/TableLocator")
+);
+const TournamentCenter = lazy(() =>
+  import("./features/tournaments/TournamentCenter")
+);
+const ChatCenter = lazy(() => import("./features/chat/ChatCenter"));
+
+// Authentication emails must open a real HTTPS page. A Capacitor build runs
+// from capacitor://localhost, which is not a valid email callback URL.
+const APP_URL =
+  import.meta.env.VITE_APP_URL || "https://tabletalktabletennis.com";
+
+function BrandMark({ className = "" }) {
+  return (
+    <span className={`brand-mark-shell ${className}`.trim()} aria-hidden="true">
+      <img src={tableTalkMark} alt="" />
+    </span>
+  );
+}
 
 function AppIcon({ name, size = 18, className = "" }) {
   const common = {
@@ -33,6 +53,12 @@ function AppIcon({ name, size = 18, className = "" }) {
         <path d="M9 21v-7h6v7" />
       </svg>
     ),
+    location: (
+      <svg {...common}>
+        <path d="M20 10c0 5-8 11-8 11S4 15 4 10a8 8 0 1 1 16 0Z" />
+        <circle cx="12" cy="10" r="2.5" />
+      </svg>
+    ),
     trophy: (
       <svg {...common}>
         <path d="M8 4h8v4.5a4 4 0 0 1-8 0V4Z" />
@@ -41,6 +67,14 @@ function AppIcon({ name, size = 18, className = "" }) {
         <path d="M12 12.5V17" />
         <path d="M8 21h8" />
         <path d="M9.5 17h5" />
+      </svg>
+    ),
+    bracket: (
+      <svg {...common}>
+        <rect x="3" y="3" width="6" height="5" rx="1" />
+        <rect x="3" y="16" width="6" height="5" rx="1" />
+        <rect x="15" y="9.5" width="6" height="5" rx="1" />
+        <path d="M9 5.5h3v6.5h3M9 18.5h3V12" />
       </svg>
     ),
     plus: (
@@ -1456,14 +1490,15 @@ function App() {
 
   const [themeSaving, setThemeSaving] = useState(false);
 
-  const [chatMessages, setChatMessages] = useState([]);
-  const [chatDraft, setChatDraft] = useState("");
-  const [chatLoading, setChatLoading] = useState(false);
-  const [chatSending, setChatSending] = useState(false);
   const [chatUnread, setChatUnread] = useState(0);
+  const [chatOpenRequest, setChatOpenRequest] = useState(0);
 
-  const chatEndRef = useRef(null);
   const activeTabRef = useRef(activeTab);
+  const mobileHeaderMenuRef = useRef(null);
+
+  function closeMobileHeaderMenu() {
+    mobileHeaderMenuRef.current?.removeAttribute("open");
+  }
 
   useEffect(() => {
     document.documentElement.dataset.theme = themeMode;
@@ -1472,22 +1507,29 @@ function App() {
 
   useEffect(() => {
     activeTabRef.current = activeTab;
-
-    if (activeTab === "chat") {
-      setChatUnread(0);
-    }
   }, [activeTab]);
 
   useEffect(() => {
-    if (activeTab === "chat" && chatMessages.length > 0) {
-      window.setTimeout(() => {
-        chatEndRef.current?.scrollIntoView({
-          behavior: "smooth",
-          block: "end",
-        });
-      }, 40);
+    function handleDocumentPointerDown(event) {
+      const menu = mobileHeaderMenuRef.current;
+
+      if (menu?.open && !menu.contains(event.target)) {
+        closeMobileHeaderMenu();
+      }
     }
-  }, [activeTab, chatMessages.length]);
+
+    function handleScroll() {
+      closeMobileHeaderMenu();
+    }
+
+    document.addEventListener("pointerdown", handleDocumentPointerDown);
+    window.addEventListener("scroll", handleScroll, true);
+
+    return () => {
+      document.removeEventListener("pointerdown", handleDocumentPointerDown);
+      window.removeEventListener("scroll", handleScroll, true);
+    };
+  }, []);
 
   useEffect(() => {
     let mounted = true;
@@ -1629,12 +1671,8 @@ if (
 
   useEffect(() => {
     if (!league?.id || !currentPlayer?.id) {
-      setChatMessages([]);
-      setChatUnread(0);
       return;
     }
-
-    loadChatMessages(league.id).catch(console.error);
 
     const channel = supabase
       .channel(`league-chat-${league.id}`)
@@ -1647,26 +1685,12 @@ if (
           filter: `league_id=eq.${league.id}`,
         },
         (payload) => {
-          loadChatMessages(league.id).catch(console.error);
-
           if (
             payload.new?.player_id !== currentPlayer.id &&
             activeTabRef.current !== "chat"
           ) {
             setChatUnread((count) => count + 1);
           }
-        }
-      )
-      .on(
-        "postgres_changes",
-        {
-          event: "DELETE",
-          schema: "public",
-          table: "league_messages",
-          filter: `league_id=eq.${league.id}`,
-        },
-        () => {
-          loadChatMessages(league.id).catch(console.error);
         }
       )
       .subscribe();
@@ -1721,8 +1745,6 @@ if (
     setEditingMatch(null);
     setSelectedMatch(null);
     setPerformanceRange("all");
-    setChatMessages([]);
-    setChatDraft("");
     setChatUnread(0);
     setActiveTab("leaderboard");
   }
@@ -1827,109 +1849,6 @@ if (
       );
     } finally {
       setThemeSaving(false);
-    }
-  }
-
-  async function loadChatMessages(leagueId = league?.id) {
-    if (!leagueId) return [];
-
-    try {
-      setChatLoading(true);
-
-      const { data, error } = await supabase
-        .from("league_messages")
-        .select(`
-          id,
-          league_id,
-          player_id,
-          message,
-          created_at,
-          player:players (
-            id,
-            name,
-            avatar_url,
-            is_active
-          )
-        `)
-        .eq("league_id", leagueId)
-        .order("created_at", { ascending: true })
-        .limit(150);
-
-      if (error) throw error;
-
-      const list = data || [];
-      setChatMessages(list);
-      return list;
-    } catch (error) {
-      console.error(error);
-      return [];
-    } finally {
-      setChatLoading(false);
-    }
-  }
-
-  async function sendChatMessage(event) {
-    event?.preventDefault?.();
-
-    if (!league?.id || !currentPlayer?.id) return;
-
-    const cleanMessage = chatDraft.trim();
-
-    if (!cleanMessage) return;
-
-    if (cleanMessage.length > 500) {
-      alert("Messages must be 500 characters or fewer.");
-      return;
-    }
-
-    try {
-      setChatSending(true);
-
-      const { error } = await supabase.rpc(
-        "send_league_message",
-        {
-          p_league_id: league.id,
-          p_message: cleanMessage,
-        }
-      );
-
-      if (error) throw error;
-
-      setChatDraft("");
-      await loadChatMessages(league.id);
-    } catch (error) {
-      console.error(error);
-      alert(
-        error.message || "Could not send your message."
-      );
-    } finally {
-      setChatSending(false);
-    }
-  }
-
-  async function deleteChatMessage(messageId) {
-    if (!messageId) return;
-
-    const confirmed = window.confirm(
-      "Delete this chat message?"
-    );
-
-    if (!confirmed) return;
-
-    try {
-      const { error } = await supabase.rpc(
-        "delete_league_message",
-        { p_message_id: messageId }
-      );
-
-      if (error) throw error;
-
-      await loadChatMessages(league?.id);
-    } catch (error) {
-      console.error(error);
-      alert(
-        error.message || "Could not delete this message."
-      );
     }
   }
 
@@ -2675,6 +2594,8 @@ if (
   }
 
   async function signOut() {
+    closeMobileHeaderMenu();
+
     const confirmed =
       window.confirm(
         "Sign out of Table Talk Table Tennis?"
@@ -2921,6 +2842,7 @@ if (
   }
 
   function goToMyLeagues() {
+    closeMobileHeaderMenu();
     resetLeagueState();
     setHubMode("list");
     setErrorMessage("");
@@ -3343,8 +3265,14 @@ if (
   }
 
   function changeTab(tab) {
+    closeMobileHeaderMenu();
     setErrorMessage("");
     setActiveTab(tab);
+
+    if (tab === "chat") {
+      setChatUnread(0);
+      setChatOpenRequest((request) => request + 1);
+    }
 
     if (tab === "record") {
       setRecordMode("mine");
@@ -4524,6 +4452,8 @@ if (
   }
 
   async function copyLeagueCode() {
+    closeMobileHeaderMenu();
+
     if (
       !league?.join_code
     ) {
@@ -4674,7 +4604,7 @@ if (
     return (
       <div className="loading-screen">
         <div className="loading-logo">
-          <AppIcon name="paddle" size={48} />
+          <BrandMark className="brand-mark-large" />
         </div>
 
         <h1>
@@ -4695,9 +4625,7 @@ if (
       <div className="auth-page">
         <div className="auth-shell">
           <div className="auth-brand">
-            <div className="auth-icon">
-              <AppIcon name="paddle" size={48} />
-            </div>
+            <BrandMark className="auth-icon" />
 
             <h1>
               Table Talk Table Tennis
@@ -4798,9 +4726,7 @@ if (
       <div className="auth-page">
         <div className="auth-shell">
           <div className="auth-brand">
-            <div className="auth-icon">
-              <AppIcon name="paddle" size={48} />
-            </div>
+            <BrandMark className="auth-icon" />
 
             <h1>
               Table Talk Table Tennis
@@ -5135,9 +5061,7 @@ if (
         <header className="hub-header">
           <div className="hub-header-inner">
             <div className="brand-area">
-              <div className="brand-ball brand-icon">
-                <AppIcon name="paddle" size={32} />
-              </div>
+              <BrandMark className="brand-icon" />
 
               <div>
                 <h1>
@@ -5694,9 +5618,7 @@ if (
                 alt=""
               />
             ) : (
-              <div className="brand-ball brand-icon">
-                <AppIcon name="paddle" size={32} />
-              </div>
+              <BrandMark className="brand-icon" />
             )}
 
             <div>
@@ -5736,7 +5658,7 @@ if (
             </button>
           </div>
 
-          <details className="mobile-header-menu">
+          <details ref={mobileHeaderMenuRef} className="mobile-header-menu">
             <summary aria-label="Open league menu">
               <AppIcon name="more" size={22} />
             </summary>
@@ -5757,6 +5679,14 @@ if (
                 <AppIcon name="copy" size={17} />
                 <span>Copy League Code</span>
                 <strong>{league.join_code}</strong>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => changeTab("tournaments")}
+              >
+                <AppIcon name="bracket" size={17} />
+                <span>Tournaments</span>
               </button>
 
               <button
@@ -5794,6 +5724,13 @@ if (
             }
           >
             <AppIcon name="trophy" size={17} /> Leaderboard
+          </button>
+
+          <button
+            className={activeTab === "tournaments" ? "nav-active" : ""}
+            onClick={() => changeTab("tournaments")}
+          >
+            <AppIcon name="bracket" size={17} /> Tournaments
           </button>
 
           <button
@@ -5881,6 +5818,13 @@ if (
           </button>
 
           <button
+            className={activeTab === "tables" ? "nav-active" : ""}
+            onClick={() => changeTab("tables")}
+          >
+            <AppIcon name="location" size={17} /> Find Tables
+          </button>
+
+          <button
             className={activeTab === "chat" ? "nav-active" : ""}
             onClick={() => changeTab("chat")}
           >
@@ -5935,7 +5879,13 @@ if (
           activeTab !==
             "profile" &&
           activeTab !==
-            "leaderboard" && (
+            "leaderboard" &&
+          activeTab !==
+            "tables" &&
+          activeTab !==
+            "tournaments" &&
+          activeTab !==
+            "chat" && (
             <div className="league-description">
               {
                 league.description
@@ -6427,6 +6377,23 @@ if (
               </div>
             )}
           </>
+        )}
+
+        {activeTab === "tables" && (
+          <Suspense fallback={<div className="card">Loading table map…</div>}>
+            <TableLocator userId={user?.id} />
+          </Suspense>
+        )}
+
+        {activeTab === "tournaments" && (
+          <Suspense fallback={<div className="card">Loading tournaments…</div>}>
+            <TournamentCenter
+              league={league}
+              currentPlayer={currentPlayer}
+              players={activeStandings}
+              isAdmin={isAdmin}
+            />
+          </Suspense>
         )}
 
         {activeTab ===
@@ -7696,122 +7663,15 @@ if (
         )}
 
         {activeTab === "chat" && (
-          <>
-            <div className="page-heading-row chat-page-heading">
-              <div>
-                <p className="season-label">LEAGUE</p>
-                <h2>Welcome to the Locker Room</h2>
-                <p>
-                  A private conversation for active members of {league.name}.
-                </p>
-              </div>
-            </div>
-
-            <div className="card chat-card">
-              <div className="chat-card-header">
-                <div>
-                  <strong>{league.name}</strong>
-                  <span>{activePlayers.length} active players</span>
-                </div>
-                <div className="chat-live-pill">
-                  <span className="chat-live-dot" />
-                  Live
-                </div>
-              </div>
-
-              <div className="chat-message-list">
-                {chatLoading && chatMessages.length === 0 ? (
-                  <div className="chat-empty-state">Loading chat...</div>
-                ) : chatMessages.length === 0 ? (
-                  <div className="chat-empty-state">
-                    <AppIcon name="chat" size={34} />
-                    <h3>Start the conversation</h3>
-                    <p>No messages have been sent in this league yet.</p>
-                  </div>
-                ) : (
-                  chatMessages.map((item) => {
-                    const isMine = item.player_id === currentPlayer?.id;
-                    const canDelete = isMine || isAdmin;
-                    const messagePlayer = item.player || {
-                      name: "Player",
-                      avatar_url: null,
-                    };
-
-                    return (
-                      <div
-                        className={`chat-message-row ${isMine ? "chat-message-mine" : ""}`}
-                        key={item.id}
-                      >
-                        <PlayerAvatar player={messagePlayer} size="small" />
-
-                        <div className="chat-message-content">
-                          <div className="chat-message-meta">
-                            <strong>{messagePlayer.name || "Player"}</strong>
-                            <span>
-                              {new Date(item.created_at).toLocaleString([], {
-                                month: "short",
-                                day: "numeric",
-                                hour: "numeric",
-                                minute: "2-digit",
-                              })}
-                            </span>
-                          </div>
-
-                          <div className="chat-message-bubble">
-                            <p>{item.message}</p>
-                            {canDelete && (
-                              <button
-                                type="button"
-                                className="chat-delete-button"
-                                onClick={() => deleteChatMessage(item.id)}
-                              >
-                                Delete
-                              </button>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })
-                )}
-                <div ref={chatEndRef} />
-              </div>
-
-              <form className="chat-composer" onSubmit={sendChatMessage}>
-                <textarea
-                  rows="2"
-                  maxLength="500"
-                  value={chatDraft}
-                  onChange={(event) => setChatDraft(event.target.value)}
-                  onKeyDown={(event) => {
-                    if (event.key === "Enter" && !event.shiftKey) {
-                      event.preventDefault();
-                      if (!chatSending && chatDraft.trim()) {
-                        sendChatMessage(event);
-                      }
-                    }
-                  }}
-                  placeholder="Message the league..."
-                />
-
-                <div className="chat-composer-footer">
-                  <div>
-                    <span>{chatDraft.length}/500</span>
-                    <small>
-                      Profanity is automatically masked before a message is saved.
-                    </small>
-                  </div>
-
-                  <button
-                    className="primary-button chat-send-button"
-                    disabled={chatSending || !chatDraft.trim()}
-                  >
-                    {chatSending ? "Sending..." : "Send"}
-                  </button>
-                </div>
-              </form>
-            </div>
-          </>
+          <Suspense fallback={<div className="card">Loading chat…</div>}>
+            <ChatCenter
+              league={league}
+              currentPlayer={currentPlayer}
+              players={players}
+              isAdmin={isAdmin}
+              resetSignal={chatOpenRequest}
+            />
+          </Suspense>
         )}
 
         {activeTab ===
@@ -8171,11 +8031,11 @@ if (
         </button>
 
         <button
-          className={activeTab === "history" ? "mobile-nav-active" : ""}
-          onClick={() => changeTab("history")}
+          className={activeTab === "tables" ? "mobile-nav-active" : ""}
+          onClick={() => changeTab("tables")}
         >
-          <AppIcon name="history" size={20} />
-          <small>Matches</small>
+          <AppIcon name="location" size={20} />
+          <small>Tables</small>
         </button>
 
         <button
