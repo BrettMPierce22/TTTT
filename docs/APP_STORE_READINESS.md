@@ -30,8 +30,9 @@ requirements can be reviewed together.
 - Deploy and test the included `delete-account` Edge Function with disposable
   accounts. The in-app flow removes the Auth user and associated content while
   anonymizing player history.
-- Publish a privacy policy, terms of use, community standards, and support
-  contact page.
+- Deploy and verify the included public privacy policy, terms of use,
+  community standards, and support contact pages. Confirm
+  `VITE_SUPPORT_EMAIL` points to a monitored mailbox.
 - Document the moderation response process and test it with realistic reports.
 - Add an admin report queue for chat reports before public release, and verify
   that the published support contact can receive urgent safety reports.
@@ -57,3 +58,12 @@ requirements can be reviewed together.
 - Confirm moderator membership is limited to trusted accounts.
 - Confirm reports receive a documented, timely response.
 - Confirm all public links use HTTPS.
+
+## App Store Connect URLs
+
+After deploying the website, verify these pages while signed out:
+
+- Privacy Policy URL: `https://tabletalktabletennis.com/#/legal/privacy`
+- Support URL: `https://tabletalktabletennis.com/#/legal/support`
+- Privacy choices and account deletion are described on the privacy and support
+  pages and are available in-app under **My Leagues → My Profile**.

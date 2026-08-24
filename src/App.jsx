@@ -10,17 +10,45 @@ const TournamentCenter = lazy(() =>
   import("./features/tournaments/TournamentCenter")
 );
 const ChatCenter = lazy(() => import("./features/chat/ChatCenter"));
+const LegalCenter = lazy(() => import("./features/legal/LegalCenter"));
 
 // Authentication emails must open a real HTTPS page. A Capacitor build runs
 // from capacitor://localhost, which is not a valid email callback URL.
 const APP_URL =
   import.meta.env.VITE_APP_URL || "https://tabletalktabletennis.com";
+const SUPPORT_EMAIL =
+  import.meta.env.VITE_SUPPORT_EMAIL || "support@tabletalktabletennis.com";
+const LEGAL_PAGE_KEYS = new Set(["privacy", "terms", "community", "support"]);
+
+function getLegalPageFromHash() {
+  const page = window.location.hash.replace(/^#\/?(?:legal\/)?/, "");
+  return LEGAL_PAGE_KEYS.has(page) ? page : null;
+}
 
 function BrandMark({ className = "" }) {
   return (
     <span className={`brand-mark-shell ${className}`.trim()} aria-hidden="true">
       <img src={tableTalkMark} alt="" />
     </span>
+  );
+}
+
+function LegalLinks({ onNavigate }) {
+  return (
+    <div className="legal-links">
+      <button type="button" onClick={() => onNavigate("privacy")}>
+        Privacy
+      </button>
+      <button type="button" onClick={() => onNavigate("terms")}>
+        Terms
+      </button>
+      <button type="button" onClick={() => onNavigate("community")}>
+        Community
+      </button>
+      <button type="button" onClick={() => onNavigate("support")}>
+        Support
+      </button>
+    </div>
   );
 }
 
@@ -1274,6 +1302,9 @@ function App() {
   const [hubMode, setHubMode] =
     useState("list");
 
+  const [legalPage, setLegalPage] =
+    useState(getLegalPageFromHash);
+
   const [league, setLeague] =
     useState(null);
 
@@ -1506,10 +1537,38 @@ function App() {
     mobileHeaderMenuRef.current?.removeAttribute("open");
   }
 
+  function openLegalPage(page) {
+    if (!LEGAL_PAGE_KEYS.has(page)) return;
+    closeMobileHeaderMenu();
+    window.location.hash = `/legal/${page}`;
+    setLegalPage(page);
+    window.scrollTo({ top: 0, behavior: "auto" });
+  }
+
+  function closeLegalPage() {
+    window.history.replaceState(
+      null,
+      "",
+      `${window.location.pathname}${window.location.search}`
+    );
+    setLegalPage(null);
+    window.scrollTo({ top: 0, behavior: "auto" });
+  }
+
   useEffect(() => {
     document.documentElement.dataset.theme = themeMode;
     window.localStorage.setItem("tttt_theme", themeMode);
   }, [themeMode]);
+
+  useEffect(() => {
+    function handleHashChange() {
+      setLegalPage(getLegalPageFromHash());
+      window.scrollTo({ top: 0, behavior: "auto" });
+    }
+
+    window.addEventListener("hashchange", handleHashChange);
+    return () => window.removeEventListener("hashchange", handleHashChange);
+  }, []);
 
   useEffect(() => {
     activeTabRef.current = activeTab;
@@ -4695,6 +4754,28 @@ if (
     );
   }
 
+  if (legalPage) {
+    return (
+      <Suspense
+        fallback={
+          <div className="loading-screen">
+            <div className="loading-logo">
+              <BrandMark className="brand-mark-large" />
+            </div>
+            <p>Loading policy…</p>
+          </div>
+        }
+      >
+        <LegalCenter
+          page={legalPage}
+          supportEmail={SUPPORT_EMAIL}
+          onNavigate={openLegalPage}
+          onClose={closeLegalPage}
+        />
+      </Suspense>
+    );
+  }
+
   if (
     authMode === "reset"
   ) {
@@ -5047,6 +5128,18 @@ if (
                     ? "Creating..."
                     : "Create Account"}
                 </button>
+
+                <p className="auth-terms-copy">
+                  By creating an account, you agree to our{" "}
+                  <button type="button" onClick={() => openLegalPage("terms")}>
+                    Terms of Use
+                  </button>{" "}
+                  and{" "}
+                  <button type="button" onClick={() => openLegalPage("community")}>
+                    Community Guidelines
+                  </button>
+                  .
+                </p>
               </form>
             )}
 
@@ -5127,6 +5220,8 @@ if (
               </form>
             )}
           </div>
+
+          <LegalLinks onNavigate={openLegalPage} />
         </div>
       </div>
     );
@@ -5675,6 +5770,18 @@ if (
                 </button>
               </div>
 
+              <div className="account-legal-card">
+                <div>
+                  <p className="season-label">SAFETY & LEGAL</p>
+                  <h3>Policies and Support</h3>
+                  <p>
+                    Review your privacy choices, community rules, or contact
+                    Table Talk Support.
+                  </p>
+                </div>
+                <LegalLinks onNavigate={openLegalPage} />
+              </div>
+
               <div className="account-deletion-card">
                 <div>
                   <p className="season-label">DANGER ZONE</p>
@@ -5846,6 +5953,14 @@ if (
               >
                 <AppIcon name="bracket" size={17} />
                 <span>Tournaments</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => openLegalPage("support")}
+              >
+                <AppIcon name="settings" size={17} />
+                <span>Support & Safety</span>
               </button>
 
               <button

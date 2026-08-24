@@ -89,3 +89,17 @@ The function performs its own server-side JWT verification, and
 `supabase/config.toml` disables only Supabase's legacy gateway check so modern
 publishable-key sessions work. Never place the Supabase service-role key in the
 React app or any `VITE_` environment variable.
+
+## Public safety, legal, and support pages
+
+The app includes public pages that work before or after login:
+
+- `/#/legal/privacy`
+- `/#/legal/terms`
+- `/#/legal/community`
+- `/#/legal/support`
+
+Set `VITE_SUPPORT_EMAIL` to a monitored mailbox before release. Use the
+deployed privacy URL for App Store Connect's required Privacy Policy URL and
+the support page for the app-version Support URL. Verify both URLs in a signed
+out browser before submitting a build.
