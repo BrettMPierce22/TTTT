@@ -4,20 +4,30 @@
 }
 
 :root {
-  --navy: #172033;
-  --navy-light: #2c374d;
-  --navy-hover: #394762;
-  --active-tab: #dbeafe;
-  --active-tab-text: #172033;
+  --sport-blue: #168fd3;
+  --sport-blue-mid: #237db2;
+  --sport-blue-deep: #1d5679;
+  --header-blue-start: #4b8caf;
+  --header-blue-mid: #3d7898;
+  --header-blue-end: #315f79;
+  --sport-navy: #143246;
+  --sport-mint: #66c7a7;
+  --sport-mint-soft: rgba(102, 199, 167, 0.18);
+  --sport-score: #ec805d;
+  --navy: var(--sport-navy);
+  --navy-light: #24516b;
+  --navy-hover: #2d6b8d;
+  --active-tab: #d9effb;
+  --active-tab-text: #143246;
   --background: #f4f6f8;
   --text: #172033;
   --muted: #6e7890;
   --border: #e1e5eb;
   --soft: #e8ecf2;
-  --green: #15803d;
-  --green-light: #dcfce7;
-  --red: #b42318;
-  --red-light: #fee4e2;
+  --green: #2f8b6c;
+  --green-light: #dff5ed;
+  --red: #c66548;
+  --red-light: #fde9e2;
   --blue-soft: #eef5ff;
   --surface: #ffffff;
   --surface-alt: #fafbfc;
@@ -28,20 +38,20 @@
 
 :root[data-theme="dark"] {
   color-scheme: dark;
-  --navy: #0b111d;
-  --navy-light: #1a2434;
-  --navy-hover: #253248;
-  --active-tab: #253753;
+  --navy: #091720;
+  --navy-light: #182d3b;
+  --navy-hover: #25485d;
+  --active-tab: #22465d;
   --active-tab-text: #f3f7fd;
   --background: #0d131d;
   --text: #edf2f8;
   --muted: #9da9bb;
   --border: #2d3747;
   --soft: #1b2432;
-  --green: #63d68a;
-  --green-light: #153624;
-  --red: #ff8a82;
-  --red-light: #3c1c1d;
+  --green: #78d8b7;
+  --green-light: #12392e;
+  --red: #f09a7c;
+  --red-light: #42251f;
   --blue-soft: #17283d;
   --surface: #151d29;
   --surface-alt: #111925;
@@ -58,7 +68,12 @@
 
 header,
 .hub-header {
-  background: var(--navy);
+  background: linear-gradient(
+    135deg,
+    var(--header-blue-start) 0%,
+    var(--header-blue-mid) 52%,
+    var(--header-blue-end) 100%
+  );
   color: white;
   padding: calc(28px + env(safe-area-inset-top)) 40px 28px;
 }
@@ -3873,31 +3888,28 @@ th {
    ========================================================= */
 
 :root {
-  --ios-accent: #6f98b4;
-  --ios-accent-strong: #3c5466;
+  --ios-accent: var(--sport-blue);
+  --ios-accent-strong: var(--sport-blue-deep);
   --ios-canvas: #f4f1e9;
   --ios-glass: rgba(252, 250, 246, 0.73);
   --ios-glass-strong: rgba(252, 250, 246, 0.89);
   --ios-glass-border: rgba(255, 255, 255, 0.76);
   --ios-glass-shadow: rgba(49, 69, 83, 0.17);
-  --ios-glow: rgba(111, 152, 180, 0.24);
-  --sport-mint: #8fbfae;
-  --sport-mint-soft: rgba(143, 191, 174, 0.18);
-  --sport-score: #d38b6d;
+  --ios-glow: rgba(22, 143, 211, 0.27);
 }
 
 :root[data-theme="dark"] {
-  --ios-accent: #aac8df;
-  --ios-accent-strong: #7da5bf;
-  --ios-canvas: #10181e;
+  --ios-accent: #96ccec;
+  --ios-accent-strong: #5e9fc6;
+  --ios-canvas: #0c171f;
   --ios-glass: rgba(24, 35, 43, 0.72);
   --ios-glass-strong: rgba(26, 38, 47, 0.9);
   --ios-glass-border: rgba(255, 255, 255, 0.13);
   --ios-glass-shadow: rgba(0, 0, 0, 0.48);
-  --ios-glow: rgba(125, 165, 191, 0.22);
-  --sport-mint: #9ed8c3;
-  --sport-mint-soft: rgba(158, 216, 195, 0.14);
-  --sport-score: #e39a78;
+  --ios-glow: rgba(94, 159, 198, 0.24);
+  --sport-mint: #93ddc4;
+  --sport-mint-soft: rgba(147, 221, 196, 0.14);
+  --sport-score: #f0a083;
 }
 
 @media (max-width: 800px) {
@@ -3907,15 +3919,24 @@ th {
 
   body {
     -webkit-tap-highlight-color: transparent;
+    max-width: 100%;
+    overflow-x: hidden;
     overscroll-behavior-y: none;
+  }
+
+  #root,
+  .app,
+  .league-hub-page {
+    max-width: 100%;
+    overflow-x: clip;
   }
 
   .app,
   .league-hub-page {
     min-height: 100dvh;
     background:
-      radial-gradient(circle at 12% 4%, rgba(170, 200, 223, 0.34), transparent 34%),
-      radial-gradient(circle at 94% 22%, rgba(169, 187, 160, 0.22), transparent 31%),
+      radial-gradient(circle at 12% 4%, rgba(122, 205, 245, 0.3), transparent 34%),
+      radial-gradient(circle at 94% 22%, rgba(102, 199, 167, 0.2), transparent 31%),
       var(--ios-canvas);
     background-attachment: fixed;
   }
@@ -3925,12 +3946,18 @@ th {
     position: sticky;
     z-index: 8800;
     top: 0;
-    padding: calc(14px + env(safe-area-inset-top)) 18px 14px;
+    /* Capacitor can report a zero safe-area inset while the WebView overlays
+       the status bar. A fixed native inset keeps all controls below modern
+       iPhone status hardware while the gradient still fills behind it. */
+    padding: 64px 18px 14px;
     border-bottom: 1px solid rgba(255, 255, 255, 0.14);
-    background: rgba(53, 75, 91, 0.78);
-    box-shadow: 0 10px 30px rgba(4, 9, 18, 0.16);
-    -webkit-backdrop-filter: saturate(175%) blur(24px);
-    backdrop-filter: saturate(175%) blur(24px);
+    background: linear-gradient(
+      135deg,
+      var(--header-blue-start) 0%,
+      var(--header-blue-mid) 54%,
+      var(--header-blue-end) 100%
+    );
+    box-shadow: 0 10px 30px rgba(4, 35, 55, 0.22);
   }
 
   .brand-icon,
@@ -4083,10 +4110,10 @@ th {
   }
 
   .mobile-bottom-nav button.mobile-nav-active {
-    background: rgba(111, 152, 180, 0.16);
+    background: rgba(22, 143, 211, 0.15);
     color: var(--ios-accent-strong);
     box-shadow:
-      inset 0 0 0 1px rgba(111, 152, 180, 0.16),
+      inset 0 0 0 1px rgba(22, 143, 211, 0.2),
       inset 0 1px 0 rgba(255, 255, 255, 0.22);
   }
 
@@ -4129,9 +4156,9 @@ th {
       18px
       calc(30px + env(safe-area-inset-bottom));
     background:
-      radial-gradient(circle at 18% 7%, rgba(170, 200, 223, 0.5), transparent 35%),
-      radial-gradient(circle at 88% 28%, rgba(169, 187, 160, 0.22), transparent 31%),
-      linear-gradient(165deg, #3c5466 0%, #293c4a 48%, #17242d 100%);
+      radial-gradient(circle at 18% 7%, rgba(135, 210, 247, 0.42), transparent 35%),
+      radial-gradient(circle at 88% 28%, rgba(102, 199, 167, 0.2), transparent 31%),
+      linear-gradient(165deg, var(--sport-blue) 0%, var(--sport-blue-deep) 52%, var(--sport-navy) 100%);
   }
 
   .auth-card {
@@ -4794,7 +4821,7 @@ th {
 
 @media (max-width: 800px) {
   .app header {
-    padding: 14px 12px;
+    padding: 64px 12px 14px;
   }
 
   .app header .header-inner {

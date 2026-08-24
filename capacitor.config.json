@@ -4,9 +4,9 @@
   "webDir": "dist",
   "plugins": {
     "StatusBar": {
-      "overlaysWebView": false,
+      "overlaysWebView": true,
       "style": "DARK",
-      "backgroundColor": "#354b5b"
+      "backgroundColor": "#4b8caf"
     }
   }
 }

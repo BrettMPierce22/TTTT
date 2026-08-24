@@ -1,7 +1,7 @@
 # Table Talk Table Tennis
 
 Table Talk Table Tennis is a React/Vite league hub for rankings, matches,
-players, rivalries, chat, and community table discovery. The same application
+players, tournaments, league/direct chat, rivalries, and community table discovery. The same application
 can be deployed to the web or packaged as an iPhone app with Capacitor.
 
 ## Local development
@@ -63,3 +63,17 @@ browser location request is initiated only after the user taps a location
 button; the device position is not stored as a separate record.
 
 See `docs/APP_STORE_READINESS.md` before shipping the iOS build.
+
+## Tournament and direct-chat setup
+
+Apply these migrations in filename order after the table-locator migration:
+
+1. `supabase/migrations/202608240001_tournaments.sql`
+2. `supabase/migrations/202608240002_direct_messages.sql`
+
+The tournament migration adds league-scoped single-elimination,
+double-elimination, and round-robin events with organizer/admin permissions.
+The direct-message migration keeps one-to-one conversations private to their
+two active league players and adds reporting and blocking controls.
+
+See `docs/TOURNAMENTS_AND_CHAT.md` for the feature and release-test checklist.

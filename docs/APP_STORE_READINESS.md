@@ -21,6 +21,9 @@ requirements can be reviewed together.
 - The iOS project includes a clear location-while-in-use purpose string.
 - The layout accounts for iPhone safe areas around the status area and bottom
   navigation.
+- League and direct chat include message reporting, player blocking, and basic
+  server-side profanity masking.
+- Direct conversations are visible only to their two active league players.
 
 ## Required before App Store submission
 
@@ -29,6 +32,8 @@ requirements can be reviewed together.
 - Publish a privacy policy, terms of use, community standards, and support
   contact page.
 - Document the moderation response process and test it with realistic reports.
+- Add an admin report queue for chat reports before public release, and verify
+  that the published support contact can receive urgent safety reports.
 - Add a camera or photo-library purpose string before introducing any feature
   that requests those permissions.
 - Complete App Store privacy disclosures for Supabase, maps, location, photos,

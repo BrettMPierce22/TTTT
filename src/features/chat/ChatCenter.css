@@ -1,0 +1,345 @@
+.chat-center {
+  --chat-blue: var(--sport-blue, #168fd3);
+  --chat-blue-strong: var(--sport-blue-deep, #1d5679);
+  --chat-mint: var(--sport-mint, #66c7a7);
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  display: grid;
+  gap: 12px;
+}
+
+.chat-topbar {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 14px;
+  border: 1px solid var(--ios-glass-border, var(--border));
+  border-radius: 19px;
+  background: var(--ios-glass, var(--surface));
+  box-shadow: 0 12px 28px rgba(19, 38, 52, 0.12);
+  backdrop-filter: blur(20px);
+}
+
+.chat-mode-tabs {
+  display: inline-flex;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 14px;
+  background: var(--surface-alt);
+}
+
+.chat-mode-tabs button {
+  padding: 9px 12px;
+  border-radius: 11px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 850;
+}
+
+.chat-mode-tabs button.chat-mode-active {
+  background: linear-gradient(145deg, var(--chat-blue), var(--chat-blue-strong));
+  color: white;
+  box-shadow: 0 7px 16px rgba(22, 143, 211, 0.24);
+}
+
+.chat-topbar-title {
+  min-width: 0;
+}
+
+.chat-topbar-title strong,
+.chat-topbar-title span {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chat-topbar-title strong {
+  font-size: 14px;
+}
+
+.chat-topbar-title span {
+  margin-top: 2px;
+  color: var(--muted);
+  font-size: 10px;
+}
+
+.chat-block-button {
+  padding: 8px 10px;
+  border: 1px solid rgba(238, 139, 104, 0.36);
+  border-radius: 11px;
+  background: rgba(238, 139, 104, 0.1);
+  color: #b85e42;
+  font-size: 9px;
+  font-weight: 850;
+}
+
+.direct-chat-alert {
+  padding: 10px 13px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 750;
+}
+
+.direct-chat-error {
+  background: rgba(238, 139, 104, 0.13);
+  color: #b85e42;
+}
+
+.direct-chat-notice {
+  background: rgba(120, 201, 173, 0.13);
+  color: #347a63;
+}
+
+.chat-workspace {
+  min-width: 0;
+}
+
+.chat-workspace-direct {
+  display: grid;
+  grid-template-columns: minmax(205px, 0.28fr) minmax(0, 1fr);
+  gap: 12px;
+  align-items: stretch;
+}
+
+.direct-chat-sidebar {
+  max-height: min(66vh, 720px);
+  padding: 15px 10px;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: var(--surface);
+  overflow-y: auto;
+}
+
+.direct-chat-sidebar > .season-label {
+  margin: 0 7px 8px;
+}
+
+.direct-player-label {
+  margin-top: 20px !important;
+}
+
+.direct-conversation-list,
+.direct-player-list {
+  display: grid;
+  gap: 4px;
+}
+
+.direct-conversation-list button,
+.direct-player-list button {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  min-width: 0;
+  padding: 8px;
+  border-radius: 12px;
+  background: transparent;
+  color: var(--text);
+  text-align: left;
+}
+
+.direct-conversation-list button:hover,
+.direct-player-list button:hover,
+.direct-conversation-list button.direct-conversation-active {
+  background: rgba(22, 143, 211, 0.12);
+}
+
+.direct-conversation-list button.direct-conversation-active {
+  box-shadow: inset 3px 0 0 var(--chat-blue);
+}
+
+.direct-conversation-list button > span:not(.direct-chat-avatar) {
+  min-width: 0;
+}
+
+.direct-conversation-list strong,
+.direct-conversation-list small {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.direct-conversation-list strong,
+.direct-player-list span {
+  font-size: 11px;
+}
+
+.direct-conversation-list small {
+  margin-top: 2px;
+  color: var(--muted);
+  font-size: 8px;
+}
+
+.direct-player-list b {
+  color: var(--chat-blue-strong);
+  font-size: 17px;
+}
+
+.direct-chat-avatar {
+  display: grid;
+  flex: 0 0 auto;
+  width: 32px;
+  height: 32px;
+  place-items: center;
+  overflow: hidden;
+  border: 1px solid rgba(22, 143, 211, 0.3);
+  border-radius: 50%;
+  background: linear-gradient(145deg, #e2f4fc, #addcf2);
+  color: #27465a;
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.direct-chat-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.chat-card-raised {
+  min-width: 0;
+  border-top: 2px solid rgba(22, 143, 211, 0.64);
+}
+
+.direct-chat-empty-icon {
+  font-size: 32px;
+}
+
+.direct-chat-prompt {
+  min-height: min(58vh, 590px);
+}
+
+.direct-chat-message-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 7px;
+}
+
+.direct-chat-message-actions:empty {
+  display: none;
+}
+
+.direct-chat-message-actions button {
+  padding: 0;
+  background: transparent;
+  color: var(--muted);
+  font-size: 8px;
+  font-weight: 750;
+}
+
+.chat-message-mine .direct-chat-message-actions {
+  justify-content: flex-end;
+}
+
+.chat-message-mine .direct-chat-message-actions button {
+  color: #cbdbe5;
+}
+
+:root[data-theme="dark"] .chat-block-button,
+:root[data-theme="dark"] .direct-chat-error {
+  color: #ffc0a9;
+}
+
+:root[data-theme="dark"] .direct-chat-notice {
+  color: #a6e0cc;
+}
+
+@media (max-width: 800px) {
+  .chat-center {
+    margin-top: -8px;
+  }
+
+  .chat-topbar {
+    position: sticky;
+    z-index: 40;
+    top: 132px;
+    grid-template-columns: 1fr auto;
+    gap: 9px;
+    padding: 8px;
+    border-radius: 17px;
+  }
+
+  .chat-mode-tabs {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    width: 100%;
+  }
+
+  .chat-topbar-title {
+    padding: 2px 6px 4px;
+  }
+
+  .chat-workspace-direct {
+    width: 100%;
+    min-width: 0;
+    grid-template-columns: 1fr;
+  }
+
+  .direct-chat-sidebar {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    max-height: none;
+    padding: 10px;
+    overflow: hidden;
+    box-sizing: border-box;
+  }
+
+  .direct-conversation-list,
+  .direct-player-list {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px;
+    width: 100%;
+    min-width: 0;
+    overflow: hidden;
+  }
+
+  .direct-conversation-list button,
+  .direct-player-list button {
+    width: 100%;
+    min-width: 0;
+    padding: 8px 7px;
+  }
+
+  .direct-player-list span {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .chat-card-raised {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+
+  .chat-message-list {
+    height: 52vh;
+    min-height: 300px;
+  }
+}
+
+@media (max-width: 520px) {
+  .chat-topbar-title span {
+    max-width: 240px;
+  }
+
+  .direct-chat-sidebar {
+    border-radius: 16px;
+  }
+
+  .direct-conversation-list,
+  .direct-player-list {
+    grid-template-columns: 1fr;
+  }
+}

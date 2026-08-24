@@ -36,7 +36,7 @@
 
 .locator-kicker {
   margin: 0;
-  color: #2563eb !important;
+  color: var(--sport-blue, #168fd3) !important;
   font-size: 11px;
   font-weight: 850;
   letter-spacing: 0.12em;
@@ -238,7 +238,7 @@
 .locator-result-card:hover,
 .locator-result-card-selected {
   background: var(--blue-soft);
-  border-color: #7aa7e8;
+  border-color: var(--sport-blue, #168fd3);
 }
 
 .locator-result-card p {
@@ -255,7 +255,7 @@
 
 .locator-result-card-topline > span {
   white-space: nowrap;
-  color: #2563eb;
+  color: var(--sport-blue-deep, #1d5679);
   font-size: 12px;
   font-weight: 750;
 }
@@ -298,7 +298,7 @@
   place-items: center;
   width: 38px;
   height: 38px;
-  background: #172033;
+  background: var(--sport-navy, #143246);
   border: 3px solid white;
   border-radius: 13px 13px 13px 3px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.26);
@@ -378,7 +378,7 @@
 .locator-text-button,
 .locator-review-actions button {
   padding: 0;
-  color: #2563eb;
+  color: var(--sport-blue-deep, #1d5679);
   background: transparent;
   border: 0;
   text-decoration: underline;
