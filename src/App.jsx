@@ -2,6 +2,14 @@ import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import "./App.css";
 import tableTalkMark from "./assets/table-talk-mark.png";
 import { supabase } from "./lib/supabaseClient";
+import {
+  NATIVE_TAB_NAMES,
+  canUseNativeShell,
+  listenForNativeTabSelection,
+  setNativeTabBadge,
+  setNativeTabsVisible,
+  setSelectedNativeTab,
+} from "./native/nativeShell";
 
 const TableLocator = lazy(() =>
   import("./features/table-locator/TableLocator")
@@ -1537,6 +1545,7 @@ function App() {
   const [chatOpenRequest, setChatOpenRequest] = useState(0);
 
   const activeTabRef = useRef(activeTab);
+  const nativeTabHandlerRef = useRef(null);
   const mobileHeaderMenuRef = useRef(null);
 
   function closeMobileHeaderMenu() {
@@ -1579,6 +1588,59 @@ function App() {
   useEffect(() => {
     activeTabRef.current = activeTab;
   }, [activeTab]);
+
+  nativeTabHandlerRef.current = (tab) => {
+    if (!NATIVE_TAB_NAMES.includes(tab)) return;
+
+    if (tab === "profile") {
+      openMyProfile();
+    } else {
+      changeTab(tab);
+    }
+  };
+
+  useEffect(() => {
+    if (!canUseNativeShell()) return undefined;
+
+    const listener = listenForNativeTabSelection((tab) => {
+      nativeTabHandlerRef.current?.(tab);
+    });
+
+    return () => {
+      Promise.resolve(listener)
+        .then((handle) => handle.remove())
+        .catch(() => {});
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!canUseNativeShell()) return;
+
+    setNativeTabsVisible(Boolean(league) && !legalPage).catch((error) => {
+      console.warn("Could not update native tab visibility", error);
+    });
+  }, [league, legalPage]);
+
+  useEffect(() => {
+    if (!canUseNativeShell()) return;
+
+    const nativeTab =
+      activeTab === "profile" && selectedPlayerId === currentPlayer?.id
+        ? "profile"
+        : NATIVE_TAB_NAMES.includes(activeTab)
+          ? activeTab
+          : null;
+
+    if (nativeTab) {
+      setSelectedNativeTab(nativeTab).catch((error) => {
+        console.warn("Could not update the selected native tab", error);
+      });
+    }
+
+    setNativeTabBadge("chat", chatUnread).catch((error) => {
+      console.warn("Could not update the native chat badge", error);
+    });
+  }, [activeTab, chatUnread, currentPlayer?.id, selectedPlayerId]);
 
   useEffect(() => {
     function handleDocumentPointerDown(event) {

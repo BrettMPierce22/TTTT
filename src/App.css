@@ -4089,6 +4089,14 @@ th {
 }
 
 @media (max-width: 800px) {
+  :root.native-ios-shell .mobile-bottom-nav {
+    display: none !important;
+  }
+
+  :root.native-ios-shell .app main {
+    padding-bottom: calc(112px + env(safe-area-inset-bottom));
+  }
+
   html {
     background: var(--ios-canvas);
   }

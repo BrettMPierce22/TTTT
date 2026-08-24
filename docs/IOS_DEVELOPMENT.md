@@ -43,6 +43,14 @@ dependencies. Use `npm run ios:open` to reopen Xcode.
 ## Current native configuration
 
 - iOS deployment target: iOS 15
+- Navigation: a native `UITabBarController` owns the Board, Tables, Record,
+  Chat, and Me tabs. On iOS 26 and newer, UIKit renders Apple's real floating
+  Liquid Glass tab bar and minimizes it while scrolling. Earlier iOS versions
+  automatically use their standard native tab-bar appearance.
+- The React app and native tab bar communicate through the `NativeShell`
+  Capacitor plugin. Tab selection works in both directions, the Chat tab shows
+  the unread badge, and the native bar stays hidden on authentication and legal
+  screens. The web bottom bar remains the browser and non-iOS fallback.
 - Location access: requested only while the app is in use, after a user chooses
   **Near Me** or elects to use their location while adding a public table
 - Safe-area support: enabled for the iPhone status area and bottom navigation
