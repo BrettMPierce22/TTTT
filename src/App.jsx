@@ -1494,6 +1494,11 @@ function App() {
   const [chatOpenRequest, setChatOpenRequest] = useState(0);
 
   const activeTabRef = useRef(activeTab);
+  const mobileHeaderMenuRef = useRef(null);
+
+  function closeMobileHeaderMenu() {
+    mobileHeaderMenuRef.current?.removeAttribute("open");
+  }
 
   useEffect(() => {
     document.documentElement.dataset.theme = themeMode;
@@ -1503,6 +1508,28 @@ function App() {
   useEffect(() => {
     activeTabRef.current = activeTab;
   }, [activeTab]);
+
+  useEffect(() => {
+    function handleDocumentPointerDown(event) {
+      const menu = mobileHeaderMenuRef.current;
+
+      if (menu?.open && !menu.contains(event.target)) {
+        closeMobileHeaderMenu();
+      }
+    }
+
+    function handleScroll() {
+      closeMobileHeaderMenu();
+    }
+
+    document.addEventListener("pointerdown", handleDocumentPointerDown);
+    window.addEventListener("scroll", handleScroll, true);
+
+    return () => {
+      document.removeEventListener("pointerdown", handleDocumentPointerDown);
+      window.removeEventListener("scroll", handleScroll, true);
+    };
+  }, []);
 
   useEffect(() => {
     let mounted = true;
@@ -2567,6 +2594,8 @@ if (
   }
 
   async function signOut() {
+    closeMobileHeaderMenu();
+
     const confirmed =
       window.confirm(
         "Sign out of Table Talk Table Tennis?"
@@ -2813,6 +2842,7 @@ if (
   }
 
   function goToMyLeagues() {
+    closeMobileHeaderMenu();
     resetLeagueState();
     setHubMode("list");
     setErrorMessage("");
@@ -3235,6 +3265,7 @@ if (
   }
 
   function changeTab(tab) {
+    closeMobileHeaderMenu();
     setErrorMessage("");
     setActiveTab(tab);
 
@@ -4421,6 +4452,8 @@ if (
   }
 
   async function copyLeagueCode() {
+    closeMobileHeaderMenu();
+
     if (
       !league?.join_code
     ) {
@@ -5625,7 +5658,7 @@ if (
             </button>
           </div>
 
-          <details className="mobile-header-menu">
+          <details ref={mobileHeaderMenuRef} className="mobile-header-menu">
             <summary aria-label="Open league menu">
               <AppIcon name="more" size={22} />
             </summary>

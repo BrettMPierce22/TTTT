@@ -96,6 +96,64 @@
   gap: 16px;
 }
 
+.locator-address-field {
+  position: relative;
+  display: grid;
+  gap: 7px;
+  min-width: 0;
+}
+
+.locator-address-suggestions {
+  position: absolute;
+  z-index: 1100;
+  top: calc(100% + 5px);
+  right: 0;
+  left: 0;
+  overflow: hidden;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: 0 16px 34px var(--shadow);
+}
+
+.locator-address-suggestions p {
+  margin: 0;
+  padding: 13px 14px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 650;
+}
+
+.locator-address-suggestions button {
+  width: 100%;
+  display: grid;
+  gap: 3px;
+  padding: 11px 14px;
+  text-align: left;
+  color: var(--text);
+  background: var(--surface);
+  border: 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.locator-address-suggestions button:last-child {
+  border-bottom: 0;
+}
+
+.locator-address-suggestions button:hover,
+.locator-address-suggestions button:focus-visible {
+  background: var(--blue-soft);
+}
+
+.locator-address-suggestions button strong {
+  font-size: 14px;
+}
+
+.locator-address-suggestions button span {
+  color: var(--muted);
+  font-size: 12px;
+}
+
 .locator-submission-form label,
 .locator-report-form label,
 .locator-review-form label,
@@ -137,6 +195,64 @@
   width: 100%;
 }
 
+.locator-photo-picker {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px 18px;
+  padding: 16px;
+  background: var(--surface-alt);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+
+.locator-photo-picker strong {
+  display: block;
+  margin-bottom: 4px;
+}
+
+.locator-photo-picker p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.locator-photo-picker img {
+  width: 120px;
+  height: 90px;
+  grid-row: span 2;
+  object-fit: cover;
+  border-radius: 10px;
+}
+
+.locator-photo-picker label {
+  width: fit-content;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.locator-photo-picker input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  opacity: 0;
+}
+
+.locator-remove-photo {
+  width: fit-content;
+  padding: 0;
+  color: var(--red);
+  background: transparent;
+  border: 0;
+  text-decoration: underline;
+  font-size: 12px;
+  font-weight: 700;
+}
+
 .locator-coordinate-box {
   padding: 16px;
   background: var(--blue-soft);
@@ -152,6 +268,39 @@
 
 .locator-coordinate-fields {
   max-width: 620px;
+}
+
+.locator-pin-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 9px;
+}
+
+.locator-pin-map-shell {
+  overflow: hidden;
+  background: var(--surface-alt);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+}
+
+.locator-pin-map {
+  width: 100%;
+  height: 300px;
+  z-index: 0;
+}
+
+.locator-pin-map-shell > p {
+  margin: 0;
+  padding: 11px 14px;
+  color: var(--muted);
+  border-top: 1px solid var(--border);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.locator-pin-map-shell > .locator-pin-status-ready {
+  color: var(--green);
 }
 
 .locator-check-row {
@@ -193,8 +342,7 @@
 
 .locator-layout {
   display: grid;
-  grid-template-columns: minmax(260px, 0.72fr) minmax(0, 1.28fr);
-  min-height: 520px;
+  grid-template-columns: 1fr;
   overflow: hidden;
   background: var(--surface);
   border: 1px solid var(--border);
@@ -203,10 +351,14 @@
 }
 
 .locator-results {
-  max-height: 620px;
-  overflow: auto;
   padding: 14px;
-  border-right: 1px solid var(--border);
+  border-top: 1px solid var(--border);
+}
+
+.locator-results-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
 }
 
 .locator-results-count {
@@ -226,7 +378,7 @@
   width: 100%;
   display: grid;
   gap: 8px;
-  margin-bottom: 10px;
+  margin: 0;
   padding: 15px;
   text-align: left;
   color: var(--text);
@@ -280,7 +432,7 @@
 
 .locator-map-panel,
 .locator-map {
-  min-height: 520px;
+  min-height: 430px;
   width: 100%;
 }
 
@@ -330,6 +482,45 @@
   gap: 20px;
 }
 
+.locator-selection-prompt {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 13px 16px;
+  color: var(--muted);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: 0 8px 20px var(--shadow);
+}
+
+.locator-selection-prompt span {
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.locator-selection-prompt strong {
+  color: var(--text);
+  font-size: 13px;
+}
+
+.locator-detail-heading-actions {
+  display: grid;
+  gap: 8px;
+  min-width: 170px;
+}
+
+.locator-detail-photo {
+  width: 100%;
+  max-height: 390px;
+  object-fit: cover;
+  border-radius: 13px;
+  border: 1px solid var(--border);
+}
+
 .locator-directions-link {
   display: inline-flex;
   align-items: center;
@@ -371,6 +562,7 @@
 .locator-review-actions {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 14px;
 }
 
@@ -386,9 +578,20 @@
   font-weight: 700;
 }
 
+.locator-na {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 650;
+}
+
 .locator-report-button,
-.locator-review-actions button:last-child {
+.locator-review-actions button:last-child,
+.locator-delete-button {
   color: var(--red);
+}
+
+.locator-edit-button {
+  color: var(--sport-blue-deep, #1d5679);
 }
 
 .locator-review-grid {
@@ -478,10 +681,19 @@
   border-bottom: 1px solid var(--border);
 }
 
-.locator-moderation-row > div:first-child {
+.locator-moderation-copy {
   display: grid;
   gap: 4px;
   min-width: 0;
+}
+
+.locator-moderation-photo {
+  width: 88px;
+  height: 66px;
+  flex: 0 0 auto;
+  object-fit: cover;
+  border-radius: 9px;
+  border: 1px solid var(--border);
 }
 
 .locator-moderation-row span {
@@ -492,11 +704,14 @@
 
 .locator-moderation-row > div:last-child {
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
 }
 
 .locator-approve-button,
-.locator-reject-button {
+.locator-reject-button,
+.locator-edit-management-button,
+.locator-delete-management-button {
   padding: 8px 11px;
   border: 1px solid;
 }
@@ -513,17 +728,27 @@
   border-color: color-mix(in srgb, var(--red) 30%, transparent);
 }
 
+.locator-edit-management-button {
+  color: var(--sport-blue-deep, #1d5679);
+  background: var(--blue-soft);
+  border-color: color-mix(in srgb, var(--sport-blue, #168fd3) 30%, transparent);
+}
+
+.locator-delete-management-button {
+  color: var(--red);
+  background: transparent;
+  border-color: color-mix(in srgb, var(--red) 35%, transparent);
+}
+
+.locator-pending-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 9px;
+}
+
 @media (max-width: 860px) {
-  .locator-layout {
-    grid-template-columns: 1fr;
-  }
-
-  .locator-results {
-    max-height: 330px;
-    border-right: 0;
-    border-bottom: 1px solid var(--border);
-  }
-
   .locator-map-panel,
   .locator-map {
     min-height: 380px;
@@ -556,6 +781,39 @@
     box-sizing: border-box;
   }
 
+  .locator-photo-picker {
+    grid-template-columns: 1fr;
+  }
+
+  .locator-photo-picker img {
+    width: 100%;
+    height: 190px;
+    grid-row: auto;
+  }
+
+  .locator-photo-picker label,
+  .locator-photo-picker .secondary-button,
+  .locator-detail-heading-actions,
+  .locator-detail-heading-actions button {
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .locator-selection-prompt {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .locator-pin-actions,
+  .locator-pin-actions button {
+    width: 100%;
+  }
+
+  .locator-pin-map {
+    height: 270px;
+  }
+
   .locator-form-grid {
     grid-template-columns: 1fr;
   }
@@ -573,8 +831,8 @@
     min-height: 0;
   }
 
-  .locator-results {
-    max-height: 290px;
+  .locator-results-list {
+    grid-template-columns: 1fr;
   }
 
   .locator-map-panel,
@@ -592,6 +850,11 @@
     width: 100%;
   }
 
+  .locator-pending-actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
   .locator-moderation-row > div:last-child button {
     flex: 1;
   }
@@ -600,6 +863,30 @@
 /* iOS glass treatment: keep glass on controls and grouped surfaces while the
    map remains visually crisp and readable. */
 @media (max-width: 800px) {
+  .locator-submission-form input,
+  .locator-submission-form select,
+  .locator-submission-form textarea,
+  .locator-report-form select,
+  .locator-report-form textarea,
+  .locator-review-form input,
+  .locator-review-form select,
+  .locator-review-form textarea,
+  .locator-search input {
+    font-size: 16px;
+  }
+
+  .locator-address-suggestions {
+    border-color: var(--ios-glass-border);
+    border-radius: 16px;
+    background: var(--surface);
+    box-shadow: 0 18px 38px var(--ios-glass-shadow);
+  }
+
+  .locator-address-suggestions button {
+    min-height: 54px;
+    background: transparent;
+  }
+
   .locator-kicker {
     color: var(--ios-accent-strong) !important;
   }
@@ -631,6 +918,11 @@
     border-color: rgba(111, 152, 180, 0.22);
     border-radius: 18px;
     background: rgba(170, 200, 223, 0.2);
+  }
+
+  .locator-pin-map-shell {
+    border-color: var(--ios-glass-border);
+    border-radius: 18px;
   }
 
   .locator-alert {
