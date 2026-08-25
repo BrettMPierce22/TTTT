@@ -4633,6 +4633,17 @@ textarea:focus {
     display: none !important;
   }
 
+  :root.native-ios-shell.native-header-visible .app > header {
+    display: none;
+  }
+
+  :root.native-ios-shell.native-header-visible .app::before {
+    content: "";
+    display: block;
+    height: calc(80px + max(env(safe-area-inset-top), 44px));
+    pointer-events: none;
+  }
+
   :root.native-ios-shell .app main {
     padding-bottom: calc(112px + env(safe-area-inset-bottom));
   }

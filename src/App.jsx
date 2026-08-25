@@ -5,8 +5,10 @@ import { supabase } from "./lib/supabaseClient";
 import {
   NATIVE_TAB_NAMES,
   canUseNativeShell,
+  listenForNativeActionSelection,
   listenForNativeTabSelection,
   setNativeTabBadge,
+  setNativeHeaderState,
   setNativeTabsVisible,
   setSelectedNativeTab,
 } from "./native/nativeShell";
@@ -1546,6 +1548,7 @@ function App() {
 
   const activeTabRef = useRef(activeTab);
   const nativeTabHandlerRef = useRef(null);
+  const nativeActionHandlerRef = useRef(null);
   const mobileHeaderMenuRef = useRef(null);
 
   function closeMobileHeaderMenu() {
@@ -1599,27 +1602,68 @@ function App() {
     }
   };
 
+  nativeActionHandlerRef.current = (action) => {
+    if (action === "myLeagues") {
+      goToMyLeagues();
+    } else if (action === "tournaments") {
+      changeTab("tournaments");
+    } else if (action === "copyLeagueCode") {
+      copyLeagueCode();
+    } else if (action === "support") {
+      openLegalPage("support");
+    } else if (action === "moderation" && isAppModerator) {
+      changeTab("moderation");
+    } else if (action === "signOut") {
+      signOut();
+    }
+  };
+
   useEffect(() => {
     if (!canUseNativeShell()) return undefined;
 
-    const listener = listenForNativeTabSelection((tab) => {
+    const tabListener = listenForNativeTabSelection((tab) => {
       nativeTabHandlerRef.current?.(tab);
+    });
+    const actionListener = listenForNativeActionSelection((action) => {
+      nativeActionHandlerRef.current?.(action);
     });
 
     return () => {
-      Promise.resolve(listener)
-        .then((handle) => handle.remove())
-        .catch(() => {});
+      [tabListener, actionListener].forEach((listener) => {
+        Promise.resolve(listener)
+          .then((handle) => handle.remove())
+          .catch(() => {});
+      });
     };
   }, []);
 
   useEffect(() => {
     if (!canUseNativeShell()) return;
 
-    setNativeTabsVisible(Boolean(league) && !legalPage).catch((error) => {
+    const nativeChromeVisible = Boolean(league) && !legalPage;
+    document.documentElement.classList.toggle(
+      "native-header-visible",
+      nativeChromeVisible
+    );
+
+    setNativeTabsVisible(nativeChromeVisible).catch((error) => {
       console.warn("Could not update native tab visibility", error);
     });
-  }, [league, legalPage]);
+
+    setNativeHeaderState({
+      visible: nativeChromeVisible,
+      title: league?.name || "",
+      subtitle: "Table Talk Table Tennis",
+      leagueCode: league?.join_code || "",
+      showModerator: isAppModerator,
+    }).catch((error) => {
+      console.warn("Could not update the native header", error);
+    });
+
+    return () => {
+      document.documentElement.classList.remove("native-header-visible");
+    };
+  }, [isAppModerator, league, legalPage]);
 
   useEffect(() => {
     if (!canUseNativeShell()) return;
