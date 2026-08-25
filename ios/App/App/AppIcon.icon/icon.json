@@ -34,7 +34,7 @@
       },
       "translucency": {
         "enabled": true,
-        "value": 0.72
+        "value": 0.55
       }
     },
     {
@@ -54,7 +54,7 @@
       },
       "translucency": {
         "enabled": true,
-        "value": 0.72
+        "value": 0.55
       }
     }
   ],
