@@ -234,7 +234,7 @@ function TableLocator({ userId }) {
         supabase
           .from("table_locations")
           .select(
-            "id,name,address,city,region,postal_code,latitude,longitude,venue_type,access_type,indoor,table_count,hours_text,notes,website_url,photo_path,submitted_by,status,last_verified_at,created_at"
+            "id,name,address,city,region,postal_code,latitude,longitude,venue_type,access_type,indoor,table_count,hours_text,notes,website_url,photo_path,submitted_by,status,last_verified_at,source_name,source_url,created_at"
           )
           .order("created_at", { ascending: false }),
         supabase
@@ -430,6 +430,7 @@ function TableLocator({ userId }) {
             address: location.address,
             city: location.city,
             region: location.region,
+            postalCode: location.postal_code || "",
             latitude: Number(location.latitude),
             longitude: Number(location.longitude),
             venueType: location.venue_type,
@@ -437,6 +438,12 @@ function TableLocator({ userId }) {
             indoor: Boolean(location.indoor),
             tableCount: Number(location.table_count || 1),
             rating: rating ? rating.total / rating.count : null,
+            hoursText: location.hours_text || "",
+            notes: location.notes || "",
+            websiteUrl: location.website_url || "",
+            lastVerifiedAt: location.last_verified_at || "",
+            sourceName: location.source_name || "",
+            sourceUrl: location.source_url || "",
           };
         }),
         selectedLocationId: selectedLocationId || undefined,

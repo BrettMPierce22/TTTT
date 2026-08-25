@@ -9,6 +9,7 @@ private struct AppleTableLocation {
     let address: String
     let city: String
     let region: String
+    let postalCode: String
     let latitude: Double
     let longitude: Double
     let venueType: String
@@ -16,6 +17,12 @@ private struct AppleTableLocation {
     let indoor: Bool
     let tableCount: Int
     let rating: Double?
+    let hoursText: String
+    let notes: String
+    let websiteURL: String
+    let lastVerifiedAt: String
+    let sourceName: String
+    let sourceURL: String
 
     init?(object: JSObject) {
         func string(_ key: String) -> String {
@@ -42,6 +49,7 @@ private struct AppleTableLocation {
         address = string("address")
         city = string("city")
         region = string("region")
+        postalCode = string("postalCode")
         self.latitude = latitude
         self.longitude = longitude
         venueType = string("venueType")
@@ -49,6 +57,12 @@ private struct AppleTableLocation {
         indoor = object["indoor"] as? Bool ?? false
         tableCount = (object["tableCount"] as? NSNumber)?.intValue ?? 1
         rating = number("rating")
+        hoursText = string("hoursText")
+        notes = string("notes")
+        websiteURL = string("websiteUrl")
+        lastVerifiedAt = string("lastVerifiedAt")
+        sourceName = string("sourceName")
+        sourceURL = string("sourceUrl")
     }
 
     var coordinate: CLLocationCoordinate2D {
@@ -60,7 +74,8 @@ private struct AppleTableLocation {
     }
 
     var fullAddress: String {
-        [address, locality].filter { !$0.isEmpty }.joined(separator: ", ")
+        let regionAndPostal = [region, postalCode].filter { !$0.isEmpty }.joined(separator: " ")
+        return [address, city, regionAndPostal].filter { !$0.isEmpty }.joined(separator: ", ")
     }
 
     var venueLabel: String {
@@ -81,6 +96,208 @@ private struct AppleTableLocation {
         case "members": return "Members only"
         default: return "Access unknown"
         }
+    }
+}
+
+private final class AppleTableDetailsViewController: UIViewController {
+    private let location: AppleTableLocation
+
+    init(location: AppleTableLocation) {
+        self.location = location
+        super.init(nibName: nil, bundle: nil)
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        title = "Table Details"
+        view.backgroundColor = .systemGroupedBackground
+
+        navigationItem.rightBarButtonItem = UIBarButtonItem(
+            title: "Directions",
+            style: .done,
+            target: self,
+            action: #selector(openDirections)
+        )
+
+        let scrollView = UIScrollView()
+        scrollView.translatesAutoresizingMaskIntoConstraints = false
+        scrollView.alwaysBounceVertical = true
+        view.addSubview(scrollView)
+
+        let contentStack = UIStackView()
+        contentStack.translatesAutoresizingMaskIntoConstraints = false
+        contentStack.axis = .vertical
+        contentStack.spacing = 16
+        scrollView.addSubview(contentStack)
+
+        let titleLabel = UILabel()
+        titleLabel.font = .preferredFont(forTextStyle: .title2)
+        titleLabel.adjustsFontForContentSizeCategory = true
+        titleLabel.numberOfLines = 0
+        titleLabel.text = location.name
+
+        let addressLabel = UILabel()
+        addressLabel.font = .preferredFont(forTextStyle: .subheadline)
+        addressLabel.adjustsFontForContentSizeCategory = true
+        addressLabel.textColor = .secondaryLabel
+        addressLabel.numberOfLines = 0
+        addressLabel.text = display(location.fullAddress)
+
+        let heroStack = UIStackView(arrangedSubviews: [titleLabel, addressLabel])
+        heroStack.axis = .vertical
+        heroStack.spacing = 6
+        contentStack.addArrangedSubview(makeGlassCard(content: heroStack, padding: 18))
+
+        contentStack.addArrangedSubview(makeSection(
+            title: "TABLE INFORMATION",
+            rows: [
+                ("Venue", location.venueLabel),
+                ("Access", location.accessLabel),
+                ("Setting", location.indoor ? "Indoor" : "Outdoor"),
+                ("Tables", String(location.tableCount)),
+                ("Community rating", location.rating.map { String(format: "%.1f / 5", $0) } ?? "Not rated yet"),
+            ]
+        ))
+
+        contentStack.addArrangedSubview(makeSection(
+            title: "ADDITIONAL DETAILS",
+            rows: [
+                ("Hours", display(location.hoursText)),
+                ("Last verified", formattedVerificationDate()),
+                ("Website", display(location.websiteURL)),
+                ("Notes", display(location.notes)),
+            ]
+        ))
+
+        if location.sourceName == "openstreetmap" {
+            let sourceButton = UIButton(type: .system)
+            var configuration = UIButton.Configuration.plain()
+            configuration.title = "View source on OpenStreetMap"
+            configuration.image = UIImage(systemName: "arrow.up.right.square")
+            configuration.imagePadding = 7
+            sourceButton.configuration = configuration
+            sourceButton.contentHorizontalAlignment = .leading
+            sourceButton.addTarget(self, action: #selector(openSource), for: .touchUpInside)
+            sourceButton.isEnabled = !location.sourceURL.isEmpty
+            contentStack.addArrangedSubview(makeGlassCard(content: sourceButton, padding: 10))
+        }
+
+        NSLayoutConstraint.activate([
+            scrollView.topAnchor.constraint(equalTo: view.topAnchor),
+            scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            scrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            scrollView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+
+            contentStack.topAnchor.constraint(equalTo: scrollView.contentLayoutGuide.topAnchor, constant: 18),
+            contentStack.leadingAnchor.constraint(equalTo: scrollView.frameLayoutGuide.leadingAnchor, constant: 16),
+            contentStack.trailingAnchor.constraint(equalTo: scrollView.frameLayoutGuide.trailingAnchor, constant: -16),
+            contentStack.bottomAnchor.constraint(equalTo: scrollView.contentLayoutGuide.bottomAnchor, constant: -28),
+        ])
+    }
+
+    private func display(_ value: String) -> String {
+        let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed.isEmpty ? "N/A" : trimmed
+    }
+
+    private func formattedVerificationDate() -> String {
+        guard !location.lastVerifiedAt.isEmpty,
+              let date = ISO8601DateFormatter().date(from: location.lastVerifiedAt) else {
+            return "N/A"
+        }
+
+        return date.formatted(date: .abbreviated, time: .omitted)
+    }
+
+    private func makeGlassCard(content: UIView, padding: CGFloat) -> UIView {
+        let effectView: UIVisualEffectView
+        if #available(iOS 26.0, *) {
+            let effect = UIGlassEffect(style: .regular)
+            effect.tintColor = UIColor.systemBackground.withAlphaComponent(0.08)
+            effectView = UIVisualEffectView(effect: effect)
+        } else {
+            effectView = UIVisualEffectView(effect: UIBlurEffect(style: .systemMaterial))
+        }
+
+        effectView.layer.cornerRadius = 22
+        effectView.clipsToBounds = true
+        content.translatesAutoresizingMaskIntoConstraints = false
+        effectView.contentView.addSubview(content)
+
+        NSLayoutConstraint.activate([
+            content.topAnchor.constraint(equalTo: effectView.contentView.topAnchor, constant: padding),
+            content.leadingAnchor.constraint(equalTo: effectView.contentView.leadingAnchor, constant: padding),
+            content.trailingAnchor.constraint(equalTo: effectView.contentView.trailingAnchor, constant: -padding),
+            content.bottomAnchor.constraint(equalTo: effectView.contentView.bottomAnchor, constant: -padding),
+        ])
+        return effectView
+    }
+
+    private func makeSection(title: String, rows: [(String, String)]) -> UIView {
+        let stack = UIStackView()
+        stack.axis = .vertical
+        stack.spacing = 0
+
+        let titleLabel = UILabel()
+        titleLabel.font = .preferredFont(forTextStyle: .caption1)
+        titleLabel.adjustsFontForContentSizeCategory = true
+        titleLabel.textColor = .secondaryLabel
+        titleLabel.text = title
+        stack.addArrangedSubview(titleLabel)
+        stack.setCustomSpacing(10, after: titleLabel)
+
+        for (index, row) in rows.enumerated() {
+            if index > 0 {
+                let divider = UIView()
+                divider.backgroundColor = .separator
+                divider.translatesAutoresizingMaskIntoConstraints = false
+                divider.heightAnchor.constraint(equalToConstant: 0.5).isActive = true
+                stack.addArrangedSubview(divider)
+            }
+
+            let label = UILabel()
+            label.font = .preferredFont(forTextStyle: .subheadline)
+            label.adjustsFontForContentSizeCategory = true
+            label.textColor = .secondaryLabel
+            label.text = row.0
+            label.setContentHuggingPriority(.required, for: .horizontal)
+
+            let value = UILabel()
+            value.font = .preferredFont(forTextStyle: .body)
+            value.adjustsFontForContentSizeCategory = true
+            value.textAlignment = .right
+            value.numberOfLines = 0
+            value.text = row.1
+            value.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+
+            let rowStack = UIStackView(arrangedSubviews: [label, value])
+            rowStack.axis = .horizontal
+            rowStack.alignment = .firstBaseline
+            rowStack.spacing = 12
+            rowStack.isLayoutMarginsRelativeArrangement = true
+            rowStack.layoutMargins = UIEdgeInsets(top: 11, left: 0, bottom: 11, right: 0)
+            stack.addArrangedSubview(rowStack)
+        }
+
+        return makeGlassCard(content: stack, padding: 16)
+    }
+
+    @objc private func openDirections() {
+        let placemark = MKPlacemark(coordinate: location.coordinate)
+        let item = MKMapItem(placemark: placemark)
+        item.name = location.name
+        item.openInMaps(launchOptions: [
+            MKLaunchOptionsDirectionsModeKey: MKLaunchOptionsDirectionsModeDriving,
+        ])
+    }
+
+    @objc private func openSource() {
+        guard let url = URL(string: location.sourceURL) else { return }
+        UIApplication.shared.open(url)
     }
 }
 
@@ -518,9 +735,8 @@ private final class AppleTableMapViewController: UIViewController,
 
     @objc private func showDetails() {
         guard let selectedLocation else { return }
-        dismiss(animated: true) { [weak self] in
-            self?.onSelectLocation?(selectedLocation.id)
-        }
+        let detailsController = AppleTableDetailsViewController(location: selectedLocation)
+        navigationController?.pushViewController(detailsController, animated: true)
     }
 
     @objc private func openDirections() {
