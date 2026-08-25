@@ -4,6 +4,7 @@ import "./ModeratorQueue.css";
 
 const TYPE_LABELS = {
   location: "Table location",
+  photo_submission: "Table photo",
   review: "Table rating",
   location_report: "Location report",
   chat_report: "Chat report",
@@ -31,17 +32,65 @@ function ModeratorQueue() {
   const loadQueue = useCallback(async () => {
     setLoading(true);
     setErrorMessage("");
-    const { data, error } = await supabase.rpc("get_moderator_queue");
-    if (error) {
-      console.error("Could not load moderator queue", error);
+    const [queueResult, photoResult] = await Promise.all([
+      supabase.rpc("get_moderator_queue"),
+      supabase
+        .from("table_location_photo_submissions")
+        .select("id,location_id,photo_path,status,created_at,table_locations(name)")
+        .eq("status", "pending")
+        .order("created_at", { ascending: true }),
+    ]);
+
+    if (queueResult.error) {
+      console.error("Could not load moderator queue", queueResult.error);
       setErrorMessage(
-        error.code === "PGRST202" || error.code === "42883"
+        queueResult.error.code === "PGRST202" || queueResult.error.code === "42883"
           ? "The moderator queue migration is ready but has not been installed yet."
-          : error.message || "The moderator queue could not be loaded."
+          : queueResult.error.message || "The moderator queue could not be loaded."
       );
-    } else {
-      setItems(data || []);
     }
+
+    let photoItems = [];
+    const photoMigrationMissing = ["42P01", "PGRST205"].includes(photoResult.error?.code);
+    if (photoResult.error && !photoMigrationMissing) {
+      console.error("Could not load table photo suggestions", photoResult.error);
+      if (!queueResult.error) {
+        setErrorMessage("Table photo suggestions could not be loaded.");
+      }
+    } else if (!photoResult.error && photoResult.data?.length) {
+      const paths = photoResult.data.map((item) => item.photo_path);
+      const { data: signedPhotos, error: photoError } = await supabase.storage
+        .from("table-location-photos")
+        .createSignedUrls(paths, 900);
+
+      if (photoError) {
+        console.error("Could not preview suggested table photos", photoError);
+      }
+
+      const urlsByPath = Object.fromEntries(
+        (signedPhotos || [])
+          .filter((photo) => photo.path && photo.signedUrl)
+          .map((photo) => [photo.path, photo.signedUrl])
+      );
+
+      photoItems = photoResult.data.map((item) => ({
+        item_type: "photo_submission",
+        item_id: item.id,
+        item_status: item.status,
+        title: item.table_locations?.name || "Table photo suggestion",
+        body: null,
+        reason: null,
+        details: null,
+        created_at: item.created_at,
+        context: {
+          locationId: item.location_id,
+          photoPath: item.photo_path,
+          photoUrl: urlsByPath[item.photo_path] || null,
+        },
+      }));
+    }
+
+    setItems([...(queueResult.data || []), ...photoItems]);
     setLoading(false);
   }, []);
 
@@ -53,7 +102,7 @@ function ModeratorQueue() {
   const visibleItems = useMemo(
     () =>
       items.filter((item) => {
-        if (filter === "submissions") return ["location", "review"].includes(item.item_type);
+        if (filter === "submissions") return ["location", "photo_submission", "review"].includes(item.item_type);
         if (filter === "reports") return item.item_type.endsWith("report");
         if (filter === "chat") return item.item_type === "chat_report";
         return true;
@@ -63,7 +112,7 @@ function ModeratorQueue() {
 
   const counts = useMemo(
     () => ({
-      submissions: items.filter((item) => ["location", "review"].includes(item.item_type)).length,
+      submissions: items.filter((item) => ["location", "photo_submission", "review"].includes(item.item_type)).length,
       reports: items.filter((item) => item.item_type.endsWith("report")).length,
       chat: items.filter((item) => item.item_type === "chat_report").length,
     }),
@@ -79,12 +128,18 @@ function ModeratorQueue() {
     setSavingId(item.item_id);
     setErrorMessage("");
     setNotice("");
-    const { error } = await supabase.rpc("moderate_queue_item", {
-      p_item_type: item.item_type,
-      p_item_id: item.item_id,
-      p_action: action,
-      p_note: null,
-    });
+    const { error } = item.item_type === "photo_submission"
+      ? await supabase.rpc("moderate_table_location_photo_submission", {
+          p_submission_id: item.item_id,
+          p_action: action,
+          p_note: null,
+        })
+      : await supabase.rpc("moderate_queue_item", {
+          p_item_type: item.item_type,
+          p_item_id: item.item_id,
+          p_action: action,
+          p_note: null,
+        });
     if (error) {
       console.error("Moderation action failed", error);
       setErrorMessage(error.message || "That moderation action failed.");
@@ -136,7 +191,7 @@ function ModeratorQueue() {
       ) : (
         <div className="moderator-list">
           {visibleItems.map((item) => {
-            const isSubmission = ["location", "review"].includes(item.item_type);
+            const isSubmission = ["location", "photo_submission", "review"].includes(item.item_type);
             const busy = savingId === item.item_id;
             return (
               <article className="moderator-card" key={`${item.item_type}-${item.item_id}`}>
@@ -153,6 +208,13 @@ function ModeratorQueue() {
                 {item.reason && <p className="moderator-reason">Reason: {humanize(item.reason)}</p>}
                 {item.body && <blockquote>{item.body}</blockquote>}
                 {item.details && <p className="moderator-details">Reporter details: {item.details}</p>}
+                {item.item_type === "photo_submission" && item.context?.photoUrl && (
+                  <img
+                    className="moderator-photo-preview"
+                    src={item.context.photoUrl}
+                    alt={`Suggested photo for ${item.title}`}
+                  />
+                )}
                 {item.item_type === "review" && item.context?.rating && (
                   <p className="moderator-context">{item.context.rating} ★ at {item.context.locationName}</p>
                 )}

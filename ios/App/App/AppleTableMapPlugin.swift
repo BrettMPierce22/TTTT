@@ -101,9 +101,14 @@ private struct AppleTableLocation {
 
 private final class AppleTableDetailsViewController: UIViewController {
     private let location: AppleTableLocation
+    private let onContribution: (String, String) -> Void
 
-    init(location: AppleTableLocation) {
+    init(
+        location: AppleTableLocation,
+        onContribution: @escaping (String, String) -> Void
+    ) {
         self.location = location
+        self.onContribution = onContribution
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -172,6 +177,8 @@ private final class AppleTableDetailsViewController: UIViewController {
                 ("Notes", display(location.notes)),
             ]
         ))
+
+        contentStack.addArrangedSubview(makeContributionSection())
 
         if location.sourceName == "openstreetmap" {
             let sourceButton = UIButton(type: .system)
@@ -286,6 +293,86 @@ private final class AppleTableDetailsViewController: UIViewController {
         return makeGlassCard(content: stack, padding: 16)
     }
 
+    private func makeContributionSection() -> UIView {
+        let stack = UIStackView()
+        stack.axis = .vertical
+        stack.spacing = 10
+
+        let titleLabel = UILabel()
+        titleLabel.font = .preferredFont(forTextStyle: .caption1)
+        titleLabel.adjustsFontForContentSizeCategory = true
+        titleLabel.textColor = .secondaryLabel
+        titleLabel.text = "HELP IMPROVE THIS LISTING"
+        stack.addArrangedSubview(titleLabel)
+
+        let photoButton = makeContributionButton(
+            title: "Add Photo",
+            symbol: "camera.fill",
+            action: "photo"
+        )
+        let reviewButton = makeContributionButton(
+            title: "Write Review",
+            symbol: "star.bubble.fill",
+            action: "review"
+        )
+        let editButton = makeContributionButton(
+            title: "Suggest Edit",
+            symbol: "pencil",
+            action: "edit"
+        )
+        let reportButton = makeContributionButton(
+            title: "Report Problem",
+            symbol: "exclamationmark.bubble.fill",
+            action: "report"
+        )
+
+        let topRow = UIStackView(arrangedSubviews: [photoButton, reviewButton])
+        topRow.axis = .horizontal
+        topRow.spacing = 10
+        topRow.distribution = .fillEqually
+
+        let bottomRow = UIStackView(arrangedSubviews: [editButton, reportButton])
+        bottomRow.axis = .horizontal
+        bottomRow.spacing = 10
+        bottomRow.distribution = .fillEqually
+
+        stack.addArrangedSubview(topRow)
+        stack.addArrangedSubview(bottomRow)
+        return makeGlassCard(content: stack, padding: 14)
+    }
+
+    private func makeContributionButton(
+        title: String,
+        symbol: String,
+        action: String
+    ) -> UIButton {
+        let button = UIButton(type: .system)
+        var configuration: UIButton.Configuration
+        if #available(iOS 26.0, *) {
+            configuration = .glass()
+        } else {
+            configuration = .bordered()
+        }
+        configuration.title = title
+        configuration.image = UIImage(systemName: symbol)
+        configuration.imagePadding = 6
+        configuration.imagePlacement = .top
+        configuration.cornerStyle = .large
+        configuration.contentInsets = NSDirectionalEdgeInsets(
+            top: 11,
+            leading: 8,
+            bottom: 11,
+            trailing: 8
+        )
+        button.configuration = configuration
+        button.titleLabel?.adjustsFontForContentSizeCategory = true
+        button.addAction(UIAction { [weak self] _ in
+            guard let self else { return }
+            self.onContribution(action, self.location.id)
+        }, for: .touchUpInside)
+        return button
+    }
+
     @objc private func openDirections() {
         let placemark = MKPlacemark(coordinate: location.coordinate)
         let item = MKMapItem(placemark: placemark)
@@ -321,6 +408,7 @@ private final class AppleTableMapViewController: UIViewController,
 
     var onSelectLocation: ((String) -> Void)?
     var onAddLocation: (() -> Void)?
+    var onContribution: ((String, String) -> Void)?
 
     private let allLocations: [AppleTableLocation]
     private let initiallySelectedID: String?
@@ -737,7 +825,15 @@ private final class AppleTableMapViewController: UIViewController,
 
     @objc private func showDetails() {
         guard let selectedLocation else { return }
-        let detailsController = AppleTableDetailsViewController(location: selectedLocation)
+        let detailsController = AppleTableDetailsViewController(
+            location: selectedLocation
+        ) { [weak self] action, locationID in
+            guard let self else { return }
+            let contributionHandler = self.onContribution
+            self.dismiss(animated: true) {
+                contributionHandler?(action, locationID)
+            }
+        }
         navigationController?.pushViewController(detailsController, animated: true)
     }
 
@@ -861,6 +957,12 @@ public final class AppleTableMapPlugin: CAPPlugin, CAPBridgedPlugin {
             }
             mapController.onAddLocation = { [weak self] in
                 self?.notifyListeners("addLocationRequested", data: [:])
+            }
+            mapController.onContribution = { [weak self] action, id in
+                self?.notifyListeners(
+                    "contributionRequested",
+                    data: ["action": action, "id": id]
+                )
             }
 
             let navigationController = UINavigationController(rootViewController: mapController)

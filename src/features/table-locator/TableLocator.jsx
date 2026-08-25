@@ -21,6 +21,7 @@ import {
 import {
   canUseNativeAppleTableMap,
   onNativeAppleTableAddRequested,
+  onNativeAppleTableContributionRequested,
   onNativeAppleTableLocationSelected,
   presentNativeAppleTableMap,
 } from "../../native/appleTableMap";
@@ -199,6 +200,10 @@ function TableLocator({ userId }) {
     reason: "incorrect",
     details: "",
   });
+  const [nativeContributionAction, setNativeContributionAction] = useState(null);
+  const [photoSuggestionTarget, setPhotoSuggestionTarget] = useState(null);
+  const [photoSuggestionFile, setPhotoSuggestionFile] = useState(null);
+  const [photoSuggestionPreview, setPhotoSuggestionPreview] = useState("");
   const addressSuggestionTimerRef = useRef(null);
   const addressSuggestionRequestRef = useRef(0);
   const locationFormRef = useRef(null);
@@ -216,6 +221,13 @@ function TableLocator({ userId }) {
       if (locationPhotoPreview) URL.revokeObjectURL(locationPhotoPreview);
     },
     [locationPhotoPreview]
+  );
+
+  useEffect(
+    () => () => {
+      if (photoSuggestionPreview) URL.revokeObjectURL(photoSuggestionPreview);
+    },
+    [photoSuggestionPreview]
   );
 
   const loadLocatorData = useCallback(async () => {
@@ -488,6 +500,12 @@ function TableLocator({ userId }) {
           });
         }, 180);
       }),
+      onNativeAppleTableContributionRequested(({ action, id }) => {
+        setQuery("");
+        setQuickFilter("all");
+        setSelectedLocationId(id);
+        setNativeContributionAction({ action, id });
+      }),
     ]).then((nextHandles) => {
       if (cancelled) {
         nextHandles.forEach((handle) => handle.remove());
@@ -501,6 +519,61 @@ function TableLocator({ userId }) {
       handles.forEach((handle) => handle.remove());
     };
   }, []);
+
+  useEffect(() => {
+    if (
+      !nativeContributionAction ||
+      selectedLocation?.id !== nativeContributionAction.id
+    ) {
+      return;
+    }
+
+    const timer = window.setTimeout(() => {
+      const { action } = nativeContributionAction;
+      setNativeContributionAction(null);
+      setErrorMessage("");
+      setNotice("");
+
+      if (action === "review") {
+        window.setTimeout(() => {
+          document.querySelector(".locator-review-form")?.scrollIntoView({
+            behavior: "smooth",
+            block: "start",
+          });
+        }, 180);
+        return;
+      }
+
+      if (action === "edit" || action === "report") {
+        setReportTarget({ locationId: selectedLocation.id, reviewId: null });
+        setReportForm({
+          reason: "incorrect",
+          details: action === "edit" ? "Suggested listing update: " : "",
+        });
+        window.setTimeout(() => {
+          document.querySelector(".locator-report-form")?.scrollIntoView({
+            behavior: "smooth",
+            block: "start",
+          });
+        }, 180);
+        return;
+      }
+
+      if (action === "photo") {
+        setPhotoSuggestionTarget(selectedLocation);
+        setPhotoSuggestionFile(null);
+        setPhotoSuggestionPreview("");
+        window.setTimeout(() => {
+          document.querySelector(".locator-photo-suggestion-form")?.scrollIntoView({
+            behavior: "smooth",
+            block: "start",
+          });
+        }, 180);
+      }
+    }, 0);
+
+    return () => window.clearTimeout(timer);
+  }, [nativeContributionAction, selectedLocation]);
 
   useEffect(() => {
     if (
@@ -743,6 +816,92 @@ function TableLocator({ userId }) {
     if (editingLocation?.photo_path) {
       setRemoveExistingPhoto(true);
     }
+  }
+
+  function closePhotoSuggestion() {
+    setPhotoSuggestionTarget(null);
+    setPhotoSuggestionFile(null);
+    setPhotoSuggestionPreview("");
+  }
+
+  function handlePhotoSuggestionChange(event) {
+    const file = event.target.files?.[0] || null;
+    setErrorMessage("");
+
+    if (!file) {
+      setPhotoSuggestionFile(null);
+      setPhotoSuggestionPreview("");
+      return;
+    }
+
+    if (!TABLE_PHOTO_TYPES[file.type]) {
+      setErrorMessage("Table photos must be JPEG, PNG, or WebP files.");
+      event.target.value = "";
+      return;
+    }
+
+    if (file.size > MAX_TABLE_PHOTO_BYTES) {
+      setErrorMessage("Table photos must be smaller than 5 MB.");
+      event.target.value = "";
+      return;
+    }
+
+    setPhotoSuggestionFile(file);
+    setPhotoSuggestionPreview(URL.createObjectURL(file));
+  }
+
+  async function submitPhotoSuggestion(event) {
+    event.preventDefault();
+    if (!photoSuggestionTarget || !photoSuggestionFile) return;
+
+    setSaving(true);
+    setErrorMessage("");
+    setNotice("");
+
+    const submissionId = crypto.randomUUID();
+    const extension = TABLE_PHOTO_TYPES[photoSuggestionFile.type];
+    const photoPath = `${userId}/${photoSuggestionTarget.id}/${submissionId}.${extension}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from(TABLE_PHOTO_BUCKET)
+      .upload(photoPath, photoSuggestionFile, {
+        cacheControl: "3600",
+        contentType: photoSuggestionFile.type,
+        upsert: false,
+      });
+
+    if (uploadError) {
+      console.error("Could not upload suggested table photo", uploadError);
+      setErrorMessage("That photo could not be uploaded. Please try again.");
+      setSaving(false);
+      return;
+    }
+
+    const { error } = await supabase
+      .from("table_location_photo_submissions")
+      .insert({
+        id: submissionId,
+        location_id: photoSuggestionTarget.id,
+        contributor_id: userId,
+        photo_path: photoPath,
+        status: "pending",
+      });
+
+    if (error) {
+      console.error("Could not submit suggested table photo", error);
+      await supabase.storage.from(TABLE_PHOTO_BUCKET).remove([photoPath]);
+      setErrorMessage(
+        error.code === "42P01" || error.code === "PGRST205"
+          ? "The secure photo-approval update is prepared but still needs approval."
+          : "That photo could not be sent for review."
+      );
+      setSaving(false);
+      return;
+    }
+
+    closePhotoSuggestion();
+    setNotice("Thanks! Your photo is private while a moderator reviews it.");
+    setSaving(false);
   }
 
   function getCompleteAddress() {
@@ -1875,6 +2034,54 @@ function TableLocator({ userId }) {
             </div>
           </div>
         </article>
+      )}
+
+      {photoSuggestionTarget && (
+        <form
+          className="locator-report-form locator-photo-suggestion-form"
+          onSubmit={submitPhotoSuggestion}
+        >
+          <div>
+            <h3>Add a photo for {photoSuggestionTarget.name}</h3>
+            <p>
+              Your photo stays private until a moderator confirms it belongs to
+              this public table.
+            </p>
+          </div>
+          <div className="locator-photo-picker">
+            <div>
+              <strong>Clear table or playing-area photo</strong>
+              <p>JPEG, PNG, or WebP. Maximum size 5 MB.</p>
+            </div>
+            {photoSuggestionPreview && (
+              <img src={photoSuggestionPreview} alt="Suggested table preview" />
+            )}
+            <label className="secondary-button">
+              {photoSuggestionPreview ? "Choose a different photo" : "Choose photo"}
+              <input
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                onChange={handlePhotoSuggestionChange}
+              />
+            </label>
+          </div>
+          <div className="locator-form-actions">
+            <button
+              className="primary-button"
+              disabled={saving || !photoSuggestionFile}
+            >
+              {saving ? "Sending…" : "Send for approval"}
+            </button>
+            <button
+              type="button"
+              className="secondary-button"
+              onClick={closePhotoSuggestion}
+              disabled={saving}
+            >
+              Cancel
+            </button>
+          </div>
+        </form>
       )}
 
       {reportTarget && (

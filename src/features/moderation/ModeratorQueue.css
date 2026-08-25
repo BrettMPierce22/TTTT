@@ -18,7 +18,7 @@
 .moderator-card-heading > div { display: flex; gap: 7px; flex-wrap: wrap; }
 .moderator-card-heading time { color: var(--muted-text, #687184); font-size: .78rem; }
 .moderator-type, .moderator-reviewing { display: inline-flex; padding: 5px 8px; border-radius: 999px; font-size: .7rem; font-weight: 900; letter-spacing: .04em; text-transform: uppercase; }
-.moderator-type-location, .moderator-type-review { color: #1b5c3b; background: #dff7e8; }
+.moderator-type-location, .moderator-type-photo_submission, .moderator-type-review { color: #1b5c3b; background: #dff7e8; }
 .moderator-type-location_report, .moderator-type-chat_report { color: #8a3e00; background: #fff0d8; }
 .moderator-reviewing { color: #334f8c; background: #e7edff; }
 .moderator-card h3 { margin: 13px 0 7px; }
@@ -26,6 +26,7 @@
 .moderator-reason, .moderator-details, .moderator-context { margin: 7px 0; }
 .moderator-reason { font-weight: 800; text-transform: capitalize; }
 .moderator-details, .moderator-context { color: var(--muted-text, #687184); }
+.moderator-photo-preview { display: block; width: min(100%, 520px); max-height: 360px; margin: 13px 0; object-fit: cover; border-radius: 14px; }
 .moderator-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 15px; }
 .moderator-actions button { border: 0; border-radius: 10px; padding: 9px 13px; color: white; font: inherit; font-weight: 850; cursor: pointer; }
 .moderator-actions button:disabled { opacity: .5; cursor: wait; }
