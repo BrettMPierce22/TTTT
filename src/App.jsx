@@ -1,6 +1,7 @@
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import "./App.css";
 import tableTalkMark from "./assets/table-talk-mark.png";
+import tableTalkAppIcon from "./assets/table-talk-app-icon.png";
 import { supabase } from "./lib/supabaseClient";
 import {
   NATIVE_TAB_NAMES,
@@ -4834,7 +4835,7 @@ if (
     return (
       <div className="loading-screen">
         <div className="loading-logo">
-          <BrandMark className="brand-mark-large" />
+          <img src={tableTalkAppIcon} alt="Table Talk Table Tennis" />
         </div>
 
         <h1>
@@ -4854,7 +4855,7 @@ if (
         fallback={
           <div className="loading-screen">
             <div className="loading-logo">
-              <BrandMark className="brand-mark-large" />
+              <img src={tableTalkAppIcon} alt="Table Talk Table Tennis" />
             </div>
             <p>Loading policy…</p>
           </div>
