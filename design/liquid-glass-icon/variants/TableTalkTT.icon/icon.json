@@ -1,0 +1,63 @@
+{
+  "fill": {
+    "linear-gradient": [
+      "display-p3:0.51765,0.74118,0.89412,1.00000",
+      "display-p3:0.10196,0.32941,0.56078,1.00000"
+    ]
+  },
+  "fill-specializations": [
+    {
+      "appearance": "dark",
+      "value": {
+        "linear-gradient": [
+          "display-p3:0.04706,0.13725,0.26667,1.00000",
+          "display-p3:0.01176,0.05098,0.11765,1.00000"
+        ]
+      }
+    }
+  ],
+  "groups": [
+    {
+      "layers": [
+        {
+          "image-name": "01-dome.png",
+          "name": "Table Dome"
+        }
+      ],
+      "shadow": {
+        "kind": "neutral",
+        "opacity": 0.34
+      },
+      "translucency": {
+        "enabled": true,
+        "value": 0.38
+      }
+    },
+    {
+      "layers": [
+        {
+          "image-name": "03-right-t.png",
+          "name": "Right T"
+        },
+        {
+          "image-name": "02-left-t.png",
+          "name": "Left T"
+        }
+      ],
+      "shadow": {
+        "kind": "neutral",
+        "opacity": 0.42
+      },
+      "translucency": {
+        "enabled": true,
+        "value": 0.50
+      }
+    }
+  ],
+  "supported-platforms": {
+    "circles": [
+      "watchOS"
+    ],
+    "squares": "shared"
+  }
+}
