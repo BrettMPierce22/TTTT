@@ -3,6 +3,7 @@ import Capacitor
 class TableTalkViewController: CAPBridgeViewController {
     override open func capacitorDidLoad() {
         bridge?.registerPluginInstance(AddressGeocoderPlugin())
+        bridge?.registerPluginInstance(AppleTableMapPlugin())
 
         let nativeShell = NativeShellPlugin()
         nativeShell.shellController = parent as? TableTalkTabBarController

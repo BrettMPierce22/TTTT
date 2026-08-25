@@ -18,6 +18,12 @@ import {
   reverseGeocodeWithApple,
   suggestAddressesWithApple,
 } from "../../native/addressGeocoder";
+import {
+  canUseNativeAppleTableMap,
+  onNativeAppleTableAddRequested,
+  onNativeAppleTableLocationSelected,
+  presentNativeAppleTableMap,
+} from "../../native/appleTableMap";
 
 const DEFAULT_CENTER = [39.8283, -98.5795];
 const MAX_TABLE_PHOTO_BYTES = 5 * 1024 * 1024;
@@ -166,6 +172,7 @@ function TableLocator({ userId }) {
   const [errorMessage, setErrorMessage] = useState("");
   const [notice, setNotice] = useState("");
   const [query, setQuery] = useState("");
+  const [quickFilter, setQuickFilter] = useState("all");
   const [userPosition, setUserPosition] = useState(null);
   const [locating, setLocating] = useState(false);
   const [geocoding, setGeocoding] = useState(false);
@@ -195,6 +202,7 @@ function TableLocator({ userId }) {
   const addressSuggestionTimerRef = useRef(null);
   const addressSuggestionRequestRef = useRef(0);
   const locationFormRef = useRef(null);
+  const nativeMapLaunchAttemptedRef = useRef(false);
 
   useEffect(
     () => () => {
@@ -342,6 +350,16 @@ function TableLocator({ userId }) {
 
     return approvedLocations
       .filter((location) => {
+        if (quickFilter === "free" && location.access_type !== "free") {
+          return false;
+        }
+        if (quickFilter === "indoor" && !location.indoor) {
+          return false;
+        }
+        if (quickFilter === "outdoor" && location.indoor) {
+          return false;
+        }
+
         if (!normalizedQuery) return true;
 
         return [
@@ -363,7 +381,7 @@ function TableLocator({ userId }) {
         }
         return a.distance - b.distance;
       });
-  }, [approvedLocations, query, userPosition]);
+  }, [approvedLocations, query, quickFilter, userPosition]);
 
   const selectedLocation = useMemo(
     () =>
@@ -398,6 +416,99 @@ function TableLocator({ userId }) {
       ),
     [locations, userId]
   );
+
+  const openNativeAppleMap = useCallback(async () => {
+    if (!canUseNativeAppleTableMap()) return;
+
+    try {
+      await presentNativeAppleTableMap({
+        locations: approvedLocations.map((location) => {
+          const rating = ratingsByLocation[location.id];
+          return {
+            id: location.id,
+            name: location.name,
+            address: location.address,
+            city: location.city,
+            region: location.region,
+            latitude: Number(location.latitude),
+            longitude: Number(location.longitude),
+            venueType: location.venue_type,
+            accessType: location.access_type,
+            indoor: Boolean(location.indoor),
+            tableCount: Number(location.table_count || 1),
+            rating: rating ? rating.total / rating.count : null,
+          };
+        }),
+        selectedLocationId: selectedLocationId || undefined,
+        userLatitude: userPosition?.latitude,
+        userLongitude: userPosition?.longitude,
+      });
+    } catch (error) {
+      console.error("Could not open the native Apple map", error);
+      setErrorMessage("The Apple map could not be opened. The table list is still available below.");
+    }
+  }, [approvedLocations, ratingsByLocation, selectedLocationId, userPosition]);
+
+  useEffect(() => {
+    if (!canUseNativeAppleTableMap()) return undefined;
+
+    let cancelled = false;
+    const handles = [];
+
+    Promise.all([
+      onNativeAppleTableLocationSelected(({ id }) => {
+        setSelectedLocationId(id);
+        window.setTimeout(() => {
+          document.querySelector(".locator-detail-card")?.scrollIntoView({
+            behavior: "smooth",
+            block: "start",
+          });
+        }, 180);
+      }),
+      onNativeAppleTableAddRequested(() => {
+        setEditingLocationId(null);
+        setLocationForm(EMPTY_LOCATION_FORM);
+        setRemoveExistingPhoto(false);
+        setAddressSuggestions([]);
+        setSuggestionsAttempted(false);
+        setLocationPhoto(null);
+        setLocationPhotoPreview("");
+        setShowSubmissionForm(true);
+        window.setTimeout(() => {
+          locationFormRef.current?.scrollIntoView({
+            behavior: "smooth",
+            block: "start",
+          });
+        }, 180);
+      }),
+    ]).then((nextHandles) => {
+      if (cancelled) {
+        nextHandles.forEach((handle) => handle.remove());
+      } else {
+        handles.push(...nextHandles);
+      }
+    });
+
+    return () => {
+      cancelled = true;
+      handles.forEach((handle) => handle.remove());
+    };
+  }, []);
+
+  useEffect(() => {
+    if (
+      loading ||
+      showSubmissionForm ||
+      nativeMapLaunchAttemptedRef.current ||
+      !canUseNativeAppleTableMap()
+    ) {
+      return;
+    }
+
+    nativeMapLaunchAttemptedRef.current = true;
+    const timer = window.setTimeout(() => openNativeAppleMap(), 180);
+    return () => window.clearTimeout(timer);
+  }, [loading, openNativeAppleMap, showSubmissionForm]);
 
   function updateLocationForm(field, value) {
     const addressFields = ["address", "city", "region", "postalCode"];
@@ -1044,11 +1155,10 @@ function TableLocator({ userId }) {
     <section className="table-locator-page">
       <div className="locator-heading-row">
         <div>
-          <p className="locator-kicker">COMMUNITY TABLE MAP</p>
-          <h2>Find a Place to Play</h2>
+          <p className="locator-kicker">TABLE LOCATOR</p>
+          <h2>Find Tables</h2>
           <p>
-            Discover moderated public tables, check access details, and help the
-            community keep listings accurate.
+            Search trusted public places to play nearby.
           </p>
         </div>
 
@@ -1064,7 +1174,8 @@ function TableLocator({ userId }) {
             }
           }}
         >
-          {showSubmissionForm ? "Close form" : "+ Add a table"}
+          <span aria-hidden="true">{showSubmissionForm ? "×" : "+"}</span>
+          {showSubmissionForm ? "Close" : "Add Table"}
         </button>
       </div>
 
@@ -1422,14 +1533,45 @@ function TableLocator({ userId }) {
             enterKeyHint="search"
           />
         </label>
-        <button
-          type="button"
-          className="secondary-button"
-          onClick={() => requestUserPosition()}
-          disabled={locating}
-        >
-          {locating ? "Finding you…" : "Near me"}
-        </button>
+        <div className="locator-toolbar-actions">
+          {canUseNativeAppleTableMap() && (
+            <button
+              type="button"
+              className="primary-button locator-open-apple-map"
+              onClick={openNativeAppleMap}
+            >
+              <span aria-hidden="true">⌖</span>
+              Apple Map
+            </button>
+          )}
+          <button
+            type="button"
+            className="secondary-button"
+            onClick={() => requestUserPosition()}
+            disabled={locating}
+          >
+            {locating ? "Finding you…" : "Near me"}
+          </button>
+        </div>
+      </div>
+
+      <div className="locator-quick-filters" role="group" aria-label="Filter tables">
+        {[
+          ["all", "All"],
+          ["free", "Free"],
+          ["indoor", "Indoor"],
+          ["outdoor", "Outdoor"],
+        ].map(([value, label]) => (
+          <button
+            type="button"
+            className={quickFilter === value ? "locator-quick-filter-active" : ""}
+            aria-pressed={quickFilter === value}
+            key={value}
+            onClick={() => setQuickFilter(value)}
+          >
+            {label}
+          </button>
+        ))}
       </div>
 
       <div className="locator-layout">
