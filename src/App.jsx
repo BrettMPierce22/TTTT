@@ -5,10 +5,8 @@ import { supabase } from "./lib/supabaseClient";
 import {
   NATIVE_TAB_NAMES,
   canUseNativeShell,
-  listenForNativeActionSelection,
   listenForNativeTabSelection,
   setNativeTabBadge,
-  setNativeHeaderState,
   setNativeTabsVisible,
   setSelectedNativeTab,
 } from "./native/nativeShell";
@@ -148,6 +146,12 @@ function AppIcon({ name, size = 18, className = "" }) {
       <svg {...common}>
         <circle cx="12" cy="12" r="3" />
         <path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1-2.8 2.8-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.6V21h-4v-.1a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1L4.2 17l.1-.1a1.7 1.7 0 0 0 .3-1.9A1.7 1.7 0 0 0 3 14H3v-4h.1a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9L4.2 7 7 4.2l.1.1a1.7 1.7 0 0 0 1.9.3 1.7 1.7 0 0 0 1-1.6V3h4v.1a1.7 1.7 0 0 0 1 1.6 1.7 1.7 0 0 0 1.9-.3l.1-.1L19.8 7l-.1.1a1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0 1.6 1h.1v4H21a1.7 1.7 0 0 0-1.6 1Z" />
+      </svg>
+    ),
+    lock: (
+      <svg {...common}>
+        <rect x="5" y="10" width="14" height="11" rx="2" />
+        <path d="M8 10V7a4 4 0 0 1 8 0v3" />
       </svg>
     ),
     chat: (
@@ -1392,6 +1396,12 @@ function App() {
   const [joinCode, setJoinCode] =
     useState("");
 
+  const [leagueDirectory, setLeagueDirectory] = useState([]);
+  const [leagueAccessAvailable, setLeagueAccessAvailable] = useState(false);
+  const [directoryMessage, setDirectoryMessage] = useState("");
+  const [pendingJoinRequests, setPendingJoinRequests] = useState([]);
+  const [inviteEmail, setInviteEmail] = useState("");
+
   const [
     createName,
     setCreateName,
@@ -1406,6 +1416,8 @@ function App() {
     createLeagueCode,
     setCreateLeagueCode,
   ] = useState("");
+
+  const [createAccessType, setCreateAccessType] = useState("private");
 
   const [playerA, setPlayerA] =
     useState("");
@@ -1548,7 +1560,6 @@ function App() {
 
   const activeTabRef = useRef(activeTab);
   const nativeTabHandlerRef = useRef(null);
-  const nativeActionHandlerRef = useRef(null);
   const mobileHeaderMenuRef = useRef(null);
 
   function closeMobileHeaderMenu() {
@@ -1602,68 +1613,27 @@ function App() {
     }
   };
 
-  nativeActionHandlerRef.current = (action) => {
-    if (action === "myLeagues") {
-      goToMyLeagues();
-    } else if (action === "tournaments") {
-      changeTab("tournaments");
-    } else if (action === "copyLeagueCode") {
-      copyLeagueCode();
-    } else if (action === "support") {
-      openLegalPage("support");
-    } else if (action === "moderation" && isAppModerator) {
-      changeTab("moderation");
-    } else if (action === "signOut") {
-      signOut();
-    }
-  };
-
   useEffect(() => {
     if (!canUseNativeShell()) return undefined;
 
-    const tabListener = listenForNativeTabSelection((tab) => {
+    const listener = listenForNativeTabSelection((tab) => {
       nativeTabHandlerRef.current?.(tab);
-    });
-    const actionListener = listenForNativeActionSelection((action) => {
-      nativeActionHandlerRef.current?.(action);
     });
 
     return () => {
-      [tabListener, actionListener].forEach((listener) => {
-        Promise.resolve(listener)
-          .then((handle) => handle.remove())
-          .catch(() => {});
-      });
+      Promise.resolve(listener)
+        .then((handle) => handle.remove())
+        .catch(() => {});
     };
   }, []);
 
   useEffect(() => {
     if (!canUseNativeShell()) return;
 
-    const nativeChromeVisible = Boolean(league) && !legalPage;
-    document.documentElement.classList.toggle(
-      "native-header-visible",
-      nativeChromeVisible
-    );
-
-    setNativeTabsVisible(nativeChromeVisible).catch((error) => {
+    setNativeTabsVisible(Boolean(league) && !legalPage).catch((error) => {
       console.warn("Could not update native tab visibility", error);
     });
-
-    setNativeHeaderState({
-      visible: nativeChromeVisible,
-      title: league?.name || "",
-      subtitle: "Table Talk Table Tennis",
-      leagueCode: league?.join_code || "",
-      showModerator: isAppModerator,
-    }).catch((error) => {
-      console.warn("Could not update the native header", error);
-    });
-
-    return () => {
-      document.documentElement.classList.remove("native-header-visible");
-    };
-  }, [isAppModerator, league, legalPage]);
+  }, [league, legalPage]);
 
   useEffect(() => {
     if (!canUseNativeShell()) return;
@@ -2255,6 +2225,29 @@ if (
     return list;
   }
 
+  async function fetchLeagueDirectory() {
+    const { data, error } = await supabase.rpc("get_discoverable_leagues");
+
+    if (error) {
+      const migrationMissing =
+        error.code === "PGRST202" ||
+        error.message?.includes("get_discoverable_leagues");
+
+      if (migrationMissing) {
+        setLeagueAccessAvailable(false);
+        setLeagueDirectory([]);
+        return [];
+      }
+
+      throw error;
+    }
+
+    const directory = data || [];
+    setLeagueAccessAvailable(true);
+    setLeagueDirectory(directory);
+    return directory;
+  }
+
   async function bootstrapAuthenticatedUser(
     userId
   ) {
@@ -2263,6 +2256,8 @@ if (
 
       const list =
         await fetchMyLeagues();
+
+      await fetchLeagueDirectory();
 
       if (list.length === 0) {
         resetLeagueState();
@@ -2937,17 +2932,19 @@ if (
         data: newLeagueId,
         error,
       } = await supabase.rpc(
-        "create_league_v2",
-        {
-          p_league_name:
-            cleanLeagueName,
-
-          p_join_code:
-            cleanCode,
-
-          p_player_name:
-            cleanPlayerName,
-        }
+        leagueAccessAvailable ? "create_league_v3" : "create_league_v2",
+        leagueAccessAvailable
+          ? {
+              p_league_name: cleanLeagueName,
+              p_join_code: cleanCode,
+              p_player_name: cleanPlayerName,
+              p_access_type: createAccessType,
+            }
+          : {
+              p_league_name: cleanLeagueName,
+              p_join_code: cleanCode,
+              p_player_name: cleanPlayerName,
+            }
       );
 
       if (error) throw error;
@@ -2955,9 +2952,12 @@ if (
       setCreateLeagueName("");
       setCreateLeagueCode("");
       setCreateName("");
+      setCreateAccessType("private");
 
       const list =
         await fetchMyLeagues();
+
+      await fetchLeagueDirectory();
 
       const membership =
         list.find(
@@ -3021,10 +3021,12 @@ if (
       }
 
       const {
-        data: playerId,
+        data: joinResult,
         error,
       } = await supabase.rpc(
-        "join_league_v2",
+        leagueAccessAvailable
+          ? "request_or_join_league_by_code"
+          : "join_league_v2",
         {
           p_join_code:
             cleanCode,
@@ -3035,6 +3037,24 @@ if (
       );
 
       if (error) throw error;
+
+      const outcome = leagueAccessAvailable
+        ? (Array.isArray(joinResult) ? joinResult[0] : joinResult)
+        : null;
+
+      if (outcome?.result === "pending") {
+        setJoinCode("");
+        setDirectoryMessage(
+          "Your request is pending league admin approval."
+        );
+        setHubMode("list");
+        await fetchLeagueDirectory();
+        return;
+      }
+
+      const playerId = leagueAccessAvailable
+        ? outcome?.player_id
+        : joinResult;
 
       setJoinName("");
       setJoinCode("");
@@ -3065,6 +3085,129 @@ if (
         error.message ||
           "Could not join the league."
       );
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function joinDirectoryLeague(directoryLeague) {
+    const playerName = accountProfile?.display_name?.trim() || "";
+
+    if (!playerName) {
+      setHubMode("profile");
+      setErrorMessage("Add your player name before joining a league.");
+      return;
+    }
+
+    try {
+      setSaving(true);
+      setErrorMessage("");
+      setDirectoryMessage("");
+
+      const { data, error } = await supabase.rpc("request_or_join_league", {
+        p_league_id: directoryLeague.league_id,
+        p_player_name: playerName,
+      });
+
+      if (error) throw error;
+
+      const outcome = Array.isArray(data) ? data[0] : data;
+
+      if (outcome?.result === "pending") {
+        setDirectoryMessage(
+          `Your request to join ${directoryLeague.league_name} is pending admin approval.`
+        );
+        await fetchLeagueDirectory();
+        return;
+      }
+
+      const list = await fetchMyLeagues();
+      await fetchLeagueDirectory();
+
+      const membership = list.find(
+        (item) => item.player_id === outcome?.player_id
+      );
+
+      if (membership) {
+        await syncAccountProfileToPlayer(membership.player_id);
+        await openLeague(membership.league_id, user.id, list);
+      }
+    } catch (error) {
+      console.error(error);
+      setErrorMessage(error.message || "Could not join that league.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function fetchPendingLeagueJoinRequests() {
+    if (!leagueAccessAvailable || !league?.id || !isAdmin) {
+      setPendingJoinRequests([]);
+      return;
+    }
+
+    const { data, error } = await supabase.rpc(
+      "get_pending_league_join_requests",
+      { p_league_id: league.id }
+    );
+
+    if (error) throw error;
+    setPendingJoinRequests(data || []);
+  }
+
+  async function reviewLeagueJoinRequest(requestId, approve) {
+    try {
+      setSaving(true);
+      setErrorMessage("");
+      const { error } = await supabase.rpc("review_league_join_request", {
+        p_request_id: requestId,
+        p_approve: approve,
+      });
+      if (error) throw error;
+      await fetchPendingLeagueJoinRequests();
+      await fetchLeagueDirectory();
+    } catch (error) {
+      console.error(error);
+      setErrorMessage(error.message || "Could not review that request.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function changeLeagueAccessType(accessType) {
+    try {
+      setSaving(true);
+      setErrorMessage("");
+      const { error } = await supabase.rpc("update_league_access_type", {
+        p_league_id: league.id,
+        p_access_type: accessType,
+      });
+      if (error) throw error;
+      await fetchLeagueDirectory();
+    } catch (error) {
+      console.error(error);
+      setErrorMessage(error.message || "Could not update league access.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function sendLeagueInvitation(event) {
+    event.preventDefault();
+
+    try {
+      setSaving(true);
+      setErrorMessage("");
+      const { error } = await supabase.rpc("invite_to_league", {
+        p_league_id: league.id,
+        p_email: inviteEmail,
+      });
+      if (error) throw error;
+      setInviteEmail("");
+      setDirectoryMessage("Invitation ready. It will appear for that account.");
+    } catch (error) {
+      console.error(error);
+      setErrorMessage(error.message || "Could not create that invitation.");
     } finally {
       setSaving(false);
     }
@@ -3120,6 +3263,12 @@ if (
     resetLeagueState();
     setHubMode("list");
     setErrorMessage("");
+    setDirectoryMessage("");
+
+    fetchLeagueDirectory().catch((error) => {
+      console.error(error);
+      setErrorMessage(error.message || "Could not refresh available leagues.");
+    });
 
     window.scrollTo({
       top: 0,
@@ -3196,6 +3345,14 @@ if (
     currentPlayer?.member_role ===
       "admin" &&
     currentPlayer?.is_active;
+
+  const currentLeagueDirectoryEntry = leagueDirectory.find(
+    (item) => item.league_id === league?.id
+  );
+
+  const availableLeagueDirectory = leagueDirectory.filter(
+    (item) => !item.is_member
+  );
 
   const selectedPlayer =
     players.find(
@@ -3555,6 +3712,13 @@ if (
       );
       setPlayerB("");
       resetScores();
+    }
+
+    if (tab === "admin" && leagueAccessAvailable && isAdmin) {
+      fetchPendingLeagueJoinRequests().catch((error) => {
+        console.error(error);
+        setErrorMessage(error.message || "Could not load pending join requests.");
+      });
     }
 
     if (tab !== "leaderboard") {
@@ -5565,6 +5729,98 @@ if (
                 </div>
               )}
 
+              {leagueAccessAvailable && (
+                <section className="league-directory-section">
+                  <div className="league-directory-heading">
+                    <div>
+                      <p className="season-label">DISCOVER</p>
+                      <h2>Available Leagues</h2>
+                    </div>
+                    <p>Public leagues join instantly. Private leagues require admin approval.</p>
+                  </div>
+
+                  {availableLeagueDirectory.length > 0 ? (
+                    <div className="league-directory-grid">
+                      {availableLeagueDirectory.map((directoryLeague) => {
+                        const isPending = directoryLeague.request_status === "pending";
+                        const isApproved = directoryLeague.request_status === "approved";
+                        const isLocked =
+                          directoryLeague.access_type === "invite_only" &&
+                          !directoryLeague.has_invitation;
+                        const accessLabel =
+                          directoryLeague.access_type === "public"
+                            ? "Public"
+                            : directoryLeague.access_type === "private"
+                              ? "Private"
+                              : "Invite only";
+
+                        return (
+                          <article
+                            className="league-directory-card"
+                            key={directoryLeague.league_id}
+                          >
+                            <div className="league-directory-card-top">
+                              {directoryLeague.logo_url ? (
+                                <img
+                                  className="hub-league-logo"
+                                  src={directoryLeague.logo_url}
+                                  alt=""
+                                />
+                              ) : (
+                                <div className="hub-league-fallback">
+                                  <AppIcon name="paddle" size={28} />
+                                </div>
+                              )}
+                              <span
+                                className={`league-access-pill league-access-${directoryLeague.access_type}`}
+                              >
+                                {isLocked && <AppIcon name="lock" size={13} />}
+                                {accessLabel}
+                              </span>
+                            </div>
+
+                            <h3>{directoryLeague.league_name}</h3>
+                            {directoryLeague.league_description && (
+                              <p>{directoryLeague.league_description}</p>
+                            )}
+                            <small>
+                              {directoryLeague.active_player_count || 0} active players
+                            </small>
+
+                            <button
+                              type="button"
+                              className="primary-button"
+                              disabled={saving || isPending || isLocked}
+                              onClick={() => joinDirectoryLeague(directoryLeague)}
+                            >
+                              {isPending
+                                ? "Pending"
+                                : isApproved
+                                  ? "Approved — Join"
+                                  : isLocked
+                                    ? "Invitation Required"
+                                    : directoryLeague.has_invitation
+                                      ? "Accept Invitation"
+                                      : directoryLeague.access_type === "private"
+                                        ? "Request to Join"
+                                        : "Join"}
+                            </button>
+                          </article>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <div className="league-directory-empty">
+                      No other leagues are available yet.
+                    </div>
+                  )}
+                </section>
+              )}
+
+              {directoryMessage && (
+                <div className="success-message">{directoryMessage}</div>
+              )}
+
               {errorMessage && (
                 <div className="error-message">
                   {
@@ -5735,6 +5991,53 @@ if (
                   }
                   placeholder="Create a league code"
                 />
+
+                {leagueAccessAvailable && (
+                  <fieldset className="league-access-picker">
+                    <legend>Who can join?</legend>
+
+                    {[
+                      {
+                        value: "public",
+                        title: "Public",
+                        copy: "Anyone can join immediately.",
+                      },
+                      {
+                        value: "private",
+                        title: "Private",
+                        copy: "An admin approves each request.",
+                      },
+                      {
+                        value: "invite_only",
+                        title: "Invite only",
+                        copy: "Only invited people can join.",
+                      },
+                    ].map((option) => (
+                      <label
+                        className={
+                          createAccessType === option.value
+                            ? "league-access-option league-access-option-active"
+                            : "league-access-option"
+                        }
+                        key={option.value}
+                      >
+                        <input
+                          type="radio"
+                          name="league-access"
+                          value={option.value}
+                          checked={createAccessType === option.value}
+                          onChange={(event) =>
+                            setCreateAccessType(event.target.value)
+                          }
+                        />
+                        <span>
+                          <strong>{option.title}</strong>
+                          <small>{option.copy}</small>
+                        </span>
+                      </label>
+                    ))}
+                  </fieldset>
+                )}
 
                 {errorMessage && (
                   <div className="error-message">
@@ -6095,6 +6398,14 @@ if (
 
               <button
                 type="button"
+                onClick={() => changeTab("tables")}
+              >
+                <AppIcon name="location" size={17} />
+                <span>Find Tables</span>
+              </button>
+
+              <button
+                type="button"
                 onClick={() => openLegalPage("support")}
               >
                 <AppIcon name="settings" size={17} />
@@ -6371,16 +6682,12 @@ if (
 
               <button
                 type="button"
-                className={
-                  boardDetailMode === "matches"
-                    ? "board-quick-stat board-quick-stat-active"
-                    : "board-quick-stat"
-                }
-                onClick={() => showBoardDetail("matches")}
+                className="board-quick-stat"
+                onClick={() => changeTab("history")}
               >
-                <span>Matches Played</span>
+                <span>Match History</span>
                 <strong>{matches.length}</strong>
-                <small>View activity</small>
+                <small>Open history</small>
               </button>
 
               <button
@@ -8078,10 +8385,6 @@ if (
               <AppIcon name="history" size={17} /> Match History
             </h2>
 
-            <p>
-              Complete league match history.
-            </p>
-
             {matches.length ===
             0 ? (
               <p>
@@ -8132,6 +8435,83 @@ if (
                 </p>
               </div>
             </div>
+
+            {leagueAccessAvailable && (
+              <div className="card league-access-admin-card">
+                <div className="league-access-admin-heading">
+                  <div>
+                    <h3>League Access</h3>
+                    <p>Control how new players can join this league.</p>
+                  </div>
+
+                  <select
+                    value={currentLeagueDirectoryEntry?.access_type || "private"}
+                    onChange={(event) =>
+                      changeLeagueAccessType(event.target.value)
+                    }
+                    disabled={saving}
+                    aria-label="League access type"
+                  >
+                    <option value="public">Public</option>
+                    <option value="private">Private</option>
+                    <option value="invite_only">Invite only</option>
+                  </select>
+                </div>
+
+                {pendingJoinRequests.length > 0 && (
+                  <div className="league-request-list">
+                    <h4>Pending Requests</h4>
+                    {pendingJoinRequests.map((request) => (
+                      <div className="league-request-row" key={request.request_id}>
+                        <div>
+                          <strong>{request.player_name}</strong>
+                          <small>Requested to join</small>
+                        </div>
+                        <div className="league-request-actions">
+                          <button
+                            type="button"
+                            className="secondary-button"
+                            disabled={saving}
+                            onClick={() =>
+                              reviewLeagueJoinRequest(request.request_id, false)
+                            }
+                          >
+                            Decline
+                          </button>
+                          <button
+                            type="button"
+                            className="primary-button"
+                            disabled={saving}
+                            onClick={() =>
+                              reviewLeagueJoinRequest(request.request_id, true)
+                            }
+                          >
+                            Approve
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                <form className="league-invite-form" onSubmit={sendLeagueInvitation}>
+                  <label htmlFor="league-invite-email">Invite by email</label>
+                  <div>
+                    <input
+                      id="league-invite-email"
+                      type="email"
+                      value={inviteEmail}
+                      onChange={(event) => setInviteEmail(event.target.value)}
+                      placeholder="player@example.com"
+                      required
+                    />
+                    <button className="primary-button" disabled={saving}>
+                      Send Invite
+                    </button>
+                  </div>
+                </form>
+              </div>
+            )}
 
             <div className="card">
               <h3>
@@ -8470,11 +8850,11 @@ if (
         </button>
 
         <button
-          className={activeTab === "tables" ? "mobile-nav-active" : ""}
-          onClick={() => changeTab("tables")}
+          className={activeTab === "tournaments" ? "mobile-nav-active" : ""}
+          onClick={() => changeTab("tournaments")}
         >
-          <AppIcon name="location" size={20} />
-          <small>Tables</small>
+          <AppIcon name="bracket" size={20} />
+          <small>Tourney</small>
         </button>
 
         <button

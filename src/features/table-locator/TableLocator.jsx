@@ -1415,9 +1415,11 @@ function TableLocator({ userId }) {
         <label className="locator-search">
           <span>Search locations</span>
           <input
+            type="search"
             value={query}
             onChange={(event) => setQuery(event.target.value)}
             placeholder="City, state, ZIP, venue, or address"
+            enterKeyHint="search"
           />
         </label>
         <button

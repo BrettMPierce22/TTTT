@@ -996,3 +996,58 @@
   -webkit-backdrop-filter: blur(16px);
   backdrop-filter: blur(16px);
 }
+
+/* iOS-style Liquid Glass search field */
+.locator-toolbar {
+  align-items: center;
+  border-color: rgba(255, 255, 255, 0.52);
+  border-radius: 22px;
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.22), transparent 48%),
+    rgba(224, 241, 253, 0.42);
+  box-shadow:
+    0 14px 34px rgba(25, 72, 109, 0.16),
+    inset 0 1px 0 rgba(255, 255, 255, 0.66);
+  -webkit-backdrop-filter: saturate(180%) blur(26px);
+  backdrop-filter: saturate(180%) blur(26px);
+}
+
+.locator-search {
+  position: relative;
+}
+
+.locator-search::before {
+  content: "";
+  position: absolute;
+  z-index: 1;
+  top: 50%;
+  left: 15px;
+  width: 18px;
+  height: 18px;
+  pointer-events: none;
+  transform: translateY(-50%);
+  background: center / contain no-repeat url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23345f7e' stroke-width='2.2' stroke-linecap='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='m20 20-4-4'/%3E%3C/svg%3E");
+  opacity: 0.72;
+}
+
+.locator-search input[type="search"] {
+  min-height: 48px;
+  padding: 12px 42px;
+  border: 1px solid rgba(255, 255, 255, 0.72);
+  border-radius: 18px;
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.34), transparent 52%),
+    rgba(246, 251, 255, 0.64);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.82),
+    0 8px 22px rgba(25, 72, 109, 0.12);
+  color: var(--text);
+  -webkit-appearance: none;
+  -webkit-backdrop-filter: saturate(180%) blur(22px);
+  backdrop-filter: saturate(180%) blur(22px);
+}
+
+.locator-search input[type="search"]:focus {
+  border-color: rgba(57, 118, 166, 0.7);
+  outline: 3px solid rgba(75, 143, 195, 0.24);
+}

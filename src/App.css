@@ -3286,6 +3286,309 @@ th {
   }
 }
 
+/* League discovery and access controls */
+.league-directory-section {
+  margin-top: 28px;
+}
+
+.league-directory-heading,
+.league-access-admin-heading {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 18px;
+  margin-bottom: 14px;
+}
+
+.league-directory-heading h2,
+.league-directory-heading p,
+.league-access-admin-heading h3,
+.league-access-admin-heading p {
+  margin: 0;
+}
+
+.league-directory-heading > p {
+  max-width: 460px;
+  color: var(--muted);
+  font-size: 13px;
+  text-align: right;
+}
+
+.league-directory-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.league-directory-card,
+.league-directory-empty {
+  border: 1px solid var(--liquid-border);
+  border-radius: 22px;
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.24), transparent 46%),
+    var(--liquid-surface);
+  box-shadow:
+    0 16px 38px var(--liquid-shadow),
+    inset 0 1px 0 var(--liquid-highlight);
+  -webkit-backdrop-filter: saturate(170%) blur(24px);
+  backdrop-filter: saturate(170%) blur(24px);
+}
+
+.league-directory-card {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 10px;
+  padding: 18px;
+}
+
+.league-directory-card h3,
+.league-directory-card p {
+  margin: 0;
+}
+
+.league-directory-card p {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.league-directory-card > small {
+  margin-top: auto;
+  color: var(--muted);
+}
+
+.league-directory-card > button {
+  width: 100%;
+  margin-top: 5px;
+}
+
+.league-directory-card-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.league-access-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 9px;
+  border: 1px solid rgba(255, 255, 255, 0.48);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.34);
+  color: var(--liquid-blue-deep);
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.league-access-public {
+  background: rgba(108, 204, 174, 0.22);
+}
+
+.league-access-invite_only {
+  background: rgba(113, 131, 159, 0.18);
+}
+
+.league-directory-empty {
+  padding: 24px;
+  color: var(--muted);
+  text-align: center;
+}
+
+.league-access-picker {
+  display: grid;
+  gap: 9px;
+  margin: 22px 0;
+  padding: 0;
+  border: 0;
+}
+
+.league-access-picker legend {
+  margin-bottom: 9px;
+  font-weight: 800;
+}
+
+.league-access-option {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 13px 14px;
+  border: 1px solid var(--liquid-border-soft);
+  border-radius: 17px;
+  background: var(--liquid-surface-soft);
+  cursor: pointer;
+  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px);
+}
+
+.league-access-option-active {
+  border-color: rgba(57, 118, 166, 0.58);
+  background: rgba(156, 201, 240, 0.28);
+  box-shadow:
+    0 8px 20px rgba(35, 78, 113, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.62);
+}
+
+.league-access-option input {
+  width: 20px;
+  height: 20px;
+  margin: 0;
+  accent-color: var(--liquid-blue-mid);
+}
+
+.league-access-option span {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.league-access-option small {
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.league-access-admin-card {
+  display: grid;
+  gap: 22px;
+}
+
+.league-access-admin-heading select {
+  min-width: 150px;
+}
+
+.league-request-list {
+  display: grid;
+  gap: 9px;
+}
+
+.league-request-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 13px;
+  border: 1px solid var(--liquid-border-soft);
+  border-radius: 16px;
+  background: var(--liquid-surface-soft);
+}
+
+.league-request-row > div:first-child {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.league-request-row small {
+  color: var(--muted);
+}
+
+.league-request-actions,
+.league-invite-form > div {
+  display: flex;
+  gap: 9px;
+}
+
+.league-invite-form {
+  display: grid;
+  gap: 8px;
+}
+
+.league-invite-form input {
+  flex: 1;
+}
+
+@media (max-width: 800px) {
+  .league-directory-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .league-directory-heading,
+  .league-access-admin-heading,
+  .league-request-row {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .league-directory-heading > p {
+    text-align: left;
+  }
+
+  .league-access-admin-heading select,
+  .league-request-actions,
+  .league-request-actions button,
+  .league-invite-form > div,
+  .league-invite-form button {
+    width: 100%;
+  }
+
+  .league-invite-form > div {
+    flex-direction: column;
+  }
+}
+
+/* Weather-inspired league snapshot. These blue glass layers sit in the
+   content plane while UIKit continues to render the native bottom bar. */
+@media (max-width: 800px) {
+  .board-heading-actions button,
+  .board-quick-stat {
+    border: 1px solid rgba(219, 240, 255, 0.34);
+    background:
+      linear-gradient(145deg, rgba(255, 255, 255, 0.18), transparent 46%),
+      rgba(35, 124, 192, 0.52);
+    box-shadow:
+      0 14px 32px rgba(25, 72, 109, 0.2),
+      inset 0 1px 0 rgba(255, 255, 255, 0.34),
+      inset 0 -1px 0 rgba(20, 74, 118, 0.12);
+    color: #f7fbff;
+    -webkit-backdrop-filter: saturate(175%) blur(24px);
+    backdrop-filter: saturate(175%) blur(24px);
+  }
+
+  .board-heading-actions .board-record-button {
+    border-color: rgba(235, 248, 255, 0.42);
+    background:
+      radial-gradient(circle at 26% 0%, rgba(255, 255, 255, 0.22), transparent 38%),
+      rgba(25, 91, 145, 0.7);
+  }
+
+  .board-heading-actions .board-players-button {
+    color: #f7fbff;
+  }
+
+  .board-quick-stats {
+    gap: 8px;
+  }
+
+  .board-quick-stat {
+    min-height: 68px;
+    padding: 10px 11px;
+    border-radius: 18px;
+  }
+
+  .board-quick-stat span,
+  .board-quick-stat small {
+    color: rgba(225, 242, 255, 0.76);
+  }
+
+  .board-quick-stat strong {
+    color: #ffffff;
+    text-shadow: 0 1px 8px rgba(12, 55, 88, 0.18);
+  }
+
+  .board-quick-stat:hover,
+  .board-quick-stat:active,
+  .board-quick-stat-active {
+    border-color: rgba(244, 251, 255, 0.72);
+    background:
+      linear-gradient(145deg, rgba(255, 255, 255, 0.24), transparent 48%),
+      rgba(28, 108, 171, 0.68);
+    box-shadow:
+      0 16px 34px rgba(25, 72, 109, 0.24),
+      inset 0 1px 0 rgba(255, 255, 255, 0.5);
+  }
+}
+
 @media (max-width: 550px) {
   header h1,
   .hub-header h1 {
@@ -4633,17 +4936,6 @@ textarea:focus {
     display: none !important;
   }
 
-  :root.native-ios-shell.native-header-visible .app > header {
-    display: none;
-  }
-
-  :root.native-ios-shell.native-header-visible .app::before {
-    content: "";
-    display: block;
-    height: calc(80px + max(env(safe-area-inset-top), 44px));
-    pointer-events: none;
-  }
-
   :root.native-ios-shell .app main {
     padding-bottom: calc(112px + env(safe-area-inset-bottom));
   }
@@ -5961,5 +6253,55 @@ textarea {
     background:
       radial-gradient(circle at 16% 0%, rgba(255, 255, 255, 0.2), transparent 36%),
       linear-gradient(155deg, rgba(25, 72, 109, 0.88), rgba(87, 133, 184, 0.8));
+  }
+}
+
+/* Keep the Weather-style Board layers above the shared cascade. */
+@media (max-width: 800px) {
+  .board-heading-actions button,
+  .board-quick-stat {
+    border: 1px solid rgba(219, 240, 255, 0.34);
+    background:
+      linear-gradient(145deg, rgba(255, 255, 255, 0.18), transparent 46%),
+      rgba(35, 124, 192, 0.52);
+    box-shadow:
+      0 14px 32px rgba(25, 72, 109, 0.2),
+      inset 0 1px 0 rgba(255, 255, 255, 0.34),
+      inset 0 -1px 0 rgba(20, 74, 118, 0.12);
+    color: #f7fbff;
+    -webkit-backdrop-filter: saturate(175%) blur(24px);
+    backdrop-filter: saturate(175%) blur(24px);
+  }
+
+  .board-heading-actions .board-record-button {
+    border-color: rgba(235, 248, 255, 0.42);
+    background:
+      radial-gradient(circle at 26% 0%, rgba(255, 255, 255, 0.22), transparent 38%),
+      rgba(25, 91, 145, 0.7);
+  }
+
+  .board-heading-actions .board-players-button,
+  .board-quick-stat strong {
+    color: #ffffff;
+  }
+
+  .board-quick-stat {
+    min-height: 68px;
+    padding: 10px 11px;
+    border-radius: 18px;
+  }
+
+  .board-quick-stat span,
+  .board-quick-stat small {
+    color: rgba(225, 242, 255, 0.76);
+  }
+
+  .board-quick-stat:hover,
+  .board-quick-stat:active,
+  .board-quick-stat-active {
+    border-color: rgba(244, 251, 255, 0.72);
+    background:
+      linear-gradient(145deg, rgba(255, 255, 255, 0.24), transparent 48%),
+      rgba(28, 108, 171, 0.68);
   }
 }

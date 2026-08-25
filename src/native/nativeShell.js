@@ -4,7 +4,7 @@ const NativeShell = registerPlugin("NativeShell");
 
 export const NATIVE_TAB_NAMES = [
   "leaderboard",
-  "tables",
+  "tournaments",
   "record",
   "chat",
   "profile",
@@ -18,12 +18,6 @@ export function listenForNativeTabSelection(listener) {
   return NativeShell.addListener("tabSelected", ({ tab }) => listener(tab));
 }
 
-export function listenForNativeActionSelection(listener) {
-  return NativeShell.addListener("actionSelected", ({ action }) =>
-    listener(action)
-  );
-}
-
 export function setNativeTabsVisible(visible) {
   return NativeShell.setTabsVisible({ visible });
 }
@@ -34,20 +28,4 @@ export function setSelectedNativeTab(tab) {
 
 export function setNativeTabBadge(tab, value) {
   return NativeShell.setTabBadge({ tab, value });
-}
-
-export function setNativeHeaderState({
-  visible,
-  title = "",
-  subtitle = "",
-  leagueCode = "",
-  showModerator = false,
-}) {
-  return NativeShell.setHeaderState({
-    visible,
-    title,
-    subtitle,
-    leagueCode,
-    showModerator,
-  });
 }
