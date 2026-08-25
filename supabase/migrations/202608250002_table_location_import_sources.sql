@@ -1,5 +1,5 @@
 -- Adds provenance and deduplication support for reviewed public data imports.
--- This file is prepared only; do not apply it to live Supabase without approval.
+-- Applied to the TTTT production project after explicit approval on 2026-08-25.
 
 alter table public.table_locations
   add column if not exists source_name text not null default 'community',

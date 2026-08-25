@@ -1,6 +1,6 @@
 -- Staged U.S. public table-tennis catalog from OpenStreetMap.
 -- Generated from 2026-08-25T21:29:41Z; 389 records.
--- This file is prepared only; do not apply it to live Supabase without approval.
+-- Applied to the TTTT production project after explicit approval on 2026-08-25.
 -- Data © OpenStreetMap contributors, ODbL 1.0.
 
 insert into public.table_locations (
