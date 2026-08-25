@@ -6,6 +6,7 @@ export const NATIVE_TAB_NAMES = [
   "leaderboard",
   "tournaments",
   "record",
+  "tables",
   "chat",
   "profile",
 ];

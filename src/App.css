@@ -2673,6 +2673,10 @@ th {
   display: inline-flex;
 }
 
+.mobile-floating-chat {
+  display: none;
+}
+
 .mobile-unread-badge {
   position: absolute;
   top: -8px;
@@ -3721,6 +3725,37 @@ th {
     background: var(--navy);
     color: white;
     box-shadow: 0 7px 18px rgba(23, 32, 51, 0.25);
+  }
+
+  .mobile-floating-chat {
+    position: fixed;
+    z-index: 9100;
+    right: 16px;
+    bottom: calc(92px + env(safe-area-inset-bottom));
+    width: 56px;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    border: 1px solid rgba(255, 255, 255, 0.78);
+    border-radius: 50%;
+    background: rgba(250, 252, 255, 0.76);
+    color: var(--sport-blue-deep);
+    box-shadow: 0 12px 28px rgba(30, 73, 102, 0.24);
+    -webkit-backdrop-filter: blur(22px) saturate(165%);
+    backdrop-filter: blur(22px) saturate(165%);
+  }
+
+  .mobile-floating-chat:hover,
+  .mobile-floating-chat.mobile-floating-chat-active {
+    background: var(--sport-blue);
+    color: white;
+  }
+
+  .mobile-floating-chat .mobile-unread-badge {
+    top: -2px;
+    right: -2px;
   }
 
   .ranking-card-heading,
@@ -4933,6 +4968,10 @@ textarea:focus {
 
 @media (max-width: 800px) {
   :root.native-ios-shell .mobile-bottom-nav {
+    display: none !important;
+  }
+
+  :root.native-ios-shell .mobile-floating-chat {
     display: none !important;
   }
 

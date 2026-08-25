@@ -115,6 +115,7 @@ private final class AppleTableMapViewController: UIViewController,
     private let filterControl = UISegmentedControl(items: ["All", "Free", "Indoor", "Outdoor"])
     private let locationManager = CLLocationManager()
     private let resultCountLabel = UILabel()
+    private let dataAttributionButton = UIButton(type: .system)
     private let cardTitleLabel = UILabel()
     private let cardSubtitleLabel = UILabel()
     private let cardTagsLabel = UILabel()
@@ -233,6 +234,19 @@ private final class AppleTableMapViewController: UIViewController,
         locateButton.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(locateButton)
 
+        dataAttributionButton.translatesAutoresizingMaskIntoConstraints = false
+        var attributionConfiguration = UIButton.Configuration.plain()
+        attributionConfiguration.title = "Table data © OpenStreetMap contributors"
+        attributionConfiguration.image = UIImage(systemName: "info.circle")
+        attributionConfiguration.imagePadding = 5
+        attributionConfiguration.contentInsets = .zero
+        dataAttributionButton.configuration = attributionConfiguration
+        dataAttributionButton.titleLabel?.font = .systemFont(ofSize: 10, weight: .medium)
+        dataAttributionButton.contentHorizontalAlignment = .leading
+        dataAttributionButton.accessibilityHint = "Opens the OpenStreetMap copyright and license page"
+        dataAttributionButton.addTarget(self, action: #selector(openDataAttribution), for: .touchUpInside)
+        view.addSubview(dataAttributionButton)
+
         NSLayoutConstraint.activate([
             searchGlass.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 10),
             searchGlass.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 14),
@@ -255,6 +269,11 @@ private final class AppleTableMapViewController: UIViewController,
             locateButton.topAnchor.constraint(equalTo: searchGlass.bottomAnchor, constant: 12),
             locateButton.widthAnchor.constraint(equalToConstant: 48),
             locateButton.heightAnchor.constraint(equalToConstant: 48),
+
+            dataAttributionButton.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 18),
+            dataAttributionButton.trailingAnchor.constraint(lessThanOrEqualTo: locateButton.leadingAnchor, constant: -10),
+            dataAttributionButton.centerYAnchor.constraint(equalTo: locateButton.centerYAnchor),
+            dataAttributionButton.heightAnchor.constraint(greaterThanOrEqualToConstant: 32),
         ])
     }
 
@@ -379,6 +398,11 @@ private final class AppleTableMapViewController: UIViewController,
 
     @objc private func closeMap() {
         dismiss(animated: true)
+    }
+
+    @objc private func openDataAttribution() {
+        guard let url = URL(string: "https://www.openstreetmap.org/copyright") else { return }
+        UIApplication.shared.open(url)
     }
 
     private func addLocation() {

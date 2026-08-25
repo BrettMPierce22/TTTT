@@ -8872,18 +8872,11 @@ if (
         </button>
 
         <button
-          className={activeTab === "chat" ? "mobile-nav-active" : ""}
-          onClick={() => changeTab("chat")}
+          className={activeTab === "tables" ? "mobile-nav-active" : ""}
+          onClick={() => changeTab("tables")}
         >
-          <span className="mobile-nav-icon-wrap">
-            <AppIcon name="chat" size={20} />
-            {chatUnread > 0 && (
-              <span className="mobile-unread-badge">
-                {chatUnread > 9 ? "9+" : chatUnread}
-              </span>
-            )}
-          </span>
-          <small>Chat</small>
+          <AppIcon name="location" size={20} />
+          <small>Tables</small>
         </button>
 
         <button
@@ -8899,6 +8892,22 @@ if (
           <small>Me</small>
         </button>
       </nav>
+
+      <button
+        type="button"
+        className={`mobile-floating-chat ${
+          activeTab === "chat" ? "mobile-floating-chat-active" : ""
+        }`}
+        onClick={() => changeTab("chat")}
+        aria-label="Open league chat"
+      >
+        <AppIcon name="chat" size={23} />
+        {chatUnread > 0 && (
+          <span className="mobile-unread-badge">
+            {chatUnread > 9 ? "9+" : chatUnread}
+          </span>
+        )}
+      </button>
 
       {rankInfoMode && (
         <div

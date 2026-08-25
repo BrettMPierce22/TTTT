@@ -141,7 +141,9 @@ function PrivacyPolicy({ supportEmail, onNavigate }) {
           <li>
             <strong>Mapping services.</strong> The iPhone app can use Apple
             geocoding and Apple Maps for directions. Map tiles in the locator
-            are provided by OpenStreetMap infrastructure.
+            are provided by OpenStreetMap infrastructure. Some table-location
+            records are derived from OpenStreetMap data and displayed with the
+            required OpenStreetMap contributor and ODbL attribution.
           </li>
           <li>
             <strong>Legal and safety needs.</strong> Information may be
