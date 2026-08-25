@@ -1,6 +1,5 @@
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import "./App.css";
-import tableTalkMark from "./assets/table-talk-mark.png";
 import tableTalkAppIcon from "./assets/table-talk-app-icon.png";
 import { supabase } from "./lib/supabaseClient";
 import {
@@ -40,7 +39,7 @@ function getLegalPageFromHash() {
 function BrandMark({ className = "" }) {
   return (
     <span className={`brand-mark-shell ${className}`.trim()} aria-hidden="true">
-      <img src={tableTalkMark} alt="" />
+      <img src={tableTalkAppIcon} alt="" />
     </span>
   );
 }

@@ -1,4 +1,5 @@
 import "./LegalCenter.css";
+import tableTalkAppIcon from "../../assets/table-talk-app-icon.png";
 
 const UPDATED_DATE = "August 24, 2026";
 
@@ -578,7 +579,7 @@ export default function LegalCenter({
       <header className="legal-header">
         <div className="legal-header-inner">
           <button type="button" className="legal-brand" onClick={onClose}>
-            <span className="legal-brand-paddle" aria-hidden="true">●</span>
+            <img className="legal-brand-icon" src={tableTalkAppIcon} alt="" />
             <span>
               <strong>Table Talk Table Tennis</strong>
               <small>Safety & Legal</small>

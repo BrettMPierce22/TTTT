@@ -48,18 +48,6 @@
   cursor: pointer;
 }
 
-.legal-brand-paddle {
-  width: 38px;
-  height: 38px;
-  display: grid;
-  place-items: center;
-  color: #8fc2ec;
-  background: rgba(255, 255, 255, 0.16);
-  border: 1px solid rgba(255, 255, 255, 0.28);
-  border-radius: 13px;
-  box-shadow: inset 0 1px rgba(255, 255, 255, 0.25);
-}
-
 .legal-brand span:last-child {
   display: grid;
   gap: 2px;
@@ -446,4 +434,65 @@
   .legal-links-compact {
     justify-content: flex-start;
   }
+}
+
+/* Official branding and Liquid Glass legal surfaces */
+.legal-page {
+  background:
+    radial-gradient(circle at 10% -10%, rgba(156, 201, 240, 0.38), transparent 34rem),
+    linear-gradient(180deg, var(--liquid-canvas) 0%, var(--liquid-canvas-deep) 100%);
+}
+
+.legal-header {
+  border-bottom: 1px solid rgba(255,255,255,.22);
+  background:
+    radial-gradient(circle at 16% 0%, rgba(255,255,255,.2), transparent 34%),
+    linear-gradient(155deg, rgba(25,72,109,.9), rgba(87,133,184,.82));
+  box-shadow: 0 14px 38px rgba(25,72,109,.2), inset 0 -1px 0 rgba(255,255,255,.1);
+  -webkit-backdrop-filter: saturate(175%) blur(28px);
+  backdrop-filter: saturate(175%) blur(28px);
+}
+
+.legal-brand-icon {
+  width: 42px;
+  height: 42px;
+  flex: 0 0 auto;
+  border: 1px solid rgba(255,255,255,.38);
+  border-radius: 12px;
+  box-shadow: 0 8px 20px rgba(6,34,55,.24), inset 0 1px 0 rgba(255,255,255,.42);
+}
+
+.legal-close-button,
+.legal-page-nav,
+.legal-content section,
+.legal-link-grid button {
+  border-color: var(--liquid-border);
+  background:
+    linear-gradient(145deg, rgba(255,255,255,.2), transparent 48%),
+    var(--liquid-surface);
+  box-shadow: 0 14px 36px var(--liquid-shadow), inset 0 1px 0 var(--liquid-highlight);
+  -webkit-backdrop-filter: saturate(165%) blur(22px);
+  backdrop-filter: saturate(165%) blur(22px);
+}
+
+.legal-close-button {
+  background: rgba(255,255,255,.12);
+  color: white;
+}
+
+.legal-title-card,
+.legal-content section.legal-highlight-card,
+.legal-content section.legal-support-hero {
+  border: 1px solid rgba(255,255,255,.28);
+  background:
+    radial-gradient(circle at 18% 0%, rgba(255,255,255,.2), transparent 34%),
+    linear-gradient(145deg, rgba(57,118,166,.92), rgba(25,72,109,.94));
+  box-shadow: 0 18px 46px rgba(25,72,109,.25), inset 0 1px 0 rgba(255,255,255,.34);
+}
+
+.legal-page-nav button.legal-page-nav-active,
+.legal-contact-button {
+  border: 1px solid rgba(255,255,255,.38);
+  background: linear-gradient(145deg, var(--liquid-blue-mid), var(--liquid-blue-deep));
+  box-shadow: 0 8px 20px rgba(25,72,109,.2), inset 0 1px 0 rgba(255,255,255,.38);
 }

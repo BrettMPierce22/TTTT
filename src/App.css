@@ -117,10 +117,13 @@ header,
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  padding: 7px;
-  border: 1px solid rgba(255, 255, 255, 0.52);
-  border-radius: 16px;
-  background: rgba(248, 246, 240, 0.94);
+  padding: 0;
+  border: 0;
+  border-radius: 24%;
+  background: transparent;
+  box-shadow:
+    0 10px 28px rgba(13, 42, 69, 0.24),
+    0 1px 0 rgba(255, 255, 255, 0.5);
 }
 
 .brand-mark-shell img {
@@ -131,17 +134,15 @@ header,
 }
 
 .brand-mark-shell.auth-icon {
-  width: 76px;
-  height: 76px;
+  width: 96px;
+  height: 96px;
   margin: 0 auto;
-  padding: 10px;
   box-shadow: 0 14px 36px rgba(13, 25, 36, 0.28);
 }
 
 .brand-mark-shell.brand-mark-large {
   width: 84px;
   height: 84px;
-  padding: 11px;
   box-shadow: 0 16px 40px rgba(35, 53, 67, 0.2);
 }
 
@@ -4056,6 +4057,522 @@ th {
   }
 }
 
+/* =========================================================
+   TABLE TALK LIQUID GLASS SYSTEM
+   Shared materials for the website and Capacitor WebView.
+   The native iOS tab bar remains Apple's system-rendered glass.
+   ========================================================= */
+
+:root {
+  --liquid-blue-top: #5785b8;
+  --liquid-blue-bottom: #9cc9f0;
+  --liquid-blue-deep: #19486d;
+  --liquid-blue-mid: #3976a6;
+  --liquid-canvas: #eaf3fa;
+  --liquid-canvas-deep: #d7e8f5;
+  --liquid-surface: rgba(255, 255, 255, 0.54);
+  --liquid-surface-strong: rgba(255, 255, 255, 0.72);
+  --liquid-surface-soft: rgba(241, 249, 255, 0.38);
+  --liquid-border: rgba(255, 255, 255, 0.76);
+  --liquid-border-soft: rgba(98, 144, 180, 0.24);
+  --liquid-shadow: rgba(35, 78, 113, 0.16);
+  --liquid-highlight: rgba(255, 255, 255, 0.78);
+  --liquid-focus: rgba(66, 142, 197, 0.3);
+  --liquid-danger: rgba(184, 66, 55, 0.13);
+  --liquid-danger-border: rgba(184, 66, 55, 0.34);
+}
+
+:root[data-theme="dark"] {
+  --liquid-canvas: #0a1824;
+  --liquid-canvas-deep: #10283a;
+  --liquid-surface: rgba(21, 43, 59, 0.58);
+  --liquid-surface-strong: rgba(24, 49, 67, 0.76);
+  --liquid-surface-soft: rgba(31, 63, 83, 0.38);
+  --liquid-border: rgba(205, 232, 250, 0.17);
+  --liquid-border-soft: rgba(171, 211, 239, 0.13);
+  --liquid-shadow: rgba(0, 0, 0, 0.42);
+  --liquid-highlight: rgba(255, 255, 255, 0.16);
+  --liquid-focus: rgba(112, 190, 239, 0.27);
+  --liquid-danger: rgba(219, 96, 80, 0.13);
+  --liquid-danger-border: rgba(239, 137, 122, 0.3);
+}
+
+html,
+body {
+  background: var(--liquid-canvas);
+}
+
+.app,
+.league-hub-page {
+  background:
+    radial-gradient(circle at 8% 4%, rgba(156, 201, 240, 0.56), transparent 31%),
+    radial-gradient(circle at 96% 26%, rgba(87, 133, 184, 0.22), transparent 34%),
+    linear-gradient(180deg, var(--liquid-canvas) 0%, var(--liquid-canvas-deep) 100%);
+  background-attachment: fixed;
+}
+
+:root[data-theme="dark"] .app,
+:root[data-theme="dark"] .league-hub-page {
+  background:
+    radial-gradient(circle at 10% 4%, rgba(87, 133, 184, 0.22), transparent 34%),
+    radial-gradient(circle at 94% 28%, rgba(48, 99, 135, 0.18), transparent 36%),
+    linear-gradient(180deg, var(--liquid-canvas) 0%, var(--liquid-canvas-deep) 100%);
+}
+
+header,
+.hub-header {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.22);
+  background:
+    radial-gradient(circle at 16% 0%, rgba(255, 255, 255, 0.2), transparent 34%),
+    linear-gradient(155deg, rgba(25, 72, 109, 0.9), rgba(87, 133, 184, 0.82));
+  box-shadow:
+    0 14px 38px rgba(25, 72, 109, 0.2),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.1);
+  -webkit-backdrop-filter: saturate(175%) blur(28px);
+  backdrop-filter: saturate(175%) blur(28px);
+}
+
+.brand-mark-shell.brand-icon,
+.league-logo {
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  box-shadow:
+    0 9px 24px rgba(6, 34, 55, 0.25),
+    inset 0 1px 0 rgba(255, 255, 255, 0.48);
+}
+
+:is(
+  .card,
+  .stat-card,
+  .league-description,
+  .league-hub-card,
+  .empty-leagues-card,
+  .hub-form-card,
+  .your-status-card,
+  .player-profile-hero,
+  .profile-fact-card,
+  .profile-stat-card,
+  .velocity-card,
+  .account-profile-hub-card,
+  .account-security-card,
+  .account-deletion-card,
+  .account-legal-card,
+  .branding-setting-card,
+  .display-settings-card,
+  .profile-display-setting,
+  .performance-chart-card,
+  .board-quick-stat,
+  .board-detail-panel,
+  .chat-card,
+  .match-edit-modal,
+  .rank-info-modal,
+  .match-detail-modal
+),
+.performance-summary-grid > div,
+.power-formula-card > div {
+  border: 1px solid var(--liquid-border);
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.22), transparent 44%),
+    var(--liquid-surface);
+  box-shadow:
+    0 16px 42px var(--liquid-shadow),
+    inset 0 1px 0 var(--liquid-highlight),
+    inset 0 -1px 0 rgba(73, 118, 151, 0.08);
+  -webkit-backdrop-filter: saturate(165%) blur(24px);
+  backdrop-filter: saturate(165%) blur(24px);
+}
+
+:root[data-theme="dark"] :is(
+  .card,
+  .stat-card,
+  .league-description,
+  .league-hub-card,
+  .empty-leagues-card,
+  .hub-form-card,
+  .your-status-card,
+  .player-profile-hero,
+  .profile-fact-card,
+  .profile-stat-card,
+  .velocity-card,
+  .account-profile-hub-card,
+  .account-security-card,
+  .account-deletion-card,
+  .account-legal-card,
+  .branding-setting-card,
+  .display-settings-card,
+  .profile-display-setting,
+  .performance-chart-card,
+  .board-quick-stat,
+  .board-detail-panel,
+  .chat-card,
+  .match-edit-modal,
+  .rank-info-modal,
+  .match-detail-modal
+),
+:root[data-theme="dark"] .performance-summary-grid > div,
+:root[data-theme="dark"] .power-formula-card > div {
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.08), transparent 42%),
+    var(--liquid-surface);
+}
+
+button,
+summary {
+  -webkit-tap-highlight-color: transparent;
+}
+
+:is(
+  .primary-button,
+  .secondary-button,
+  .back-button,
+  .board-record-button,
+  .board-players-button,
+  .edit-button,
+  .avatar-upload-button,
+  .rank-info-button,
+  .status-toggle button,
+  .performance-range-tabs button,
+  .record-mode-switch button,
+  .theme-control button,
+  .mobile-header-menu-panel button,
+  .modal-close,
+  .chat-send-button,
+  .header-signout-button,
+  .sign-out-button,
+  .league-code-box button
+) {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--liquid-border);
+  border-radius: 15px;
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.28), transparent 48%),
+    var(--liquid-surface);
+  box-shadow:
+    0 8px 22px rgba(35, 78, 113, 0.13),
+    inset 0 1px 0 var(--liquid-highlight),
+    inset 0 -1px 0 rgba(67, 111, 145, 0.1);
+  color: var(--text);
+  -webkit-backdrop-filter: saturate(175%) blur(18px);
+  backdrop-filter: saturate(175%) blur(18px);
+  transition:
+    transform 0.16s ease,
+    border-color 0.18s ease,
+    background 0.18s ease,
+    box-shadow 0.18s ease;
+}
+
+:is(.primary-button, .board-record-button, .avatar-upload-button, .chat-send-button) {
+  border-color: rgba(255, 255, 255, 0.35);
+  background:
+    radial-gradient(circle at 28% 8%, rgba(255, 255, 255, 0.28), transparent 36%),
+    linear-gradient(145deg, rgba(57, 118, 166, 0.94), rgba(25, 72, 109, 0.92));
+  box-shadow:
+    0 11px 28px rgba(25, 72, 109, 0.25),
+    inset 0 1px 0 rgba(255, 255, 255, 0.42),
+    inset 0 -1px 0 rgba(7, 35, 57, 0.18);
+  color: white;
+}
+
+:is(.header-signout-button, .sign-out-button, .league-code-box button) {
+  border-color: rgba(255, 255, 255, 0.27);
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.2),
+    0 8px 20px rgba(3, 30, 48, 0.14);
+}
+
+:is(
+  .danger-outline-button,
+  .delete-button,
+  .remove-button,
+  .remove-image-button,
+  .delete-league-button,
+  .delete-account-button,
+  .chat-delete-button
+) {
+  border: 1px solid var(--liquid-danger-border);
+  border-radius: 14px;
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.26), transparent 54%),
+    var(--liquid-danger);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.28),
+    0 7px 18px rgba(123, 45, 38, 0.09);
+  color: var(--red);
+  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px);
+}
+
+nav button {
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.09);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.16);
+  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px);
+}
+
+nav button.nav-active {
+  border-color: rgba(255, 255, 255, 0.64);
+  background: rgba(239, 248, 255, 0.78);
+  box-shadow:
+    0 8px 22px rgba(7, 36, 57, 0.2),
+    inset 0 1px 0 white;
+  color: var(--liquid-blue-deep);
+}
+
+:is(.auth-tabs, .performance-range-tabs, .record-mode-switch, .theme-control) {
+  padding: 4px;
+  border: 1px solid var(--liquid-border);
+  border-radius: 17px;
+  background: var(--liquid-surface-soft);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.44),
+    0 7px 18px rgba(35, 78, 113, 0.08);
+  -webkit-backdrop-filter: saturate(160%) blur(18px);
+  backdrop-filter: saturate(160%) blur(18px);
+}
+
+:is(
+  .auth-tabs button.auth-tab-active,
+  .performance-range-tabs button.performance-range-active,
+  .record-mode-switch button.record-mode-active,
+  .theme-control button.theme-option-active
+) {
+  border-color: var(--liquid-border);
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.36), transparent 54%),
+    var(--liquid-surface-strong);
+  box-shadow:
+    0 7px 18px rgba(35, 78, 113, 0.13),
+    inset 0 1px 0 var(--liquid-highlight);
+  color: var(--liquid-blue-deep);
+}
+
+:root[data-theme="dark"] :is(
+  .auth-tabs button.auth-tab-active,
+  .performance-range-tabs button.performance-range-active,
+  .record-mode-switch button.record-mode-active,
+  .theme-control button.theme-option-active
+) {
+  color: #e8f5ff;
+}
+
+input,
+select,
+textarea,
+.velocity-input span {
+  border-color: var(--liquid-border-soft);
+  border-radius: 14px;
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.2), transparent 48%),
+    var(--liquid-surface-strong);
+  box-shadow:
+    inset 0 1px 2px rgba(29, 72, 103, 0.08),
+    0 6px 18px rgba(35, 78, 113, 0.07);
+  -webkit-backdrop-filter: saturate(155%) blur(18px);
+  backdrop-filter: saturate(155%) blur(18px);
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  border-color: rgba(57, 118, 166, 0.66);
+  outline: 3px solid var(--liquid-focus);
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.72),
+    0 10px 28px rgba(35, 78, 113, 0.13);
+}
+
+.modal-backdrop {
+  background: rgba(15, 38, 56, 0.44);
+  -webkit-backdrop-filter: saturate(130%) blur(16px);
+  backdrop-filter: saturate(130%) blur(16px);
+}
+
+.mobile-header-menu-panel {
+  border: 1px solid var(--liquid-border);
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.26), transparent 46%),
+    var(--liquid-surface-strong);
+  box-shadow:
+    0 24px 60px var(--liquid-shadow),
+    inset 0 1px 0 var(--liquid-highlight);
+  -webkit-backdrop-filter: saturate(185%) blur(28px);
+  backdrop-filter: saturate(185%) blur(28px);
+}
+
+.mobile-bottom-nav {
+  border-color: var(--liquid-border);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.28), transparent 54%),
+    var(--liquid-surface-strong);
+  box-shadow:
+    0 -8px 30px rgba(35, 78, 113, 0.13),
+    inset 0 1px 0 var(--liquid-highlight);
+  -webkit-backdrop-filter: saturate(190%) blur(30px);
+  backdrop-filter: saturate(190%) blur(30px);
+}
+
+:is(.head-to-head-row, .admin-player-row, .board-roster-row) {
+  border-color: var(--liquid-border-soft);
+  background: rgba(255, 255, 255, 0.2);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.28);
+}
+
+.auth-page {
+  background:
+    radial-gradient(circle at 18% 5%, rgba(255, 255, 255, 0.18), transparent 34%),
+    linear-gradient(180deg, var(--liquid-blue-deep) 0%, var(--liquid-blue-top) 48%, var(--liquid-blue-bottom) 100%);
+}
+
+.auth-card {
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.26), transparent 46%),
+    rgba(246, 251, 255, 0.7);
+  box-shadow:
+    0 28px 72px rgba(18, 57, 86, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.88);
+  -webkit-backdrop-filter: saturate(170%) blur(30px);
+  backdrop-filter: saturate(170%) blur(30px);
+}
+
+:root[data-theme="dark"] .auth-card {
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.09), transparent 45%),
+    rgba(15, 34, 48, 0.74);
+}
+
+@media (hover: hover) {
+  :is(
+    .primary-button,
+    .secondary-button,
+    .back-button,
+    .board-record-button,
+    .board-players-button,
+    .edit-button,
+    .avatar-upload-button,
+    .rank-info-button,
+    .status-toggle button,
+    .performance-range-tabs button,
+    .record-mode-switch button,
+    .theme-control button,
+    .chat-send-button
+  ):hover {
+    transform: translateY(-1px);
+    border-color: rgba(255, 255, 255, 0.9);
+    filter: brightness(1.035);
+    box-shadow:
+      0 12px 30px rgba(35, 78, 113, 0.2),
+      inset 0 1px 0 rgba(255, 255, 255, 0.88);
+  }
+}
+
+:is(
+  .primary-button,
+  .secondary-button,
+  .back-button,
+  .board-record-button,
+  .board-players-button,
+  .edit-button,
+  .avatar-upload-button,
+  .rank-info-button,
+  .status-toggle button,
+  .performance-range-tabs button,
+  .record-mode-switch button,
+  .theme-control button,
+  .chat-send-button
+):active {
+  transform: scale(0.975);
+  box-shadow:
+    0 4px 12px rgba(35, 78, 113, 0.12),
+    inset 0 2px 5px rgba(25, 72, 109, 0.13);
+}
+
+@media (max-width: 800px) {
+  .app,
+  .league-hub-page {
+    background:
+      radial-gradient(circle at 10% 2%, rgba(156, 201, 240, 0.6), transparent 34%),
+      radial-gradient(circle at 96% 24%, rgba(87, 133, 184, 0.22), transparent 34%),
+      linear-gradient(180deg, var(--liquid-canvas) 0%, var(--liquid-canvas-deep) 100%);
+  }
+
+  header,
+  .hub-header {
+    background:
+      radial-gradient(circle at 16% 0%, rgba(255, 255, 255, 0.2), transparent 36%),
+      linear-gradient(155deg, rgba(25, 72, 109, 0.88), rgba(87, 133, 184, 0.8));
+  }
+
+  :is(
+    .card,
+    .stat-card,
+    .league-description,
+    .league-hub-card,
+    .empty-leagues-card,
+    .hub-form-card,
+    .your-status-card,
+    .player-profile-hero,
+    .profile-fact-card,
+    .profile-stat-card,
+    .velocity-card,
+    .account-profile-hub-card,
+    .account-security-card,
+    .account-deletion-card,
+    .account-legal-card,
+    .branding-setting-card,
+    .display-settings-card,
+    .profile-display-setting,
+    .performance-chart-card,
+    .board-quick-stat,
+    .board-detail-panel,
+    .chat-card
+  ) {
+    border-radius: 22px;
+  }
+
+  :is(
+    .primary-button,
+    .secondary-button,
+    .back-button,
+    .board-record-button,
+    .board-players-button,
+    .edit-button,
+    .avatar-upload-button,
+    .rank-info-button,
+    .chat-send-button
+  ) {
+    min-height: 46px;
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  :is(
+    .card,
+    .stat-card,
+    .league-description,
+    .league-hub-card,
+    .empty-leagues-card,
+    .hub-form-card,
+    .your-status-card,
+    .player-profile-hero,
+    .profile-fact-card,
+    .profile-stat-card,
+    .match-edit-modal,
+    .rank-info-modal,
+    .match-detail-modal,
+    .mobile-header-menu-panel,
+    .auth-card
+  ) {
+    background: var(--surface);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+
 @media (max-width: 620px) {
   .account-deletion-card > .danger-outline-button,
   .account-deletion-actions,
@@ -5240,5 +5757,198 @@ th {
   .league-landscape-legend {
     width: 610px;
     min-width: 610px;
+  }
+}
+
+/* Final cascade: keep the shared Liquid Glass materials authoritative over
+   feature-specific and responsive rules declared above. */
+.app,
+.league-hub-page {
+  background:
+    radial-gradient(circle at 8% 4%, rgba(156, 201, 240, 0.56), transparent 31%),
+    radial-gradient(circle at 96% 26%, rgba(87, 133, 184, 0.22), transparent 34%),
+    linear-gradient(180deg, var(--liquid-canvas) 0%, var(--liquid-canvas-deep) 100%);
+  background-attachment: fixed;
+}
+
+header,
+.hub-header {
+  border-bottom-color: rgba(255, 255, 255, 0.22);
+  background:
+    radial-gradient(circle at 16% 0%, rgba(255, 255, 255, 0.2), transparent 34%),
+    linear-gradient(155deg, rgba(25, 72, 109, 0.9), rgba(87, 133, 184, 0.82));
+  box-shadow:
+    0 14px 38px rgba(25, 72, 109, 0.2),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.1);
+  -webkit-backdrop-filter: saturate(175%) blur(28px);
+  backdrop-filter: saturate(175%) blur(28px);
+}
+
+:is(
+  .card,
+  .stat-card,
+  .league-description,
+  .league-hub-card,
+  .empty-leagues-card,
+  .hub-form-card,
+  .your-status-card,
+  .player-profile-hero,
+  .profile-fact-card,
+  .profile-stat-card,
+  .velocity-card,
+  .account-profile-hub-card,
+  .account-security-card,
+  .account-deletion-card,
+  .account-legal-card,
+  .branding-setting-card,
+  .display-settings-card,
+  .profile-display-setting,
+  .performance-chart-card,
+  .board-quick-stat,
+  .board-detail-panel,
+  .chat-card,
+  .match-edit-modal,
+  .rank-info-modal,
+  .match-detail-modal
+),
+.performance-summary-grid > div,
+.power-formula-card > div {
+  border-color: var(--liquid-border);
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.22), transparent 44%),
+    var(--liquid-surface);
+  box-shadow:
+    0 16px 42px var(--liquid-shadow),
+    inset 0 1px 0 var(--liquid-highlight),
+    inset 0 -1px 0 rgba(73, 118, 151, 0.08);
+  -webkit-backdrop-filter: saturate(165%) blur(24px);
+  backdrop-filter: saturate(165%) blur(24px);
+}
+
+:is(
+  .primary-button,
+  .board-record-button,
+  .avatar-upload-button,
+  .chat-send-button
+),
+.auth-card .primary-button {
+  border: 1px solid rgba(255, 255, 255, 0.38);
+  border-radius: 15px;
+  background:
+    radial-gradient(circle at 28% 8%, rgba(255, 255, 255, 0.3), transparent 36%),
+    linear-gradient(145deg, rgba(57, 118, 166, 0.94), rgba(25, 72, 109, 0.92));
+  box-shadow:
+    0 11px 28px rgba(25, 72, 109, 0.25),
+    inset 0 1px 0 rgba(255, 255, 255, 0.46),
+    inset 0 -1px 0 rgba(7, 35, 57, 0.18);
+  color: white;
+  -webkit-backdrop-filter: saturate(175%) blur(18px);
+  backdrop-filter: saturate(175%) blur(18px);
+}
+
+:is(
+  .secondary-button,
+  .back-button,
+  .board-players-button,
+  .edit-button,
+  .rank-info-button,
+  .status-toggle button,
+  .performance-range-tabs button,
+  .record-mode-switch button,
+  .theme-control button,
+  .mobile-header-menu-panel button,
+  .modal-close
+) {
+  border-color: var(--liquid-border);
+  border-radius: 15px;
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.28), transparent 48%),
+    var(--liquid-surface);
+  box-shadow:
+    0 8px 22px rgba(35, 78, 113, 0.13),
+    inset 0 1px 0 var(--liquid-highlight);
+  color: var(--text);
+  -webkit-backdrop-filter: saturate(175%) blur(18px);
+  backdrop-filter: saturate(175%) blur(18px);
+}
+
+input,
+select,
+textarea {
+  border-color: var(--liquid-border-soft);
+  border-radius: 14px;
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.2), transparent 48%),
+    var(--liquid-surface-strong);
+  box-shadow:
+    inset 0 1px 2px rgba(29, 72, 103, 0.08),
+    0 6px 18px rgba(35, 78, 113, 0.07);
+  -webkit-backdrop-filter: saturate(155%) blur(18px);
+  backdrop-filter: saturate(155%) blur(18px);
+}
+
+.auth-page {
+  background:
+    radial-gradient(circle at 18% 5%, rgba(255, 255, 255, 0.18), transparent 34%),
+    linear-gradient(180deg, var(--liquid-blue-deep) 0%, var(--liquid-blue-top) 48%, var(--liquid-blue-bottom) 100%);
+}
+
+.auth-card {
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.26), transparent 46%),
+    rgba(246, 251, 255, 0.7);
+  box-shadow:
+    0 28px 72px rgba(18, 57, 86, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.88);
+  -webkit-backdrop-filter: saturate(170%) blur(30px);
+  backdrop-filter: saturate(170%) blur(30px);
+}
+
+.auth-tabs {
+  border-color: rgba(255, 255, 255, 0.72);
+  background: rgba(94, 138, 177, 0.13);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.5),
+    0 8px 22px rgba(25, 72, 109, 0.1);
+}
+
+.auth-tabs button.auth-tab-active {
+  border-color: rgba(255, 255, 255, 0.82);
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.5), transparent 58%),
+    rgba(255, 255, 255, 0.7);
+  box-shadow:
+    0 8px 20px rgba(25, 72, 109, 0.16),
+    inset 0 1px 0 white;
+  color: var(--liquid-blue-deep);
+}
+
+.auth-brand p,
+.auth-page > .legal-links button,
+.auth-shell > .legal-links button {
+  color: rgba(248, 252, 255, 0.82);
+}
+
+:root[data-theme="dark"] .auth-card {
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.09), transparent 45%),
+    rgba(15, 34, 48, 0.74);
+}
+
+@media (max-width: 800px) {
+  .app,
+  .league-hub-page {
+    background:
+      radial-gradient(circle at 10% 2%, rgba(156, 201, 240, 0.6), transparent 34%),
+      radial-gradient(circle at 96% 24%, rgba(87, 133, 184, 0.22), transparent 34%),
+      linear-gradient(180deg, var(--liquid-canvas) 0%, var(--liquid-canvas-deep) 100%);
+  }
+
+  header,
+  .hub-header {
+    background:
+      radial-gradient(circle at 16% 0%, rgba(255, 255, 255, 0.2), transparent 36%),
+      linear-gradient(155deg, rgba(25, 72, 109, 0.88), rgba(87, 133, 184, 0.8));
   }
 }
