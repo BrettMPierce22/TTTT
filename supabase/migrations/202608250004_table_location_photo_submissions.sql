@@ -1,5 +1,5 @@
 -- Private photo suggestions for existing table listings.
--- Prepared locally only. Do not apply to a live project without user approval.
+-- Applied to the TTTT production project on 2026-08-25 after user approval.
 
 alter table public.table_locations
   drop constraint if exists table_locations_photo_path_check;

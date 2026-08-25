@@ -19,3 +19,22 @@ Post-deployment verification:
 
 The earlier unified moderator queue and league-access migration files were not
 part of this deployment.
+
+## 2026-08-25 — Moderated table photo submissions
+
+Target: TTTT production project (`juhdzutghafsiggwtaad`)
+
+Applied in one transaction after explicit approval:
+
+- `202608250004_table_location_photo_submissions.sql`
+
+Post-deployment verification:
+
+- private photo-submission table present with 3 row-level security policies
+- moderator-only approval function present
+- 2 hardened storage policies prevent published or pending photos from being replaced
+- 0 photo submissions created during deployment
+- all 389 existing table listings remained intact
+
+The unified moderator queue and league-access migration files were not part of
+this deployment.
