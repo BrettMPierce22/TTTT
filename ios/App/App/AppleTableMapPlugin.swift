@@ -453,16 +453,18 @@ private final class AppleTableMapViewController: UIViewController,
 
         dataAttributionButton.translatesAutoresizingMaskIntoConstraints = false
         var attributionConfiguration = UIButton.Configuration.plain()
-        attributionConfiguration.title = "Table data © OpenStreetMap contributors"
-        attributionConfiguration.image = UIImage(systemName: "info.circle")
-        attributionConfiguration.imagePadding = 5
+        attributionConfiguration.title = "© OSM"
         attributionConfiguration.contentInsets = .zero
+        attributionConfiguration.titleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { incoming in
+            var outgoing = incoming
+            outgoing.font = .systemFont(ofSize: 9, weight: .medium)
+            return outgoing
+        }
         dataAttributionButton.configuration = attributionConfiguration
-        dataAttributionButton.titleLabel?.font = .systemFont(ofSize: 10, weight: .medium)
-        dataAttributionButton.contentHorizontalAlignment = .leading
+        dataAttributionButton.accessibilityLabel = "Table data © OpenStreetMap contributors"
         dataAttributionButton.accessibilityHint = "Opens the OpenStreetMap copyright and license page"
         dataAttributionButton.addTarget(self, action: #selector(openDataAttribution), for: .touchUpInside)
-        view.addSubview(dataAttributionButton)
+        container.addSubview(dataAttributionButton)
 
         NSLayoutConstraint.activate([
             searchGlass.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 10),
@@ -479,18 +481,18 @@ private final class AppleTableMapViewController: UIViewController,
 
             resultCountLabel.topAnchor.constraint(equalTo: filterControl.bottomAnchor, constant: 8),
             resultCountLabel.leadingAnchor.constraint(equalTo: container.leadingAnchor, constant: 14),
-            resultCountLabel.trailingAnchor.constraint(equalTo: container.trailingAnchor, constant: -14),
+            resultCountLabel.trailingAnchor.constraint(lessThanOrEqualTo: dataAttributionButton.leadingAnchor, constant: -8),
             resultCountLabel.bottomAnchor.constraint(equalTo: container.bottomAnchor, constant: -10),
+
+            dataAttributionButton.trailingAnchor.constraint(equalTo: container.trailingAnchor, constant: -14),
+            dataAttributionButton.centerYAnchor.constraint(equalTo: resultCountLabel.centerYAnchor),
+            dataAttributionButton.widthAnchor.constraint(greaterThanOrEqualToConstant: 38),
+            dataAttributionButton.heightAnchor.constraint(equalToConstant: 20),
 
             locateButton.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
             locateButton.topAnchor.constraint(equalTo: searchGlass.bottomAnchor, constant: 12),
             locateButton.widthAnchor.constraint(equalToConstant: 48),
             locateButton.heightAnchor.constraint(equalToConstant: 48),
-
-            dataAttributionButton.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 18),
-            dataAttributionButton.trailingAnchor.constraint(lessThanOrEqualTo: locateButton.leadingAnchor, constant: -10),
-            dataAttributionButton.centerYAnchor.constraint(equalTo: locateButton.centerYAnchor),
-            dataAttributionButton.heightAnchor.constraint(greaterThanOrEqualToConstant: 32),
         ])
     }
 
