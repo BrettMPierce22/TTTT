@@ -20,8 +20,12 @@
     {
       "layers": [
         {
-          "image-name": "01-dome.png",
-          "name": "Table Dome"
+          "image-name": "02-right-paddle.png",
+          "name": "Right Paddle"
+        },
+        {
+          "image-name": "01-left-paddle.png",
+          "name": "Left Paddle"
         }
       ],
       "shadow": {
@@ -30,17 +34,17 @@
       },
       "translucency": {
         "enabled": true,
-        "value": 0.38
+        "value": 0.46
       }
     },
     {
       "layers": [
         {
-          "image-name": "03-right-t.png",
+          "image-name": "04-right-t.png",
           "name": "Right T"
         },
         {
-          "image-name": "02-left-t.png",
+          "image-name": "03-left-t.png",
           "name": "Left T"
         }
       ],
