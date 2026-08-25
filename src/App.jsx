@@ -6629,7 +6629,9 @@ if (
           activeTab !==
             "chat" &&
           activeTab !==
-            "moderation" && (
+            "moderation" &&
+          activeTab !==
+            "history" && (
             <div className="league-description">
               {
                 league.description
