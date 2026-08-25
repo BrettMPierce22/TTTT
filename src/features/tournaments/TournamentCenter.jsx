@@ -284,6 +284,15 @@ function formatLabel(value) {
   }[value] || value;
 }
 
+function statusLabel(value) {
+  return {
+    draft: "Draft",
+    active: "Live",
+    complete: "Final",
+    cancelled: "Cancelled",
+  }[value] || value;
+}
+
 function entrantName(entry) {
   return entry?.player?.name || entry?.guest_name || "TBD";
 }
@@ -294,6 +303,7 @@ function TournamentCenter({ league, currentPlayer, players, isAdmin }) {
   const [entries, setEntries] = useState([]);
   const [matches, setMatches] = useState([]);
   const [selectedId, setSelectedId] = useState(null);
+  const [detailTab, setDetailTab] = useState("overview");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
@@ -335,9 +345,9 @@ function TournamentCenter({ league, currentPlayer, players, isAdmin }) {
     const list = tournamentResult.data || [];
     setTournaments(list);
     const nextSelectedId =
-      (selectedId && list.some((item) => item.id === selectedId) && selectedId) ||
-      list[0]?.id ||
-      null;
+      selectedId && list.some((item) => item.id === selectedId)
+        ? selectedId
+        : null;
     setSelectedId(nextSelectedId);
 
     if (!nextSelectedId) {
@@ -376,6 +386,14 @@ function TournamentCenter({ league, currentPlayer, players, isAdmin }) {
   }, [loadData]);
 
   const selectedTournament = tournaments.find((item) => item.id === selectedId) || null;
+  const currentTournaments = useMemo(
+    () => tournaments.filter((item) => item.status === "draft" || item.status === "active"),
+    [tournaments]
+  );
+  const pastTournaments = useMemo(
+    () => tournaments.filter((item) => item.status === "complete" || item.status === "cancelled"),
+    [tournaments]
+  );
   const canManage = Boolean(
     selectedTournament &&
       (isAdmin || selectedTournament.created_by_player_id === currentPlayer?.id)
@@ -503,6 +521,7 @@ function TournamentCenter({ league, currentPlayer, players, isAdmin }) {
       });
       if (error) throw error;
       setSelectedId(data);
+      setDetailTab("overview");
       setForm(EMPTY_FORM);
       setSelectedEntrants([]);
       setShowCreate(false);
@@ -594,6 +613,47 @@ function TournamentCenter({ league, currentPlayer, players, isAdmin }) {
     await loadData();
   }
 
+  function openTournament(tournamentId) {
+    setSelectedId(tournamentId);
+    setDetailTab("overview");
+    setShowCreate(false);
+    setNotice("");
+    setErrorMessage("");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  function closeTournament() {
+    setSelectedId(null);
+    setDetailTab("overview");
+    setEntries([]);
+    setMatches([]);
+    setScoreMatch(null);
+    setNotice("");
+    setErrorMessage("");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  function renderTournamentCard(tournament, group) {
+    return (
+      <button
+        type="button"
+        className={`tournament-library-card tournament-library-card-${group}`}
+        key={tournament.id}
+        onClick={() => openTournament(tournament.id)}
+      >
+        <div className="tournament-library-card-top">
+          <span className={`tournament-status tournament-status-${tournament.status}`}>
+            {statusLabel(tournament.status)}
+          </span>
+          <span className="tournament-card-arrow" aria-hidden="true">→</span>
+        </div>
+        <strong>{tournament.name}</strong>
+        <p>{tournament.description || `${formatLabel(tournament.format)} tournament`}</p>
+        <small>{formatLabel(tournament.format)} · Best of {tournament.best_of}</small>
+      </button>
+    );
+  }
+
   function renderMatch(match) {
     const playerA = entryById.get(match.player_a_entry_id);
     const playerB = entryById.get(match.player_b_entry_id);
@@ -681,10 +741,20 @@ function TournamentCenter({ league, currentPlayer, players, isAdmin }) {
         <div>
           <p className="season-label">COMPETE</p>
           <h2>Tournament Center</h2>
-          <p>Create custom brackets, seed the field, record scores, and crown a champion.</p>
+          <p>Choose a tournament to view its details, players, and bracket.</p>
         </div>
-        <button type="button" className="primary-button" onClick={() => setShowCreate(true)}>
-          + New Tournament
+        <button
+          type="button"
+          className={`tournament-create-trigger ${showCreate ? "tournament-create-trigger-active" : ""}`}
+          aria-label={showCreate ? "Close new tournament form" : "Create a new tournament"}
+          aria-expanded={showCreate}
+          onClick={() => {
+            setSelectedId(null);
+            setDetailTab("overview");
+            setShowCreate((current) => !current);
+          }}
+        >
+          <span aria-hidden="true">{showCreate ? "×" : "+"}</span>
         </button>
       </div>
 
@@ -812,39 +882,132 @@ function TournamentCenter({ league, currentPlayer, players, isAdmin }) {
         </form>
       )}
 
-      <div className="tournament-layout">
-        <aside className="tournament-list" aria-label="Tournaments">
+      {!selectedTournament ? (
+        <div className="tournament-library">
           {tournaments.length === 0 ? (
             <div className="card tournament-empty">
               <strong>No tournaments yet</strong>
-              <p>Create the first bracket for {league.name}.</p>
+              <p>Tap the glass + to create the first tournament for {league.name}.</p>
             </div>
           ) : (
-            tournaments.map((tournament) => (
-              <button type="button" className={selectedId === tournament.id ? "tournament-list-active" : ""} key={tournament.id} onClick={() => setSelectedId(tournament.id)}>
-                <span className={`tournament-status tournament-status-${tournament.status}`}>{tournament.status}</span>
-                <strong>{tournament.name}</strong>
-                <small>{formatLabel(tournament.format)} · Best of {tournament.best_of}</small>
-              </button>
-            ))
-          )}
-        </aside>
-
-        {selectedTournament && (
-          <div className="tournament-detail">
-            <div className="card tournament-detail-header">
-              <div>
-                <div className="tournament-title-row">
-                  <span className={`tournament-status tournament-status-${selectedTournament.status}`}>{selectedTournament.status}</span>
-                  <span>{formatLabel(selectedTournament.format)}</span>
+            <>
+              <section className="tournament-library-section tournament-library-current">
+                <div className="tournament-library-heading">
+                  <div>
+                    <p className="season-label">NOW</p>
+                    <h3>Current Tournaments</h3>
+                  </div>
+                  <span>{currentTournaments.length}</span>
                 </div>
-                <h2>{selectedTournament.name}</h2>
-                <p>{selectedTournament.description || `${entries.length}-player tournament for ${league.name}.`}</p>
+                {currentTournaments.length > 0 ? (
+                  <div className="tournament-library-grid">
+                    {currentTournaments.map((tournament) => renderTournamentCard(tournament, "current"))}
+                  </div>
+                ) : (
+                  <div className="tournament-library-placeholder">No current tournaments.</div>
+                )}
+              </section>
+
+              <section className="tournament-library-section tournament-library-past">
+                <div className="tournament-library-heading">
+                  <div>
+                    <p className="season-label">ARCHIVE</p>
+                    <h3>Past Tournaments</h3>
+                  </div>
+                  <span>{pastTournaments.length}</span>
+                </div>
+                {pastTournaments.length > 0 ? (
+                  <div className="tournament-library-grid">
+                    {pastTournaments.map((tournament) => renderTournamentCard(tournament, "past"))}
+                  </div>
+                ) : (
+                  <div className="tournament-library-placeholder">Completed tournaments will appear here.</div>
+                )}
+              </section>
+            </>
+          )}
+        </div>
+      ) : (
+        <div className="tournament-detail">
+          <div className="tournament-detail-toolbar">
+            <button type="button" className="tournament-back-button" onClick={closeTournament}>
+              <span aria-hidden="true">‹</span>
+              All Tournaments
+            </button>
+            <span className={`tournament-status tournament-status-${selectedTournament.status}`}>
+              {statusLabel(selectedTournament.status)}
+            </span>
+          </div>
+
+          <div className="tournament-detail-title">
+            <div>
+              <p className="season-label">{formatLabel(selectedTournament.format)}</p>
+              <h2>{selectedTournament.name}</h2>
+              <p>{selectedTournament.description || `${entries.length}-player tournament for ${league.name}.`}</p>
+            </div>
+          </div>
+
+          <div className="tournament-detail-tabs" role="tablist" aria-label="Tournament sections">
+            <button
+              type="button"
+              role="tab"
+              aria-selected={detailTab === "overview"}
+              className={detailTab === "overview" ? "tournament-detail-tab-active" : ""}
+              onClick={() => setDetailTab("overview")}
+            >
+              Overview
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={detailTab === "bracket"}
+              className={detailTab === "bracket" ? "tournament-detail-tab-active" : ""}
+              onClick={() => setDetailTab("bracket")}
+            >
+              {selectedTournament.format === "round_robin" ? "Matches" : "Bracket"}
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={detailTab === "players"}
+              className={detailTab === "players" ? "tournament-detail-tab-active" : ""}
+              onClick={() => setDetailTab("players")}
+            >
+              Players
+            </button>
+          </div>
+
+          {detailTab === "overview" && (
+            <div className="tournament-detail-panel tournament-overview-panel">
+              <div className="tournament-overview-stats">
+                <div><small>Status</small><strong>{statusLabel(selectedTournament.status)}</strong></div>
+                <div><small>Players</small><strong>{entries.length}</strong></div>
+                <div><small>Matches</small><strong>{matches.length}</strong></div>
+                <div><small>Format</small><strong>Best of {selectedTournament.best_of}</strong></div>
               </div>
+
+              {selectedTournament.winner_entry_id && (
+                <div className="tournament-champion">
+                  <span>🏆 CHAMPION</span>
+                  <strong>{entrantName(entryById.get(selectedTournament.winner_entry_id))}</strong>
+                </div>
+              )}
+
+              {selectedTournament.format === "round_robin" && matches.length > 0 && (
+                <div className="card tournament-standings">
+                  <div className="tournament-section-heading"><p className="season-label">TABLE</p><h3>Standings</h3></div>
+                  {roundRobinStandings.map((row, index) => (
+                    <div className="tournament-standing-row" key={row.entry.id}>
+                      <span>{index + 1}</span><strong>{entrantName(row.entry)}</strong><b>{row.wins}-{row.losses}</b><small>{row.gamesFor - row.gamesAgainst >= 0 ? "+" : ""}{row.gamesFor - row.gamesAgainst}</small>
+                    </div>
+                  ))}
+                </div>
+              )}
+
               <div className="tournament-detail-actions">
                 {canManage && selectedTournament.status === "draft" && (
                   <>
-                    <button type="button" className="primary-button" disabled={saving} onClick={startTournament}>Start Bracket</button>
+                    <button type="button" className="primary-button" disabled={saving} onClick={startTournament}>Start Tournament</button>
                     <button type="button" className="secondary-button" onClick={deleteDraft}>Delete Draft</button>
                   </>
                 )}
@@ -853,41 +1016,44 @@ function TournamentCenter({ league, currentPlayer, players, isAdmin }) {
                 )}
               </div>
             </div>
+          )}
 
-            {selectedTournament.winner_entry_id && (
-              <div className="tournament-champion">
-                <span>🏆 CHAMPION</span>
-                <strong>{entrantName(entryById.get(selectedTournament.winner_entry_id))}</strong>
-              </div>
-            )}
-
-            {selectedTournament.status === "draft" && (
-              <div className="card tournament-draft-field">
-                <div className="tournament-section-heading"><p className="season-label">SEEDING</p><h3>Starting field</h3></div>
-                <div className="tournament-entry-grid">
-                  {entries.map((entry) => <div key={entry.id}><span>{entry.seed}</span><strong>{entrantName(entry)}</strong></div>)}
+          {detailTab === "bracket" && (
+            <div className="tournament-detail-panel">
+              {matches.length === 0 ? (
+                <div className="card tournament-empty tournament-bracket-empty">
+                  <strong>No bracket yet</strong>
+                  <p>The bracket will appear here after this tournament starts.</p>
+                  {canManage && selectedTournament.status === "draft" && (
+                    <button type="button" className="primary-button" disabled={saving} onClick={startTournament}>Start Tournament</button>
+                  )}
                 </div>
-              </div>
-            )}
-
-            {selectedTournament.format === "round_robin" && matches.length > 0 && (
-              <section className="tournament-round-robin">
-                <div className="card tournament-standings">
-                  <div className="tournament-section-heading"><p className="season-label">TABLE</p><h3>Round-robin standings</h3></div>
-                  {roundRobinStandings.map((row, index) => (
-                    <div className="tournament-standing-row" key={row.entry.id}>
-                      <span>{index + 1}</span><strong>{entrantName(row.entry)}</strong><b>{row.wins}-{row.losses}</b><small>{row.gamesFor - row.gamesAgainst >= 0 ? "+" : ""}{row.gamesFor - row.gamesAgainst}</small>
-                    </div>
-                  ))}
-                </div>
+              ) : selectedTournament.format === "round_robin" ? (
                 <div className="tournament-schedule">{matches.map(renderMatch)}</div>
-              </section>
-            )}
+              ) : (
+                renderBracket()
+              )}
+            </div>
+          )}
 
-            {selectedTournament.format !== "round_robin" && renderBracket()}
-          </div>
-        )}
-      </div>
+          {detailTab === "players" && (
+            <div className="card tournament-detail-panel tournament-players-panel">
+              <div className="tournament-section-heading">
+                <p className="season-label">FIELD</p>
+                <h3>{entries.length} Players</h3>
+              </div>
+              <div className="tournament-entry-grid">
+                {entries.map((entry) => (
+                  <div key={entry.id}>
+                    <span>{entry.seed}</span>
+                    <strong>{entrantName(entry)}</strong>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {scoreMatch && (
         <div className="tournament-score-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) setScoreMatch(null); }}>
