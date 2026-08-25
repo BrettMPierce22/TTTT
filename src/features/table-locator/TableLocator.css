@@ -440,6 +440,18 @@
   z-index: 0;
 }
 
+.locator-popup-details {
+  margin-top: 7px;
+  padding: 0;
+  color: var(--sport-blue-deep, #1d5679);
+  background: transparent;
+  border: 0;
+  text-decoration: underline;
+  font: inherit;
+  font-weight: 750;
+  cursor: pointer;
+}
+
 .table-map-marker-shell {
   background: transparent;
   border: 0;
@@ -631,6 +643,30 @@
   background: var(--surface-alt);
   border: 1px solid var(--border);
   border-radius: 10px;
+}
+
+@media (min-width: 861px) {
+  .locator-layout {
+    grid-template-columns: minmax(0, 1.45fr) minmax(320px, 0.55fr);
+    align-items: stretch;
+  }
+
+  .locator-map-panel,
+  .locator-map {
+    min-height: 680px;
+  }
+
+  .locator-results {
+    max-height: 680px;
+    overflow-y: auto;
+    border-top: 0;
+    border-left: 1px solid var(--border);
+    scrollbar-gutter: stable;
+  }
+
+  .locator-results-list {
+    grid-template-columns: 1fr;
+  }
 }
 
 .locator-review > div:first-child {

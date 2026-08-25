@@ -612,6 +612,21 @@ function TableLocator({ userId }) {
     );
   }
 
+  function showWebLocationDetails(locationId, { toggle = false } = {}) {
+    if (toggle && selectedLocationId === locationId) {
+      setSelectedLocationId(null);
+      return;
+    }
+
+    setSelectedLocationId(locationId);
+    window.setTimeout(() => {
+      document.querySelector(".locator-detail-card")?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    }, 100);
+  }
+
   function resetLocationEditor() {
     setEditingLocationId(null);
     setLocationForm(EMPTY_LOCATION_FORM);
@@ -1759,13 +1774,21 @@ function TableLocator({ userId }) {
                 position={[location.latitude, location.longitude]}
                 icon={tableMarker}
                 eventHandlers={{
-                  click: () => setSelectedLocationId(location.id),
+                  click: () => showWebLocationDetails(location.id),
                 }}
               >
                 <Popup>
                   <strong>{location.name}</strong>
                   <br />
                   {location.city}, {location.region}
+                  <br />
+                  <button
+                    type="button"
+                    className="locator-popup-details"
+                    onClick={() => showWebLocationDetails(location.id)}
+                  >
+                    View details
+                  </button>
                 </Popup>
               </Marker>
             ))}
@@ -1797,10 +1820,9 @@ function TableLocator({ userId }) {
                       isSelected ? "locator-result-card-selected" : ""
                     }`}
                     key={location.id}
+                    aria-expanded={isSelected}
                     onClick={() =>
-                      setSelectedLocationId((current) =>
-                        current === location.id ? null : location.id
-                      )
+                      showWebLocationDetails(location.id, { toggle: true })
                     }
                   >
                     <div className="locator-result-card-topline">
