@@ -20,8 +20,9 @@ import {
 } from "../../native/addressGeocoder";
 import {
   canUseNativeAppleTableMap,
+  completeNativeAppleTableContribution,
   onNativeAppleTableAddRequested,
-  onNativeAppleTableContributionRequested,
+  onNativeAppleTableContributionSubmitted,
   onNativeAppleTableLocationSelected,
   presentNativeAppleTableMap,
 } from "../../native/appleTableMap";
@@ -130,6 +131,17 @@ function parseCoordinate(value) {
   return Number.isFinite(coordinate) ? coordinate : null;
 }
 
+function base64ToBlob(base64, contentType) {
+  const binary = window.atob(base64);
+  const bytes = new Uint8Array(binary.length);
+
+  for (let index = 0; index < binary.length; index += 1) {
+    bytes[index] = binary.charCodeAt(index);
+  }
+
+  return new Blob([bytes], { type: contentType });
+}
+
 function formatVenueType(value) {
   const labels = {
     park: "Park",
@@ -200,7 +212,6 @@ function TableLocator({ userId }) {
     reason: "incorrect",
     details: "",
   });
-  const [nativeContributionAction, setNativeContributionAction] = useState(null);
   const [photoSuggestionTarget, setPhotoSuggestionTarget] = useState(null);
   const [photoSuggestionFile, setPhotoSuggestionFile] = useState(null);
   const [photoSuggestionPreview, setPhotoSuggestionPreview] = useState("");
@@ -467,6 +478,118 @@ function TableLocator({ userId }) {
     }
   }, [approvedLocations, ratingsByLocation, selectedLocationId, userPosition]);
 
+  const handleNativeContributionSubmission = useCallback(
+    async ({ action, id, requestId, rating, title, details, reason, photoBase64, contentType }) => {
+      let success = false;
+      let message = "That submission could not be sent. Please try again.";
+      let uploadedPhotoPath = null;
+
+      try {
+        if (!requestId || !id) {
+          throw new Error("The contribution request was incomplete.");
+        }
+
+        if (action === "review") {
+          const { error } = await supabase.from("table_location_reviews").insert({
+            location_id: id,
+            user_id: userId,
+            rating: Number(rating) || 5,
+            title: String(title || "").trim() || null,
+            body: String(details || "").trim() || null,
+            status: "pending",
+          });
+
+          if (error) {
+            if (error.code === "23505") {
+              message = "You already submitted a rating for this location.";
+            }
+            throw error;
+          }
+          success = true;
+          message = "Your review is awaiting moderation before it appears publicly.";
+        } else if (action === "edit" || action === "report") {
+          const correction = String(details || "").trim();
+          const { error } = await supabase.from("table_location_reports").insert({
+            location_id: id,
+            review_id: null,
+            reporter_id: userId,
+            reason: action === "edit" ? "incorrect" : reason || "other",
+            details:
+              action === "edit"
+                ? `Suggested listing update: ${correction}`
+                : correction || null,
+            status: "open",
+          });
+
+          if (error) throw error;
+          success = true;
+          message =
+            action === "edit"
+              ? "Thanks! A moderator will review your suggested change."
+              : "Report received. We’ll review it as soon as possible.";
+        } else if (action === "photo") {
+          const resolvedContentType = contentType || "image/jpeg";
+          const photo = base64ToBlob(String(photoBase64 || ""), resolvedContentType);
+
+          if (!photo.size || photo.size > MAX_TABLE_PHOTO_BYTES) {
+            throw new Error("The selected photo is missing or larger than 5 MB.");
+          }
+
+          const submissionId = crypto.randomUUID();
+          uploadedPhotoPath = `${userId}/${id}/${submissionId}.jpg`;
+          const { error: uploadError } = await supabase.storage
+            .from(TABLE_PHOTO_BUCKET)
+            .upload(uploadedPhotoPath, photo, {
+              cacheControl: "3600",
+              contentType: resolvedContentType,
+              upsert: false,
+            });
+
+          if (uploadError) throw uploadError;
+
+          const { error } = await supabase
+            .from("table_location_photo_submissions")
+            .insert({
+              id: submissionId,
+              location_id: id,
+              contributor_id: userId,
+              photo_path: uploadedPhotoPath,
+              status: "pending",
+            });
+
+          if (error) {
+            await supabase.storage.from(TABLE_PHOTO_BUCKET).remove([uploadedPhotoPath]);
+            uploadedPhotoPath = null;
+            throw error;
+          }
+          success = true;
+          message = "Thanks! Your photo is private while a moderator reviews it.";
+        } else {
+          throw new Error("That contribution type is not supported.");
+        }
+      } catch (error) {
+        console.error("Could not submit native table contribution", error);
+        if (uploadedPhotoPath) {
+          await supabase.storage.from(TABLE_PHOTO_BUCKET).remove([uploadedPhotoPath]);
+        }
+        if (error?.message?.includes("larger than 5 MB")) {
+          message = error.message;
+        }
+      }
+
+      try {
+        await completeNativeAppleTableContribution({ requestId, success, message });
+      } catch (error) {
+        console.error("Could not finish the native contribution flow", error);
+      }
+
+      if (success) {
+        await loadLocatorData();
+      }
+    },
+    [loadLocatorData, userId]
+  );
+
   useEffect(() => {
     if (!canUseNativeAppleTableMap()) return undefined;
 
@@ -499,12 +622,7 @@ function TableLocator({ userId }) {
           });
         }, 180);
       }),
-      onNativeAppleTableContributionRequested(({ action, id }) => {
-        setQuery("");
-        setQuickFilter("all");
-        setSelectedLocationId(id);
-        setNativeContributionAction({ action, id });
-      }),
+      onNativeAppleTableContributionSubmitted(handleNativeContributionSubmission),
     ]).then((nextHandles) => {
       if (cancelled) {
         nextHandles.forEach((handle) => handle.remove());
@@ -517,62 +635,7 @@ function TableLocator({ userId }) {
       cancelled = true;
       handles.forEach((handle) => handle.remove());
     };
-  }, []);
-
-  useEffect(() => {
-    if (
-      !nativeContributionAction ||
-      selectedLocation?.id !== nativeContributionAction.id
-    ) {
-      return;
-    }
-
-    const timer = window.setTimeout(() => {
-      const { action } = nativeContributionAction;
-      setNativeContributionAction(null);
-      setErrorMessage("");
-      setNotice("");
-
-      if (action === "review") {
-        window.setTimeout(() => {
-          document.querySelector(".locator-review-form")?.scrollIntoView({
-            behavior: "smooth",
-            block: "start",
-          });
-        }, 180);
-        return;
-      }
-
-      if (action === "edit" || action === "report") {
-        setReportTarget({ locationId: selectedLocation.id, reviewId: null });
-        setReportForm({
-          reason: "incorrect",
-          details: action === "edit" ? "Suggested listing update: " : "",
-        });
-        window.setTimeout(() => {
-          document.querySelector(".locator-report-form")?.scrollIntoView({
-            behavior: "smooth",
-            block: "start",
-          });
-        }, 180);
-        return;
-      }
-
-      if (action === "photo") {
-        setPhotoSuggestionTarget(selectedLocation);
-        setPhotoSuggestionFile(null);
-        setPhotoSuggestionPreview("");
-        window.setTimeout(() => {
-          document.querySelector(".locator-photo-suggestion-form")?.scrollIntoView({
-            behavior: "smooth",
-            block: "start",
-          });
-        }, 180);
-      }
-    }, 0);
-
-    return () => window.clearTimeout(timer);
-  }, [nativeContributionAction, selectedLocation]);
+  }, [handleNativeContributionSubmission]);
 
   function updateLocationForm(field, value) {
     const addressFields = ["address", "city", "region", "postalCode"];

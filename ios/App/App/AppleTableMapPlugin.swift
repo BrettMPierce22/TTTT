@@ -1,6 +1,7 @@
 import Capacitor
 import CoreLocation
 import MapKit
+import PhotosUI
 import UIKit
 
 private struct AppleTableLocation {
@@ -388,6 +389,395 @@ private final class AppleTableDetailsViewController: UIViewController {
     }
 }
 
+private final class AppleTableContributionViewController: UIViewController,
+    PHPickerViewControllerDelegate,
+    UITextViewDelegate {
+
+    private let action: String
+    private let location: AppleTableLocation
+    private let onSubmit: (JSObject) -> Void
+    private let contentStack = UIStackView()
+    private let titleField = UITextField()
+    private let detailsView = UITextView()
+    private let detailsPlaceholderLabel = UILabel()
+    private let ratingControl = UISegmentedControl(items: ["1", "2", "3", "4", "5"])
+    private let reasonButton = UIButton(type: .system)
+    private let photoButton = UIButton(type: .system)
+    private let photoPreview = UIImageView()
+    private let submitButton = UIButton(type: .system)
+    private var selectedImage: UIImage?
+    private var reportReason = "incorrect"
+    private(set) var requestID: String?
+
+    init(
+        action: String,
+        location: AppleTableLocation,
+        onSubmit: @escaping (JSObject) -> Void
+    ) {
+        self.action = action
+        self.location = location
+        self.onSubmit = onSubmit
+        super.init(nibName: nil, bundle: nil)
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        title = formTitle
+        view.backgroundColor = .systemGroupedBackground
+
+        let scrollView = UIScrollView()
+        scrollView.translatesAutoresizingMaskIntoConstraints = false
+        scrollView.keyboardDismissMode = .interactive
+        view.addSubview(scrollView)
+
+        contentStack.translatesAutoresizingMaskIntoConstraints = false
+        contentStack.axis = .vertical
+        contentStack.spacing = 16
+        scrollView.addSubview(contentStack)
+
+        let introLabel = UILabel()
+        introLabel.font = .preferredFont(forTextStyle: .headline)
+        introLabel.adjustsFontForContentSizeCategory = true
+        introLabel.numberOfLines = 0
+        introLabel.text = location.name
+
+        let helperLabel = UILabel()
+        helperLabel.font = .preferredFont(forTextStyle: .subheadline)
+        helperLabel.adjustsFontForContentSizeCategory = true
+        helperLabel.textColor = .secondaryLabel
+        helperLabel.numberOfLines = 0
+        helperLabel.text = helperText
+
+        let introStack = UIStackView(arrangedSubviews: [introLabel, helperLabel])
+        introStack.axis = .vertical
+        introStack.spacing = 6
+        contentStack.addArrangedSubview(makeGlassCard(content: introStack, padding: 18))
+
+        configureForm()
+        configureSubmitButton()
+
+        NSLayoutConstraint.activate([
+            scrollView.topAnchor.constraint(equalTo: view.topAnchor),
+            scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            scrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            scrollView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            contentStack.topAnchor.constraint(equalTo: scrollView.contentLayoutGuide.topAnchor, constant: 18),
+            contentStack.leadingAnchor.constraint(equalTo: scrollView.frameLayoutGuide.leadingAnchor, constant: 16),
+            contentStack.trailingAnchor.constraint(equalTo: scrollView.frameLayoutGuide.trailingAnchor, constant: -16),
+            contentStack.bottomAnchor.constraint(equalTo: scrollView.contentLayoutGuide.bottomAnchor, constant: -28),
+        ])
+    }
+
+    private var formTitle: String {
+        switch action {
+        case "photo": return "Add Photo"
+        case "review": return "Write Review"
+        case "edit": return "Suggest Edit"
+        default: return "Report Problem"
+        }
+    }
+
+    private var helperText: String {
+        switch action {
+        case "photo": return "Choose a clear photo of the public tables. It stays private until a moderator approves it."
+        case "review": return "Share your experience. Your review will appear after moderation."
+        case "edit": return "Tell us what is missing or incorrect. A moderator will review the change."
+        default: return "Let the moderation team know what is wrong with this listing."
+        }
+    }
+
+    private func configureForm() {
+        switch action {
+        case "photo": configurePhotoForm()
+        case "review": configureReviewForm()
+        case "edit":
+            contentStack.addArrangedSubview(makeTextCard(
+                title: "WHAT SHOULD WE CHANGE?",
+                placeholder: "Include the corrected name, address, hours, number of tables, or any other details."
+            ))
+        default: configureReportForm()
+        }
+    }
+
+    private func configureReviewForm() {
+        ratingControl.selectedSegmentIndex = 4
+        titleField.borderStyle = .roundedRect
+        titleField.placeholder = "Short title (optional)"
+        titleField.autocapitalizationType = .sentences
+        configureTextView(placeholder: "Anything else people should know? (optional)")
+
+        let stack = UIStackView()
+        stack.axis = .vertical
+        stack.spacing = 12
+        stack.addArrangedSubview(makeSectionLabel("YOUR RATING"))
+        stack.addArrangedSubview(ratingControl)
+        stack.addArrangedSubview(titleField)
+        stack.addArrangedSubview(detailsView)
+        detailsView.heightAnchor.constraint(greaterThanOrEqualToConstant: 120).isActive = true
+        contentStack.addArrangedSubview(makeGlassCard(content: stack, padding: 16))
+    }
+
+    private func configureReportForm() {
+        let reasons = [
+            ("Incorrect information", "incorrect"),
+            ("Location is closed", "closed"),
+            ("Private property", "private_property"),
+            ("Safety concern", "unsafe"),
+            ("Abusive content", "abusive"),
+            ("Other problem", "other"),
+        ]
+
+        var reasonConfiguration = UIButton.Configuration.bordered()
+        reasonConfiguration.title = reasons[0].0
+        reasonConfiguration.image = UIImage(systemName: "chevron.up.chevron.down")
+        reasonConfiguration.imagePlacement = .trailing
+        reasonConfiguration.cornerStyle = .large
+        reasonButton.configuration = reasonConfiguration
+        reasonButton.showsMenuAsPrimaryAction = true
+        reasonButton.menu = UIMenu(children: reasons.map { label, value in
+            UIAction(title: label) { [weak self] _ in
+                self?.reportReason = value
+                self?.reasonButton.configuration?.title = label
+            }
+        })
+
+        configureTextView(placeholder: "Describe the problem so we can review it.")
+        let stack = UIStackView()
+        stack.axis = .vertical
+        stack.spacing = 12
+        stack.addArrangedSubview(makeSectionLabel("WHAT IS WRONG?"))
+        stack.addArrangedSubview(reasonButton)
+        stack.addArrangedSubview(detailsView)
+        detailsView.heightAnchor.constraint(greaterThanOrEqualToConstant: 140).isActive = true
+        contentStack.addArrangedSubview(makeGlassCard(content: stack, padding: 16))
+    }
+
+    private func configurePhotoForm() {
+        var photoConfiguration: UIButton.Configuration
+        if #available(iOS 26.0, *) {
+            photoConfiguration = .glass()
+        } else {
+            photoConfiguration = .bordered()
+        }
+        photoConfiguration.title = "Choose Photo"
+        photoConfiguration.image = UIImage(systemName: "photo.on.rectangle")
+        photoConfiguration.imagePadding = 8
+        photoConfiguration.cornerStyle = .large
+        photoButton.configuration = photoConfiguration
+        photoButton.addTarget(self, action: #selector(choosePhoto), for: .touchUpInside)
+
+        photoPreview.translatesAutoresizingMaskIntoConstraints = false
+        photoPreview.contentMode = .scaleAspectFill
+        photoPreview.clipsToBounds = true
+        photoPreview.layer.cornerRadius = 16
+        photoPreview.backgroundColor = .secondarySystemGroupedBackground
+        photoPreview.image = UIImage(systemName: "photo")
+        photoPreview.tintColor = .tertiaryLabel
+        photoPreview.heightAnchor.constraint(equalToConstant: 220).isActive = true
+
+        let stack = UIStackView(arrangedSubviews: [makeSectionLabel("TABLE PHOTO"), photoPreview, photoButton])
+        stack.axis = .vertical
+        stack.spacing = 12
+        contentStack.addArrangedSubview(makeGlassCard(content: stack, padding: 16))
+    }
+
+    private func makeTextCard(title: String, placeholder: String) -> UIView {
+        configureTextView(placeholder: placeholder)
+        detailsView.heightAnchor.constraint(greaterThanOrEqualToConstant: 180).isActive = true
+        let stack = UIStackView(arrangedSubviews: [makeSectionLabel(title), detailsView])
+        stack.axis = .vertical
+        stack.spacing = 12
+        return makeGlassCard(content: stack, padding: 16)
+    }
+
+    private func configureTextView(placeholder: String) {
+        detailsView.font = .preferredFont(forTextStyle: .body)
+        detailsView.adjustsFontForContentSizeCategory = true
+        detailsView.backgroundColor = .secondarySystemBackground
+        detailsView.layer.cornerRadius = 12
+        detailsView.textContainerInset = UIEdgeInsets(top: 12, left: 10, bottom: 12, right: 10)
+        detailsView.accessibilityLabel = placeholder
+        detailsView.delegate = self
+
+        detailsPlaceholderLabel.text = placeholder
+        detailsPlaceholderLabel.font = .preferredFont(forTextStyle: .body)
+        detailsPlaceholderLabel.textColor = .placeholderText
+        detailsPlaceholderLabel.numberOfLines = 0
+        detailsPlaceholderLabel.translatesAutoresizingMaskIntoConstraints = false
+        detailsView.addSubview(detailsPlaceholderLabel)
+        NSLayoutConstraint.activate([
+            detailsPlaceholderLabel.topAnchor.constraint(equalTo: detailsView.topAnchor, constant: 12),
+            detailsPlaceholderLabel.leadingAnchor.constraint(equalTo: detailsView.leadingAnchor, constant: 14),
+            detailsPlaceholderLabel.trailingAnchor.constraint(equalTo: detailsView.trailingAnchor, constant: -14),
+        ])
+    }
+
+    func textViewDidChange(_ textView: UITextView) {
+        detailsPlaceholderLabel.isHidden = !textView.text.isEmpty
+    }
+
+    private func configureSubmitButton() {
+        var configuration: UIButton.Configuration
+        if #available(iOS 26.0, *) {
+            configuration = .prominentGlass()
+        } else {
+            configuration = .filled()
+        }
+        configuration.title = action == "report" ? "Send Report" : "Submit for Review"
+        configuration.cornerStyle = .capsule
+        configuration.baseBackgroundColor = UIColor(red: 0.086, green: 0.498, blue: 0.745, alpha: 1)
+        configuration.contentInsets = NSDirectionalEdgeInsets(top: 14, leading: 18, bottom: 14, trailing: 18)
+        submitButton.configuration = configuration
+        submitButton.addTarget(self, action: #selector(submit), for: .touchUpInside)
+        contentStack.addArrangedSubview(submitButton)
+    }
+
+    private func makeSectionLabel(_ text: String) -> UILabel {
+        let label = UILabel()
+        label.font = .preferredFont(forTextStyle: .caption1)
+        label.adjustsFontForContentSizeCategory = true
+        label.textColor = .secondaryLabel
+        label.text = text
+        return label
+    }
+
+    private func makeGlassCard(content: UIView, padding: CGFloat) -> UIView {
+        let effectView: UIVisualEffectView
+        if #available(iOS 26.0, *) {
+            let effect = UIGlassEffect(style: .regular)
+            effect.tintColor = UIColor.systemBackground.withAlphaComponent(0.08)
+            effectView = UIVisualEffectView(effect: effect)
+        } else {
+            effectView = UIVisualEffectView(effect: UIBlurEffect(style: .systemMaterial))
+        }
+        effectView.layer.cornerRadius = 22
+        effectView.clipsToBounds = true
+        content.translatesAutoresizingMaskIntoConstraints = false
+        effectView.contentView.addSubview(content)
+        NSLayoutConstraint.activate([
+            content.topAnchor.constraint(equalTo: effectView.contentView.topAnchor, constant: padding),
+            content.leadingAnchor.constraint(equalTo: effectView.contentView.leadingAnchor, constant: padding),
+            content.trailingAnchor.constraint(equalTo: effectView.contentView.trailingAnchor, constant: -padding),
+            content.bottomAnchor.constraint(equalTo: effectView.contentView.bottomAnchor, constant: -padding),
+        ])
+        return effectView
+    }
+
+    @objc private func choosePhoto() {
+        var configuration = PHPickerConfiguration(photoLibrary: .shared())
+        configuration.filter = .images
+        configuration.selectionLimit = 1
+        let picker = PHPickerViewController(configuration: configuration)
+        picker.delegate = self
+        present(picker, animated: true)
+    }
+
+    func picker(_ picker: PHPickerViewController, didFinishPicking results: [PHPickerResult]) {
+        picker.dismiss(animated: true)
+        guard let provider = results.first?.itemProvider,
+              provider.canLoadObject(ofClass: UIImage.self) else { return }
+        provider.loadObject(ofClass: UIImage.self) { [weak self] object, _ in
+            guard let image = object as? UIImage else { return }
+            DispatchQueue.main.async {
+                self?.selectedImage = image
+                self?.photoPreview.image = image
+                self?.photoButton.configuration?.title = "Choose a Different Photo"
+            }
+        }
+    }
+
+    @objc private func submit() {
+        view.endEditing(true)
+        var payload: JSObject = ["action": action, "id": location.id]
+
+        switch action {
+        case "photo":
+            guard let selectedImage,
+                  let photoData = resizedJPEGData(from: selectedImage) else {
+                showAlert(title: "Choose a photo", message: "Select a table photo before submitting.")
+                return
+            }
+            guard photoData.count <= 5 * 1024 * 1024 else {
+                showAlert(title: "Photo is too large", message: "Choose a smaller photo and try again.")
+                return
+            }
+            payload["photoBase64"] = photoData.base64EncodedString()
+            payload["contentType"] = "image/jpeg"
+        case "review":
+            payload["rating"] = ratingControl.selectedSegmentIndex + 1
+            payload["title"] = titleField.text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+            payload["details"] = detailsView.text.trimmingCharacters(in: .whitespacesAndNewlines)
+        case "edit":
+            let details = detailsView.text.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !details.isEmpty else {
+                showAlert(title: "Add the correction", message: "Tell us what should be changed before submitting.")
+                return
+            }
+            payload["details"] = details
+        default:
+            let details = detailsView.text.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !details.isEmpty else {
+                showAlert(title: "Add some details", message: "Describe the problem before sending your report.")
+                return
+            }
+            payload["reason"] = reportReason
+            payload["details"] = details
+        }
+
+        let nextRequestID = UUID().uuidString
+        requestID = nextRequestID
+        payload["requestId"] = nextRequestID
+        setSending(true)
+        onSubmit(payload)
+    }
+
+    private func resizedJPEGData(from image: UIImage) -> Data? {
+        let maxDimension: CGFloat = 1600
+        let longestSide = max(image.size.width, image.size.height)
+        guard longestSide > 0 else { return nil }
+        let scale = min(1, maxDimension / longestSide)
+        let targetSize = CGSize(width: image.size.width * scale, height: image.size.height * scale)
+        let renderer = UIGraphicsImageRenderer(size: targetSize)
+        let resized = renderer.image { _ in
+            image.draw(in: CGRect(origin: .zero, size: targetSize))
+        }
+        return resized.jpegData(compressionQuality: 0.82)
+    }
+
+    private func setSending(_ sending: Bool) {
+        submitButton.isEnabled = !sending
+        submitButton.configuration?.showsActivityIndicator = sending
+        submitButton.configuration?.title = sending
+            ? "Sending…"
+            : (action == "report" ? "Send Report" : "Submit for Review")
+    }
+
+    func complete(requestID: String, success: Bool, message: String) {
+        guard self.requestID == requestID else { return }
+        self.requestID = nil
+        setSending(false)
+        let alert = UIAlertController(
+            title: success ? "Submitted" : "Couldn’t Submit",
+            message: message,
+            preferredStyle: .alert
+        )
+        alert.addAction(UIAlertAction(title: "OK", style: .default) { [weak self] _ in
+            if success { self?.navigationController?.popViewController(animated: true) }
+        })
+        present(alert, animated: true)
+    }
+
+    private func showAlert(title: String, message: String) {
+        let alert = UIAlertController(title: title, message: message, preferredStyle: .alert)
+        alert.addAction(UIAlertAction(title: "OK", style: .default))
+        present(alert, animated: true)
+    }
+}
+
 private final class AppleTableAnnotation: NSObject, MKAnnotation {
     let location: AppleTableLocation
 
@@ -408,7 +798,7 @@ private final class AppleTableMapViewController: UIViewController,
 
     var onSelectLocation: ((String) -> Void)?
     var onAddLocation: (() -> Void)?
-    var onContribution: ((String, String) -> Void)?
+    var onSubmitContribution: ((JSObject) -> Void)?
 
     private let allLocations: [AppleTableLocation]
     private let initiallySelectedID: String?
@@ -426,6 +816,7 @@ private final class AppleTableMapViewController: UIViewController,
     private let cardTagsLabel = UILabel()
     private let detailsButton = UIButton(type: .system)
     private let directionsButton = UIButton(type: .system)
+    private weak var activeContributionController: AppleTableContributionViewController?
     private lazy var searchGlass = makeGlassView(interactive: true)
     private lazy var cardGlass = makeGlassView(interactive: true)
     private lazy var locateButton = makeLocateButton()
@@ -828,13 +1219,29 @@ private final class AppleTableMapViewController: UIViewController,
         let detailsController = AppleTableDetailsViewController(
             location: selectedLocation
         ) { [weak self] action, locationID in
-            guard let self else { return }
-            let contributionHandler = self.onContribution
-            self.dismiss(animated: true) {
-                contributionHandler?(action, locationID)
-            }
+            guard let self, locationID == selectedLocation.id else { return }
+            self.showContributionForm(action: action, location: selectedLocation)
         }
         navigationController?.pushViewController(detailsController, animated: true)
+    }
+
+    private func showContributionForm(action: String, location: AppleTableLocation) {
+        let controller = AppleTableContributionViewController(
+            action: action,
+            location: location
+        ) { [weak self] payload in
+            self?.onSubmitContribution?(payload)
+        }
+        activeContributionController = controller
+        navigationController?.pushViewController(controller, animated: true)
+    }
+
+    func completeContribution(requestID: String, success: Bool, message: String) {
+        activeContributionController?.complete(
+            requestID: requestID,
+            success: success,
+            message: message
+        )
     }
 
     @objc private func openDirections() {
@@ -916,7 +1323,9 @@ public final class AppleTableMapPlugin: CAPPlugin, CAPBridgedPlugin {
     public let jsName = "AppleTableMap"
     public let pluginMethods: [CAPPluginMethod] = [
         CAPPluginMethod(name: "present", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "completeContribution", returnType: CAPPluginReturnPromise),
     ]
+    private weak var activeMapController: AppleTableMapViewController?
 
     @objc func present(_ call: CAPPluginCall) {
         guard let rawLocations = call.getArray("locations", JSObject.self) else {
@@ -952,17 +1361,15 @@ public final class AppleTableMapPlugin: CAPPlugin, CAPBridgedPlugin {
                 selectedID: selectedID,
                 userCoordinate: userCoordinate
             )
+            self.activeMapController = mapController
             mapController.onSelectLocation = { [weak self] id in
                 self?.notifyListeners("locationSelected", data: ["id": id])
             }
             mapController.onAddLocation = { [weak self] in
                 self?.notifyListeners("addLocationRequested", data: [:])
             }
-            mapController.onContribution = { [weak self] action, id in
-                self?.notifyListeners(
-                    "contributionRequested",
-                    data: ["action": action, "id": id]
-                )
+            mapController.onSubmitContribution = { [weak self] payload in
+                self?.notifyListeners("contributionSubmitted", data: payload)
             }
 
             let navigationController = UINavigationController(rootViewController: mapController)
@@ -970,6 +1377,26 @@ public final class AppleTableMapPlugin: CAPPlugin, CAPBridgedPlugin {
             presenter.present(navigationController, animated: true) {
                 call.resolve()
             }
+        }
+    }
+
+    @objc func completeContribution(_ call: CAPPluginCall) {
+        guard let requestID = call.getString("requestId"),
+              let success = call.getBool("success") else {
+            call.reject("A contribution result is required.")
+            return
+        }
+        let message = call.getString("message") ?? (
+            success ? "Thanks! Your submission is awaiting moderation." : "Please try again."
+        )
+
+        DispatchQueue.main.async {
+            self.activeMapController?.completeContribution(
+                requestID: requestID,
+                success: success,
+                message: message
+            )
+            call.resolve()
         }
     }
 }

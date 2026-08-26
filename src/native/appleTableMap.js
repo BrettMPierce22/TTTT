@@ -18,6 +18,10 @@ export function onNativeAppleTableAddRequested(listener) {
   return AppleTableMap.addListener("addLocationRequested", listener);
 }
 
-export function onNativeAppleTableContributionRequested(listener) {
-  return AppleTableMap.addListener("contributionRequested", listener);
+export function onNativeAppleTableContributionSubmitted(listener) {
+  return AppleTableMap.addListener("contributionSubmitted", listener);
+}
+
+export function completeNativeAppleTableContribution(result) {
+  return AppleTableMap.completeContribution(result);
 }
