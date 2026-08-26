@@ -405,6 +405,10 @@ private final class AppleTableContributionViewController: UIViewController,
     private let photoButton = UIButton(type: .system)
     private let photoPreview = UIImageView()
     private let submitButton = UIButton(type: .system)
+    private let editIndoorControl = UISegmentedControl(items: ["Outdoor", "Indoor"])
+    private var editFields: [String: UITextField] = [:]
+    private var editVenueType: String
+    private var editAccessType: String
     private var selectedImage: UIImage?
     private var reportReason = "incorrect"
     private(set) var requestID: String?
@@ -417,6 +421,8 @@ private final class AppleTableContributionViewController: UIViewController,
         self.action = action
         self.location = location
         self.onSubmit = onSubmit
+        editVenueType = location.venueType
+        editAccessType = location.accessType
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -494,13 +500,111 @@ private final class AppleTableContributionViewController: UIViewController,
         switch action {
         case "photo": configurePhotoForm()
         case "review": configureReviewForm()
-        case "edit":
-            contentStack.addArrangedSubview(makeTextCard(
-                title: "WHAT SHOULD WE CHANGE?",
-                placeholder: "Include the corrected name, address, hours, number of tables, or any other details."
-            ))
+        case "edit": configureEditForm()
         default: configureReportForm()
         }
+    }
+
+    private func configureEditForm() {
+        let stack = UIStackView()
+        stack.axis = .vertical
+        stack.spacing = 14
+        stack.addArrangedSubview(makeSectionLabel("PROPOSED LISTING DETAILS"))
+
+        let fields: [(String, String, String, UIKeyboardType)] = [
+            ("name", "Name", location.name, .default),
+            ("address", "Street address", location.address, .default),
+            ("city", "City", location.city, .default),
+            ("region", "State or region", location.region, .default),
+            ("postalCode", "ZIP or postal code", location.postalCode, .numbersAndPunctuation),
+            ("tableCount", "Number of tables", String(location.tableCount), .numberPad),
+            ("hoursText", "Hours", location.hoursText, .default),
+            ("websiteUrl", "Website", location.websiteURL, .URL),
+        ]
+
+        for (key, label, value, keyboardType) in fields {
+            let field = UITextField()
+            field.borderStyle = .roundedRect
+            field.text = value
+            field.placeholder = label
+            field.keyboardType = keyboardType
+            field.autocapitalizationType = key == "websiteUrl" ? .none : .words
+            editFields[key] = field
+            stack.addArrangedSubview(makeLabeledControl(label, control: field))
+        }
+
+        let venueOptions = [
+            ("Park", "park"),
+            ("Community center", "community_center"),
+            ("Table tennis club", "club"),
+            ("Bar or restaurant", "bar_restaurant"),
+            ("School or campus", "school"),
+            ("Other public venue", "other"),
+        ]
+        let venueButton = makeMenuButton(
+            options: venueOptions,
+            selectedValue: editVenueType
+        ) { [weak self] value in self?.editVenueType = value }
+        stack.addArrangedSubview(makeLabeledControl("Venue type", control: venueButton))
+
+        let accessOptions = [
+            ("Free", "free"),
+            ("Fee required", "paid"),
+            ("Members only", "members"),
+            ("Access unknown", "unknown"),
+        ]
+        let accessButton = makeMenuButton(
+            options: accessOptions,
+            selectedValue: editAccessType
+        ) { [weak self] value in self?.editAccessType = value }
+        stack.addArrangedSubview(makeLabeledControl("Access", control: accessButton))
+
+        editIndoorControl.selectedSegmentIndex = location.indoor ? 1 : 0
+        stack.addArrangedSubview(makeLabeledControl("Setting", control: editIndoorControl))
+
+        configureTextView(placeholder: "Notes about the tables or venue")
+        detailsView.text = location.notes
+        detailsPlaceholderLabel.isHidden = !detailsView.text.isEmpty
+        detailsView.heightAnchor.constraint(greaterThanOrEqualToConstant: 130).isActive = true
+        stack.addArrangedSubview(makeLabeledControl("Public notes", control: detailsView))
+
+        contentStack.addArrangedSubview(makeGlassCard(content: stack, padding: 16))
+    }
+
+    private func makeLabeledControl(_ labelText: String, control: UIView) -> UIView {
+        let label = UILabel()
+        label.font = .preferredFont(forTextStyle: .caption1)
+        label.adjustsFontForContentSizeCategory = true
+        label.textColor = .secondaryLabel
+        label.text = labelText.uppercased()
+
+        let stack = UIStackView(arrangedSubviews: [label, control])
+        stack.axis = .vertical
+        stack.spacing = 6
+        return stack
+    }
+
+    private func makeMenuButton(
+        options: [(String, String)],
+        selectedValue: String,
+        onSelect: @escaping (String) -> Void
+    ) -> UIButton {
+        let button = UIButton(type: .system)
+        var configuration = UIButton.Configuration.bordered()
+        configuration.title = options.first(where: { $0.1 == selectedValue })?.0 ?? options[0].0
+        configuration.image = UIImage(systemName: "chevron.up.chevron.down")
+        configuration.imagePlacement = .trailing
+        configuration.cornerStyle = .large
+        button.configuration = configuration
+        button.contentHorizontalAlignment = .leading
+        button.showsMenuAsPrimaryAction = true
+        button.menu = UIMenu(children: options.map { label, value in
+            UIAction(title: label) { [weak button] _ in
+                button?.configuration?.title = label
+                onSelect(value)
+            }
+        })
+        return button
     }
 
     private func configureReviewForm() {
@@ -712,12 +816,12 @@ private final class AppleTableContributionViewController: UIViewController,
             payload["title"] = titleField.text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
             payload["details"] = detailsView.text.trimmingCharacters(in: .whitespacesAndNewlines)
         case "edit":
-            let details = detailsView.text.trimmingCharacters(in: .whitespacesAndNewlines)
-            guard !details.isEmpty else {
-                showAlert(title: "Add the correction", message: "Tell us what should be changed before submitting.")
+            let changes = proposedEditChanges()
+            guard !changes.isEmpty else {
+                showAlert(title: "Nothing changed", message: "Change at least one listing detail before submitting.")
                 return
             }
-            payload["details"] = details
+            payload["proposedChanges"] = changes
         default:
             let details = detailsView.text.trimmingCharacters(in: .whitespacesAndNewlines)
             guard !details.isEmpty else {
@@ -733,6 +837,42 @@ private final class AppleTableContributionViewController: UIViewController,
         payload["requestId"] = nextRequestID
         setSending(true)
         onSubmit(payload)
+    }
+
+    private func proposedEditChanges() -> JSObject {
+        var changes: JSObject = [:]
+        let originalStrings = [
+            "name": location.name,
+            "address": location.address,
+            "city": location.city,
+            "region": location.region,
+            "postalCode": location.postalCode,
+            "hoursText": location.hoursText,
+            "websiteUrl": location.websiteURL,
+        ]
+
+        for (key, original) in originalStrings {
+            let proposed = editFields[key]?.text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+            if proposed != original.trimmingCharacters(in: .whitespacesAndNewlines) {
+                changes[key] = proposed
+            }
+        }
+
+        let proposedTableCount = Int(editFields["tableCount"]?.text ?? "") ?? location.tableCount
+        if proposedTableCount != location.tableCount {
+            changes["tableCount"] = max(1, proposedTableCount)
+        }
+        if editVenueType != location.venueType { changes["venueType"] = editVenueType }
+        if editAccessType != location.accessType { changes["accessType"] = editAccessType }
+
+        let proposedIndoor = editIndoorControl.selectedSegmentIndex == 1
+        if proposedIndoor != location.indoor { changes["indoor"] = proposedIndoor }
+
+        let proposedNotes = detailsView.text.trimmingCharacters(in: .whitespacesAndNewlines)
+        if proposedNotes != location.notes.trimmingCharacters(in: .whitespacesAndNewlines) {
+            changes["notes"] = proposedNotes
+        }
+        return changes
     }
 
     private func resizedJPEGData(from image: UIImage) -> Data? {

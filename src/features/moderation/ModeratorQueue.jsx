@@ -17,8 +17,84 @@ const FILTERS = [
   ["chat", "Chat"],
 ];
 
+const TABLE_EDIT_SUGGESTION_PREFIX = "TTTT_EDIT_SUGGESTION_V1:";
+const EDIT_FIELD_CONFIG = {
+  name: { label: "Name", column: "name" },
+  address: { label: "Street address", column: "address" },
+  city: { label: "City", column: "city" },
+  region: { label: "State or region", column: "region" },
+  postalCode: { label: "ZIP or postal code", column: "postal_code", optional: true },
+  venueType: { label: "Venue type", column: "venue_type" },
+  accessType: { label: "Access", column: "access_type" },
+  indoor: { label: "Setting", column: "indoor" },
+  tableCount: { label: "Number of tables", column: "table_count" },
+  hoursText: { label: "Hours", column: "hours_text", optional: true },
+  notes: { label: "Public notes", column: "notes", optional: true },
+  websiteUrl: { label: "Website", column: "website_url", optional: true },
+};
+
+const LOCATION_EDIT_COLUMNS = [
+  "id",
+  ...new Set(Object.values(EDIT_FIELD_CONFIG).map((field) => field.column)),
+].join(",");
+
 function humanize(value) {
   return value ? value.replaceAll("_", " ") : "";
+}
+
+function parseEditSuggestion(item) {
+  if (
+    item?.item_type !== "location_report" ||
+    typeof item.details !== "string" ||
+    !item.details.startsWith(TABLE_EDIT_SUGGESTION_PREFIX)
+  ) {
+    return null;
+  }
+
+  try {
+    const parsed = JSON.parse(item.details.slice(TABLE_EDIT_SUGGESTION_PREFIX.length));
+    const changes = Object.fromEntries(
+      Object.entries(parsed?.changes || {}).filter(([key]) => EDIT_FIELD_CONFIG[key])
+    );
+    return Object.keys(changes).length > 0 ? { changes } : null;
+  } catch {
+    return null;
+  }
+}
+
+function displayEditValue(key, value) {
+  if (key === "indoor") return value ? "Indoor" : "Outdoor";
+  if (key === "venueType" || key === "accessType") return humanize(String(value));
+  if (value == null || value === "") return "Not provided";
+  return String(value);
+}
+
+function buildLocationUpdate(changes) {
+  const update = {};
+
+  Object.entries(changes).forEach(([key, value]) => {
+    const config = EDIT_FIELD_CONFIG[key];
+    if (!config) return;
+
+    if (key === "tableCount") {
+      const count = Number(value);
+      if (!Number.isInteger(count) || count < 1 || count > 50) {
+        throw new Error("The proposed table count must be between 1 and 50.");
+      }
+      update[config.column] = count;
+      return;
+    }
+
+    if (key === "indoor") {
+      update[config.column] = Boolean(value);
+      return;
+    }
+
+    const text = String(value ?? "").trim();
+    update[config.column] = config.optional && !text ? null : text;
+  });
+
+  return update;
 }
 
 function ModeratorQueue() {
@@ -48,6 +124,32 @@ function ModeratorQueue() {
           ? "The moderator queue migration is ready but has not been installed yet."
           : queueResult.error.message || "The moderator queue could not be loaded."
       );
+    }
+
+    const queueItems = queueResult.data || [];
+    const editLocationIds = [
+      ...new Set(
+        queueItems
+          .filter((item) => parseEditSuggestion(item))
+          .map((item) => item.context?.locationId)
+          .filter(Boolean)
+      ),
+    ];
+    let editLocationsById = {};
+
+    if (editLocationIds.length > 0) {
+      const { data: editLocations, error: editLocationError } = await supabase
+        .from("table_locations")
+        .select(LOCATION_EDIT_COLUMNS)
+        .in("id", editLocationIds);
+
+      if (editLocationError) {
+        console.error("Could not load current listing values", editLocationError);
+      } else {
+        editLocationsById = Object.fromEntries(
+          (editLocations || []).map((location) => [location.id, location])
+        );
+      }
     }
 
     let photoItems = [];
@@ -90,7 +192,18 @@ function ModeratorQueue() {
       }));
     }
 
-    setItems([...(queueResult.data || []), ...photoItems]);
+    setItems([
+      ...queueItems.map((item) => ({
+        ...item,
+        context: {
+          ...(item.context || {}),
+          ...(parseEditSuggestion(item)
+            ? { location: editLocationsById[item.context?.locationId] || null }
+            : {}),
+        },
+      })),
+      ...photoItems,
+    ]);
     setLoading(false);
   }, []);
 
@@ -150,6 +263,49 @@ function ModeratorQueue() {
     setSavingId(null);
   }
 
+  async function applySuggestedEdit(item, suggestion) {
+    if (!window.confirm(`Apply these changes to ${item.title}?`)) return;
+
+    setSavingId(item.item_id);
+    setErrorMessage("");
+    setNotice("");
+
+    try {
+      const update = buildLocationUpdate(suggestion.changes);
+      const { error: updateError } = await supabase
+        .from("table_locations")
+        .update({
+          ...update,
+          last_verified_at: new Date().toISOString(),
+        })
+        .eq("id", item.context.locationId);
+
+      if (updateError) throw updateError;
+
+      const { error: resolveError } = await supabase.rpc("moderate_queue_item", {
+        p_item_type: "location_report",
+        p_item_id: item.item_id,
+        p_action: "resolved",
+        p_note: "Structured listing changes applied.",
+      });
+
+      if (resolveError) {
+        console.error("Listing changed but suggestion could not be resolved", resolveError);
+        setErrorMessage(
+          "The listing was updated, but the suggestion could not be removed from the queue. Try Resolve again."
+        );
+      } else {
+        setNotice("Suggested changes applied to the public listing.");
+      }
+      await loadQueue();
+    } catch (error) {
+      console.error("Could not apply suggested listing changes", error);
+      setErrorMessage(error.message || "Those suggested changes could not be applied.");
+    } finally {
+      setSavingId(null);
+    }
+  }
+
   return (
     <section className="moderator-queue-page">
       <div className="moderator-hero">
@@ -192,22 +348,46 @@ function ModeratorQueue() {
         <div className="moderator-list">
           {visibleItems.map((item) => {
             const isSubmission = ["location", "photo_submission", "review"].includes(item.item_type);
+            const editSuggestion = parseEditSuggestion(item);
             const busy = savingId === item.item_id;
             return (
               <article className="moderator-card" key={`${item.item_type}-${item.item_id}`}>
                 <div className="moderator-card-heading">
                   <div>
                     <span className={`moderator-type moderator-type-${item.item_type}`}>
-                      {TYPE_LABELS[item.item_type]}
+                      {editSuggestion ? "Suggested edit" : TYPE_LABELS[item.item_type]}
                     </span>
                     {item.item_status === "reviewing" && <span className="moderator-reviewing">Reviewing</span>}
                   </div>
                   <time>{new Date(item.created_at).toLocaleString()}</time>
                 </div>
                 <h3>{item.title}</h3>
-                {item.reason && <p className="moderator-reason">Reason: {humanize(item.reason)}</p>}
-                {item.body && <blockquote>{item.body}</blockquote>}
-                {item.details && <p className="moderator-details">Reporter details: {item.details}</p>}
+                {!editSuggestion && item.reason && <p className="moderator-reason">Reason: {humanize(item.reason)}</p>}
+                {!editSuggestion && item.body && <blockquote>{item.body}</blockquote>}
+                {!editSuggestion && item.details && <p className="moderator-details">Reporter details: {item.details}</p>}
+                {editSuggestion && (
+                  <div className="moderator-edit-comparison">
+                    <p>Review each proposed change before applying it.</p>
+                    {Object.entries(editSuggestion.changes).map(([key, proposed]) => {
+                      const field = EDIT_FIELD_CONFIG[key];
+                      const current = item.context?.location?.[field.column];
+                      return (
+                        <div className="moderator-edit-row" key={key}>
+                          <strong>{field.label}</strong>
+                          <span className="moderator-edit-current">
+                            <small>Current</small>
+                            {displayEditValue(key, current)}
+                          </span>
+                          <span className="moderator-edit-arrow" aria-hidden="true">→</span>
+                          <span className="moderator-edit-proposed">
+                            <small>Proposed</small>
+                            {displayEditValue(key, proposed)}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
                 {item.item_type === "photo_submission" && item.context?.photoUrl && (
                   <img
                     className="moderator-photo-preview"
@@ -223,7 +403,15 @@ function ModeratorQueue() {
                 )}
 
                 <div className="moderator-actions">
-                  {isSubmission ? (
+                  {editSuggestion ? (
+                    <>
+                      {item.item_status === "open" && (
+                        <button className="moderator-review" onClick={() => actOnItem(item, "reviewing")} disabled={busy}>Start review</button>
+                      )}
+                      <button className="moderator-apply-edit" onClick={() => applySuggestedEdit(item, editSuggestion)} disabled={busy || !item.context?.location}>Apply Changes</button>
+                      <button className="moderator-dismiss" onClick={() => actOnItem(item, "dismissed")} disabled={busy}>Dismiss</button>
+                    </>
+                  ) : isSubmission ? (
                     <>
                       <button className="moderator-approve" onClick={() => actOnItem(item, "approved")} disabled={busy}>Approve</button>
                       <button className="moderator-reject" onClick={() => actOnItem(item, "rejected")} disabled={busy}>Reject</button>

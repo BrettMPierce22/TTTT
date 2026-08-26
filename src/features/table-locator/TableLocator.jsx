@@ -30,6 +30,7 @@ import {
 const DEFAULT_CENTER = [39.8283, -98.5795];
 const MAX_TABLE_PHOTO_BYTES = 5 * 1024 * 1024;
 const TABLE_PHOTO_BUCKET = "table-location-photos";
+const TABLE_EDIT_SUGGESTION_PREFIX = "TTTT_EDIT_SUGGESTION_V1:";
 const TABLE_PHOTO_TYPES = {
   "image/jpeg": "jpg",
   "image/png": "png",
@@ -479,7 +480,18 @@ function TableLocator({ userId }) {
   }, [approvedLocations, ratingsByLocation, selectedLocationId, userPosition]);
 
   const handleNativeContributionSubmission = useCallback(
-    async ({ action, id, requestId, rating, title, details, reason, photoBase64, contentType }) => {
+    async ({
+      action,
+      id,
+      requestId,
+      rating,
+      title,
+      details,
+      reason,
+      photoBase64,
+      contentType,
+      proposedChanges,
+    }) => {
       let success = false;
       let message = "That submission could not be sent. Please try again.";
       let uploadedPhotoPath = null;
@@ -507,26 +519,49 @@ function TableLocator({ userId }) {
           }
           success = true;
           message = "Your review is awaiting moderation before it appears publicly.";
-        } else if (action === "edit" || action === "report") {
-          const correction = String(details || "").trim();
+        } else if (action === "edit") {
+          const encodedSuggestion = `${TABLE_EDIT_SUGGESTION_PREFIX}${JSON.stringify({
+            changes: proposedChanges,
+          })}`;
+
+          if (
+            !proposedChanges ||
+            typeof proposedChanges !== "object" ||
+            Object.keys(proposedChanges).length === 0
+          ) {
+            throw new Error("No listing changes were included.");
+          }
+          if (encodedSuggestion.length > 1000) {
+            message = "That suggestion is too long. Shorten the notes and try again.";
+            throw new Error(message);
+          }
+
           const { error } = await supabase.from("table_location_reports").insert({
             location_id: id,
             review_id: null,
             reporter_id: userId,
-            reason: action === "edit" ? "incorrect" : reason || "other",
-            details:
-              action === "edit"
-                ? `Suggested listing update: ${correction}`
-                : correction || null,
+            reason: "incorrect",
+            details: encodedSuggestion,
             status: "open",
           });
 
           if (error) throw error;
           success = true;
-          message =
-            action === "edit"
-              ? "Thanks! A moderator will review your suggested change."
-              : "Report received. We’ll review it as soon as possible.";
+          message = "Thanks! A moderator can review and apply your suggested changes.";
+        } else if (action === "report") {
+          const correction = String(details || "").trim();
+          const { error } = await supabase.from("table_location_reports").insert({
+            location_id: id,
+            review_id: null,
+            reporter_id: userId,
+            reason: reason || "other",
+            details: correction || null,
+            status: "open",
+          });
+
+          if (error) throw error;
+          success = true;
+          message = "Report received. We’ll review it as soon as possible.";
         } else if (action === "photo") {
           const resolvedContentType = contentType || "image/jpeg";
           const photo = base64ToBlob(String(photoBase64 || ""), resolvedContentType);

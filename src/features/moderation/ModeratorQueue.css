@@ -30,13 +30,23 @@
 .moderator-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 15px; }
 .moderator-actions button { border: 0; border-radius: 10px; padding: 9px 13px; color: white; font: inherit; font-weight: 850; cursor: pointer; }
 .moderator-actions button:disabled { opacity: .5; cursor: wait; }
-.moderator-approve, .moderator-resolve { background: #197447; }
+.moderator-approve, .moderator-resolve, .moderator-apply-edit { background: #197447; }
 .moderator-reject { background: #b52b36; }
 .moderator-review { background: #385aa4; }
 .moderator-dismiss { color: #40485a !important; background: #e8ebf1; }
 .moderator-empty { display: grid; justify-items: center; gap: 5px; padding: 44px 20px; border: 1px dashed var(--border-color, #ccd3df); border-radius: 17px; color: var(--muted-text, #687184); }
 .moderator-empty strong { color: inherit; font-size: 1.1rem; }
+.moderator-edit-comparison { display: grid; gap: 9px; margin-top: 13px; }
+.moderator-edit-comparison > p { margin: 0 0 2px; color: var(--muted-text, #687184); font-size: .88rem; }
+.moderator-edit-row { display: grid; grid-template-columns: minmax(105px, .7fr) minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: 10px; padding: 11px 12px; border: 1px solid var(--border-color, #dfe3eb); border-radius: 13px; background: rgba(128,145,180,.07); }
+.moderator-edit-row > strong { font-size: .82rem; }
+.moderator-edit-row span { min-width: 0; overflow-wrap: anywhere; }
+.moderator-edit-row small { display: block; margin-bottom: 2px; color: var(--muted-text, #687184); font-size: .65rem; font-weight: 850; letter-spacing: .05em; text-transform: uppercase; }
+.moderator-edit-current { color: var(--muted-text, #687184); }
+.moderator-edit-proposed { font-weight: 750; }
+.moderator-edit-arrow { color: #3d668f; font-weight: 900; }
 @media (max-width: 640px) { .moderator-hero { padding: 19px; } .moderator-total { font-size: .82rem; } .moderator-card-heading { align-items: flex-start; flex-direction: column; } .moderator-filters .moderator-refresh { margin-left: 0; } .moderator-actions button { flex: 1; } }
+@media (max-width: 640px) { .moderator-edit-row { grid-template-columns: 1fr 1fr; } .moderator-edit-row > strong { grid-column: 1 / -1; } .moderator-edit-arrow { display: none; } }
 
 /* Liquid Glass feature materials */
 .moderator-hero {
