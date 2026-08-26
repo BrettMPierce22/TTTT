@@ -207,7 +207,6 @@ function TableLocator({ userId }) {
   const addressSuggestionTimerRef = useRef(null);
   const addressSuggestionRequestRef = useRef(0);
   const locationFormRef = useRef(null);
-  const nativeMapLaunchAttemptedRef = useRef(false);
 
   useEffect(
     () => () => {
@@ -574,21 +573,6 @@ function TableLocator({ userId }) {
 
     return () => window.clearTimeout(timer);
   }, [nativeContributionAction, selectedLocation]);
-
-  useEffect(() => {
-    if (
-      loading ||
-      showSubmissionForm ||
-      nativeMapLaunchAttemptedRef.current ||
-      !canUseNativeAppleTableMap()
-    ) {
-      return;
-    }
-
-    nativeMapLaunchAttemptedRef.current = true;
-    const timer = window.setTimeout(() => openNativeAppleMap(), 180);
-    return () => window.clearTimeout(timer);
-  }, [loading, openNativeAppleMap, showSubmissionForm]);
 
   function updateLocationForm(field, value) {
     const addressFields = ["address", "city", "region", "postalCode"];
@@ -1721,8 +1705,8 @@ function TableLocator({ userId }) {
               className="primary-button locator-open-apple-map"
               onClick={openNativeAppleMap}
             >
-              <span aria-hidden="true">⌖</span>
-              Apple Map
+              <span aria-hidden="true">⛶</span>
+              Expand Map
             </button>
           )}
           <button

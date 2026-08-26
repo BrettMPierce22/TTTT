@@ -32,7 +32,7 @@ final class TableTalkTabBarController: UITabBarController, UITabBarControllerDel
         setTabsVisible(false)
 
         if #available(iOS 26.0, *) {
-            tabBarMinimizeBehavior = .onScrollDown
+            tabBarMinimizeBehavior = .never
         }
     }
 
@@ -75,7 +75,7 @@ final class TableTalkTabBarController: UITabBarController, UITabBarControllerDel
             configuration.baseBackgroundColor = .secondarySystemBackground
         }
         configuration.image = UIImage(systemName: "bubble.left.and.bubble.right.fill")
-        configuration.preferredSymbolConfigurationForImage = UIImage.SymbolConfiguration(pointSize: 20, weight: .semibold)
+        configuration.preferredSymbolConfigurationForImage = UIImage.SymbolConfiguration(pointSize: 17, weight: .semibold)
         configuration.cornerStyle = .capsule
         configuration.baseForegroundColor = UIColor(red: 0.086, green: 0.498, blue: 0.745, alpha: 1)
         floatingChatButton.configuration = configuration
@@ -87,7 +87,7 @@ final class TableTalkTabBarController: UITabBarController, UITabBarControllerDel
         floatingChatBadge.textColor = .white
         floatingChatBadge.textAlignment = .center
         floatingChatBadge.font = .systemFont(ofSize: 10, weight: .bold)
-        floatingChatBadge.layer.cornerRadius = 10
+        floatingChatBadge.layer.cornerRadius = 9
         floatingChatBadge.layer.masksToBounds = true
         floatingChatBadge.isHidden = true
         floatingChatBadge.accessibilityElementsHidden = true
@@ -97,14 +97,14 @@ final class TableTalkTabBarController: UITabBarController, UITabBarControllerDel
 
         NSLayoutConstraint.activate([
             floatingChatButton.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -16),
-            floatingChatButton.bottomAnchor.constraint(equalTo: tabBar.topAnchor, constant: -12),
-            floatingChatButton.widthAnchor.constraint(equalToConstant: 56),
-            floatingChatButton.heightAnchor.constraint(equalToConstant: 56),
+            floatingChatButton.bottomAnchor.constraint(equalTo: tabBar.topAnchor, constant: -4),
+            floatingChatButton.widthAnchor.constraint(equalToConstant: 46),
+            floatingChatButton.heightAnchor.constraint(equalToConstant: 46),
 
             floatingChatBadge.topAnchor.constraint(equalTo: floatingChatButton.topAnchor, constant: -3),
             floatingChatBadge.trailingAnchor.constraint(equalTo: floatingChatButton.trailingAnchor, constant: 3),
-            floatingChatBadge.widthAnchor.constraint(greaterThanOrEqualToConstant: 20),
-            floatingChatBadge.heightAnchor.constraint(equalToConstant: 20),
+            floatingChatBadge.widthAnchor.constraint(greaterThanOrEqualToConstant: 18),
+            floatingChatBadge.heightAnchor.constraint(equalToConstant: 18),
         ])
     }
 

@@ -30,6 +30,14 @@ const APP_URL =
 const SUPPORT_EMAIL =
   import.meta.env.VITE_SUPPORT_EMAIL || "support@tabletalktabletennis.com";
 const LEGAL_PAGE_KEYS = new Set(["privacy", "terms", "community", "support"]);
+const ACTIVE_TAB_STORAGE_KEY = "tttt_active_tab";
+const RESTORABLE_ACTIVE_TABS = new Set([
+  "leaderboard",
+  "tournaments",
+  "record",
+  "tables",
+  "chat",
+]);
 
 function getLegalPageFromHash() {
   const page = window.location.hash.replace(/^#\/?(?:legal\/)?/, "");
@@ -1350,7 +1358,12 @@ function App() {
   ] = useState("");
 
   const [activeTab, setActiveTab] =
-    useState("leaderboard");
+    useState(() => {
+      const rememberedTab = window.sessionStorage.getItem(ACTIVE_TAB_STORAGE_KEY);
+      return RESTORABLE_ACTIVE_TABS.has(rememberedTab)
+        ? rememberedTab
+        : "leaderboard";
+    });
 
   const [isAppModerator, setIsAppModerator] =
     useState(false);
@@ -1601,6 +1614,9 @@ function App() {
 
   useEffect(() => {
     activeTabRef.current = activeTab;
+    if (RESTORABLE_ACTIVE_TABS.has(activeTab)) {
+      window.sessionStorage.setItem(ACTIVE_TAB_STORAGE_KEY, activeTab);
+    }
   }, [activeTab]);
 
   nativeTabHandlerRef.current = (tab) => {
@@ -2281,7 +2297,8 @@ if (
         await openLeague(
           remembered.league_id,
           userId,
-          list
+          list,
+          { preserveActiveTab: true }
         );
         return;
       }
@@ -2290,7 +2307,8 @@ if (
         await openLeague(
           list[0].league_id,
           userId,
-          list
+          list,
+          { preserveActiveTab: true }
         );
         return;
       }
@@ -2310,7 +2328,8 @@ if (
   async function openLeague(
     leagueId,
     userId = user?.id,
-    membershipList = memberships
+    membershipList = memberships,
+    { preserveActiveTab = false } = {}
   ) {
     if (!leagueId || !userId) {
       return;
@@ -2342,9 +2361,11 @@ if (
         leagueId
       );
 
-      setActiveTab(
-        "leaderboard"
-      );
+      if (!preserveActiveTab) {
+        setActiveTab(
+          "leaderboard"
+        );
+      }
 
       setSelectedPlayerId(null);
       setHubMode("list");
