@@ -1,7 +1,7 @@
 import "./LegalCenter.css";
 import tableTalkAppIcon from "../../assets/table-talk-app-icon.png";
 
-const UPDATED_DATE = "August 24, 2026";
+const UPDATED_DATE = "August 26, 2026";
 
 const PAGE_META = {
   privacy: {

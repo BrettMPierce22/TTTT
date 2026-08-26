@@ -24,6 +24,8 @@
 	<string>$(CURRENT_PROJECT_VERSION)</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Table Talk Table Tennis uses your location when you choose Near Me or add a table so it can show nearby public tables and place the table pin.</string>
 	<key>UIApplicationSceneManifest</key>
@@ -49,10 +51,6 @@
 	<string>LaunchScreen</string>
 	<key>UIMainStoryboardFile</key>
 	<string>Main</string>
-	<key>UIRequiredDeviceCapabilities</key>
-	<array>
-		<string>armv7</string>
-	</array>
 	<key>UISupportedInterfaceOrientations</key>
 	<array>
 		<string>UIInterfaceOrientationPortrait</string>

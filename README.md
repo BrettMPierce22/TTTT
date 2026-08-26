@@ -105,14 +105,21 @@ React app or any `VITE_` environment variable.
 
 ## Public safety, legal, and support pages
 
-The app includes public pages that work before or after login:
+The website includes permanent public URLs for App Store Connect:
+
+- `/privacy/`
+- `/terms/`
+- `/community/`
+- `/support/`
+
+Each address redirects to the matching signed-out policy view:
 
 - `/#/legal/privacy`
 - `/#/legal/terms`
 - `/#/legal/community`
 - `/#/legal/support`
 
-Set `VITE_SUPPORT_EMAIL` to a monitored mailbox before release. Use the
-deployed privacy URL for App Store Connect's required Privacy Policy URL and
-the support page for the app-version Support URL. Verify both URLs in a signed
-out browser before submitting a build.
+Set `VITE_SUPPORT_EMAIL` to a monitored mailbox before release. Use
+`https://tabletalktabletennis.com/privacy/` for App Store Connect's Privacy
+Policy URL and `https://tabletalktabletennis.com/support/` for the app-version
+Support URL. Verify both in a signed-out browser before submitting a build.

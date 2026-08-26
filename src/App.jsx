@@ -3,6 +3,10 @@ import "./App.css";
 import tableTalkAppIcon from "./assets/table-talk-app-icon.png";
 import { supabase } from "./lib/supabaseClient";
 import {
+  LEGAL_PAGE_KEYS,
+  getLegalPageFromLocation,
+} from "./lib/legalRoutes";
+import {
   NATIVE_TAB_NAMES,
   canUseNativeShell,
   listenForNativeTabSelection,
@@ -29,7 +33,6 @@ const APP_URL =
   import.meta.env.VITE_APP_URL || "https://tabletalktabletennis.com";
 const SUPPORT_EMAIL =
   import.meta.env.VITE_SUPPORT_EMAIL || "support@tabletalktabletennis.com";
-const LEGAL_PAGE_KEYS = new Set(["privacy", "terms", "community", "support"]);
 const ACTIVE_TAB_STORAGE_KEY = "tttt_active_tab";
 const RESTORABLE_ACTIVE_TABS = new Set([
   "leaderboard",
@@ -38,11 +41,6 @@ const RESTORABLE_ACTIVE_TABS = new Set([
   "tables",
   "chat",
 ]);
-
-function getLegalPageFromHash() {
-  const page = window.location.hash.replace(/^#\/?(?:legal\/)?/, "");
-  return LEGAL_PAGE_KEYS.has(page) ? page : null;
-}
 
 function BrandMark({ className = "" }) {
   return (
@@ -520,32 +518,20 @@ function calculateLeagueAnalytics(players, matches) {
         ratingBeforeB
       );
 
-    let exchange = 0;
+    const higherRatedWon = aWon
+      ? ratingBeforeA >= ratingBeforeB
+      : ratingBeforeB >= ratingBeforeA;
+    const exchange = getRatingExchangePoints(
+      differential,
+      higherRatedWon
+    );
 
     if (aWon) {
-      const higherRatedWon =
-        ratingBeforeA >= ratingBeforeB;
-
-      exchange =
-        getRatingExchangePoints(
-          differential,
-          higherRatedWon
-        );
-
       a.rating =
         ratingBeforeA + exchange;
       b.rating =
         ratingBeforeB - exchange;
     } else {
-      const higherRatedWon =
-        ratingBeforeB >= ratingBeforeA;
-
-      exchange =
-        getRatingExchangePoints(
-          differential,
-          higherRatedWon
-        );
-
       b.rating =
         ratingBeforeB + exchange;
       a.rating =
@@ -1271,7 +1257,7 @@ function PointDifferentialChart({ data }) {
 }
 
 function App() {
-  const [session, setSession] =
+  const [, setSession] =
     useState(null);
 
   const [user, setUser] =
@@ -1328,7 +1314,7 @@ function App() {
     useState("list");
 
   const [legalPage, setLegalPage] =
-    useState(getLegalPageFromHash);
+    useState(getLegalPageFromLocation);
 
   const [league, setLeague] =
     useState(null);
@@ -1338,10 +1324,7 @@ function App() {
     setCurrentPlayer,
   ] = useState(null);
 
-  const [
-    currentMembership,
-    setCurrentMembership,
-  ] = useState(null);
+  const [, setCurrentMembership] = useState(null);
 
   const [players, setPlayers] =
     useState([]);
@@ -1604,7 +1587,7 @@ function App() {
 
   useEffect(() => {
     function handleHashChange() {
-      setLegalPage(getLegalPageFromHash());
+      setLegalPage(getLegalPageFromLocation());
       window.scrollTo({ top: 0, behavior: "auto" });
     }
 
@@ -1813,6 +1796,8 @@ if (
       mounted = false;
       subscription.unsubscribe();
     };
+  // The authentication subscription is intentionally installed once.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -1856,6 +1841,9 @@ if (
 
     return () =>
       clearInterval(interval);
+  // The interval reads the latest server state; recreating it every render would
+  // interrupt polling because loadLeagueData is intentionally component-scoped.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [league?.id, user?.id]);
 
   useEffect(() => {
@@ -1890,32 +1878,38 @@ if (
   }, [league?.id, currentPlayer?.id]);
 
   useEffect(() => {
-    setLeagueDescriptionDraft(
-      league?.description || ""
-    );
+    const timer = window.setTimeout(() => {
+      setLeagueDescriptionDraft(
+        league?.description || ""
+      );
+    }, 0);
+    return () => window.clearTimeout(timer);
   }, [
     league?.id,
     league?.description,
   ]);
 
   useEffect(() => {
-    setProfileNameDraft(
-      currentPlayer?.name || ""
-    );
+    const timer = window.setTimeout(() => {
+      setProfileNameDraft(
+        currentPlayer?.name || ""
+      );
 
-    setProfileDescriptionDraft(
-      currentPlayer?.profile_description ||
-        ""
-    );
+      setProfileDescriptionDraft(
+        currentPlayer?.profile_description ||
+          ""
+      );
 
-    setHeightDraft(
-      currentPlayer?.height_text || ""
-    );
+      setHeightDraft(
+        currentPlayer?.height_text || ""
+      );
 
-    setVelocityDraft(
-      currentPlayer?.avg_ball_velocity ??
-        ""
-    );
+      setVelocityDraft(
+        currentPlayer?.avg_ball_velocity ??
+          ""
+      );
+    }, 0);
+    return () => window.clearTimeout(timer);
   }, [
     currentPlayer?.id,
     currentPlayer?.name,
@@ -3389,12 +3383,15 @@ if (
         selectedPlayerId
     );
 
-  const selectedHistory =
-    selectedPlayerId
-      ? leagueAnalytics.playerHistory[
-          selectedPlayerId
-        ] || []
-      : [];
+  const selectedHistory = useMemo(
+    () =>
+      selectedPlayerId
+        ? leagueAnalytics.playerHistory[
+            selectedPlayerId
+          ] || []
+        : [],
+    [leagueAnalytics.playerHistory, selectedPlayerId]
+  );
 
   const selectedPerformanceHistory =
     useMemo(
@@ -3662,19 +3659,22 @@ if (
   }
 
   useEffect(() => {
-    if (
-      activeTab === "record" &&
-      recordMode === "mine" &&
-      currentPlayer?.id
-    ) {
-      setPlayerA(currentPlayer.id);
-
+    const timer = window.setTimeout(() => {
       if (
-        playerB === currentPlayer.id
+        activeTab === "record" &&
+        recordMode === "mine" &&
+        currentPlayer?.id
       ) {
-        setPlayerB("");
+        setPlayerA(currentPlayer.id);
+
+        if (
+          playerB === currentPlayer.id
+        ) {
+          setPlayerB("");
+        }
       }
-    }
+    }, 0);
+    return () => window.clearTimeout(timer);
   }, [
     activeTab,
     recordMode,

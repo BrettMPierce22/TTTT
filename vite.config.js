@@ -6,4 +6,9 @@ export default defineConfig({
   // Relative asset URLs work both on the website and inside Capacitor's
   // bundled iOS web view.
   base: "./",
+  test: {
+    environment: "jsdom",
+    setupFiles: "./src/test/setup.js",
+    css: true,
+  },
 });
