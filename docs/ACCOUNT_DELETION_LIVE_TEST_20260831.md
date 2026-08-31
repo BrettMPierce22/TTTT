@@ -6,7 +6,7 @@ disposable accounts/images. No production schema, function, billing or real
 member data was changed by this test.
 
 Run identifier: `tttt-delete-test-20260831-d798d726`.
-Execution window: approximately 19:06–19:14 UTC.
+Execution window: approximately 19:06–19:16 UTC.
 
 ## Scope and containment
 
@@ -19,7 +19,8 @@ Execution window: approximately 19:06–19:14 UTC.
 - No fake public table listing and no interaction with real members/leagues.
 - Test credentials and temporary signed links were kept in an ignored,
   mode-0600 local recovery file, never source-controlled or logged. Discard that
-  file only after all test accounts are confirmed deleted.
+  file only after all test accounts are confirmed deleted. The completed run's
+  local credential file was removed after cleanup and final file verification.
 
 Disposable IDs, retained solely for audit/cleanup verification:
 
@@ -60,6 +61,7 @@ Disposable IDs, retained solely for audit/cleanup verification:
    for all three disposable accounts.
 9. Removed the disposable league and its synthetic history through the existing
    admin endpoint, then deleted the control account and its remaining avatar.
+   Its public image URL also returned object-not-found afterward.
 
 The deployed league policy does not permit direct client updates to league
 ownership. This is consistent with the documented support-mediated transfer

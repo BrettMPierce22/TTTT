@@ -7,7 +7,7 @@ requirements can be reviewed together.
 Current schedule: [accelerated release plan](RELEASE_PLAN_2026-09.md).
 The August 31 account-deletion backend is deployed and passed non-destructive
 live checks and scoped real deletion tests with disposable accounts and images.
-App-panel publication/device verification remains pending; see
+The new account panel is published on the website; physical-device verification remains pending. See
 [the evidence and checklist](ACCOUNT_DELETION_RELEASE.md).
 
 ## Implemented in the table locator foundation

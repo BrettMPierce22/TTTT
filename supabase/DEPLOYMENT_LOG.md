@@ -16,6 +16,11 @@ changes were made. Details: `../docs/ACCOUNT_DELETION_LIVE_TEST_20260831.md`.
 Actual provider-fault/concurrency stress and physical-device flow testing remain
 separate checks; this run did not force a production outage.
 
+After those tests, published the matching account panel to the website at
+`b6b24b7` (GitHub Actions run `33429720240`, success). Confirmed the new panel
+copy in the live app bundle and HTTP 200 for privacy/terms/support routes. The
+updated native app was not installed during this batch.
+
 ## 2026-08-31 — Account-deletion safeguards
 
 Target: TTTT production project (`juhdzutghafsiggwtaad`), main/Production.

@@ -95,7 +95,8 @@ navigation item is never the security boundary.
 
 The safer deletion backend was deployed to TTTT on August 31 after explicit
 approval and passed non-destructive checks plus scoped live disposable-account
-tests. The app-panel release remains pending. Follow `docs/ACCOUNT_DELETION_RELEASE.md`
+tests. The matching web panel is published; updated iPhone installation/testing
+remains pending. Follow `docs/ACCOUNT_DELETION_RELEASE.md`
 for evidence, prerequisites, future deployment order and staging tests. Do not
 reapply the migration to production or deploy future changes without approval.
 The function now requires `202608310001_safe_account_deletion.sql` as well as

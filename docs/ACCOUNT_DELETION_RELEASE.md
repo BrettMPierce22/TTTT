@@ -5,8 +5,15 @@ explicit approval**. Read-only schema/security checks and unauthenticated HTTP
 checks passed. Subsequently, explicitly approved disposable-account tests passed
 against live Auth, Storage and the deletion endpoint; see
 [the detailed test evidence](ACCOUNT_DELETION_LIVE_TEST_20260831.md).
-The updated app confirmation panel has not yet been published or installed.
+The updated confirmation panel was published to the website at `b6b24b7` and
+verified in the served `index-DZnUBAgt.js` bundle. It has not been installed on
+the physical iPhone in this batch.
 Concurrent-fault stress tests and physical-iPhone flow checks remain outstanding.
+
+Website release: [successful GitHub deployment](https://github.com/BrettMPierce22/TTTT/actions/runs/33429720240).
+The public privacy, terms and support routes returned HTTP 200 after release.
+The served app bundle contained the new confirmation/progress copy and no
+server cleanup helpers, service-role setting or disposable-test identifiers.
 
 The local tests use synthetic data in an in-memory PostgreSQL database. They
 remain separate evidence from the live checks recorded below.
