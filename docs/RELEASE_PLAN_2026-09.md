@@ -24,7 +24,7 @@ delete accounts, or submit to Apple without the required user authorization.
 
 ## Evidence already available
 
-- Working repository: `TTT`, main at `28dbd31`.
+- Working repository: `TTT`; account-deletion implementation at `548311f`.
 - August 31 baseline: lint, four automated tests, production build and release checks passed.
 - August 31 safety batch: 58 automated tests now pass, including isolated
   PostgreSQL, deletion-handler integration and confirmation-panel tests. Lint,
@@ -39,10 +39,10 @@ delete accounts, or submit to Apple without the required user authorization.
   fallback are implemented. Privacy answers still require a final data audit.
 - Tests now cover deletion safety as well as legal routing and crash recovery.
   League, match, tournament and moderation workflows still need broader coverage.
-- The Supabase deployment log records table imports and moderated photos, but
-  does not establish that account deletion, unified moderation and league access
-  are all deployed. Verify live status rather than treating this as proof they
-  are missing.
+- The Supabase deployment log records table imports, moderated photos and the
+  August 31 account-deletion backend deployment. Deletion passed non-destructive
+  live checks, not a real deletion test. Unified moderation and league-access
+  deployment still require inspection; do not infer absence from the log.
 
 ## Schedule and exit conditions
 
@@ -107,7 +107,7 @@ Audit and test account deletion and moderation/access-control behavior. Separate
 local test coverage from proof of deployment. Use a test environment where
 possible; do not exercise destructive cases on real member accounts.
 
-### Account-deletion batch prepared (August 31; not deployed)
+### Account-deletion backend deployed (August 31; app release pending)
 
 - Fixed the local function to remove owned uploads before Auth deletion.
 - Added server-only inventory and reference-cleanup routines for all three image
@@ -120,13 +120,16 @@ possible; do not exercise destructive cases on real member accounts.
 - Local regression tests cover authorization, pagination, partial failure,
   retries, row security, shared references and anonymization. The new server
   module and test database runtime are absent from the production web bundle.
-- The function's deployed version and behavior have not been verified. No
-  production account, photo, league, function or database has been changed.
+- Following explicit approval, deployed only the safety migration and complete
+  function. Persisted source matched local code, database grants/guards passed,
+  and unauthenticated HTTP calls were rejected. All 23 accounts, 18 stored files,
+  389 tables, 17 players and 2 leagues remained; no deletion was started.
+- The updated confirmation panel is still local, not published or installed.
 
-Next: follow [the deployment and recovery checklist](ACCOUNT_DELETION_RELEASE.md),
-verify the live schema read-only, obtain approval for the specific migration and
-function deployment, and run provider-level tests with authorized disposable
-accounts. Do not mark account deletion production-ready until these pass.
+Next: follow [the test and recovery checklist](ACCOUNT_DELETION_RELEASE.md) and
+run provider-level tests with explicitly authorized disposable accounts and
+images. Then release the app panel. Do not mark account deletion fully verified
+until these tests pass; never test on real member or catalog-import accounts.
 
 Independent next engineering batch: moderation and league-access regression
 coverage. Paid Apple enrollment is not required for that local work.

@@ -1,5 +1,31 @@
 # Supabase deployment log
 
+## 2026-08-31 — Account-deletion safeguards
+
+Target: TTTT production project (`juhdzutghafsiggwtaad`), main/Production.
+
+After explicit approval and a read-only prerequisite audit:
+
+- Applied `202608310001_safe_account_deletion.sql` as its explicit transaction.
+- Deployed `delete-account/index.ts` and `delete-account/handler.js` from local
+  commit `548311f`. Reloaded and compared persisted source with both local files.
+- All seven deployed SQL function bodies matched migration fingerprints.
+- Verified server-only cleanup permissions, intent-table RLS, both restrictive
+  upload policies and enabled deletion/league-owner guards.
+- Existing gateway JWT toggle remained off; handler validates callers with Auth.
+- HTTP checks: OPTIONS 200; GET 405; missing/invalid session POSTs 401.
+  Responses used `Cache-Control: no-store`.
+- Unchanged totals: 23 accounts, 17 players, 2 leagues, 389 table locations,
+  18 Storage objects and 0 photo submissions. Deletion intents: 0.
+
+No real account sessions were used to request deletion. No accounts, images or
+listings were removed. No billing settings or unrelated migrations were changed.
+Provider-level tests with authorized disposable accounts/images remain pending.
+The updated app panel has not yet been published or installed.
+
+Read-only repeat check: `checks/account-deletion-post-deploy.sql`.
+Detailed evidence and recovery: `../docs/ACCOUNT_DELETION_RELEASE.md`.
+
 ## 2026-08-25 — Public table catalog
 
 Target: TTTT production project (`juhdzutghafsiggwtaad`)

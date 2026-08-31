@@ -5,8 +5,9 @@ is intentionally kept next to the source so product changes and App Store
 requirements can be reviewed together.
 
 Current schedule: [accelerated release plan](RELEASE_PLAN_2026-09.md).
-The August 31 account-deletion safety batch is locally tested but not deployed;
-see [its exact approval/deployment checklist](ACCOUNT_DELETION_RELEASE.md).
+The August 31 account-deletion backend is deployed and passed non-destructive
+live checks. Real deletion tests with disposable accounts and the app-panel
+release remain pending; see [the evidence and checklist](ACCOUNT_DELETION_RELEASE.md).
 
 ## Implemented in the table locator foundation
 
@@ -31,10 +32,10 @@ see [its exact approval/deployment checklist](ACCOUNT_DELETION_RELEASE.md).
 
 ## Required before App Store submission
 
-- Approve, deploy and test the included deletion safety migration and complete
-  `delete-account` Edge Function directory with explicitly authorized disposable
-  accounts. The in-app flow removes the Auth user and associated content while
-  anonymizing player history.
+- Test the deployed deletion safeguards and `delete-account` Edge Function with
+  explicitly authorized disposable accounts and images. Verify actual file
+  removal, retry behavior and preserved player history before releasing the
+  updated confirmation panel. Non-destructive deployment checks have passed.
 - Deploy and verify the included public privacy policy, terms of use,
   community standards, and support contact pages. Confirm
   `VITE_SUPPORT_EMAIL` points to a monitored mailbox.

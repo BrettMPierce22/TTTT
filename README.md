@@ -93,9 +93,11 @@ navigation item is never the security boundary.
 
 ## Account deletion setup
 
-The safer deletion update is prepared locally and must not be deployed without
-approval. Follow `docs/ACCOUNT_DELETION_RELEASE.md` for read-only preflight,
-prerequisites, exact migration/function deployment order and staging tests.
+The safer deletion backend was deployed to TTTT on August 31 after explicit
+approval and passed non-destructive checks. Disposable-account deletion tests
+and the app-panel release remain pending. Follow `docs/ACCOUNT_DELETION_RELEASE.md`
+for evidence, prerequisites, future deployment order and staging tests. Do not
+reapply the migration to production or deploy future changes without approval.
 The function now requires `202608310001_safe_account_deletion.sql` as well as
 the earlier account-deletion and photo migrations. Deploy the entire
 `supabase/functions/delete-account` directory, including `handler.js`.

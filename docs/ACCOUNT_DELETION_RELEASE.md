@@ -1,8 +1,35 @@
 # Account deletion safety batch — August 31, 2026
 
-Status: implemented and tested locally; **not deployed to Supabase or the public
-app**. The local tests use synthetic data in an in-memory PostgreSQL database.
-They are not evidence that production migrations or Edge Functions are deployed.
+Status: **backend deployed to the TTTT Supabase project on August 31, 2026 after
+explicit approval**. Read-only schema/security checks and unauthenticated HTTP
+checks passed. The updated app confirmation panel has not been published or
+installed. Provider-level deletion tests with authorized disposable accounts
+remain outstanding; deployment is not proof that the complete flow passes.
+
+The local tests use synthetic data in an in-memory PostgreSQL database. They
+remain separate evidence from the live checks recorded below.
+
+## Live deployment evidence — August 31
+
+- Target: `juhdzutghafsiggwtaad`, TTTT, main/Production.
+- Required columns were present. The enabled anonymization trigger/function,
+  nullable player user ID with `ON DELETE SET NULL`, photo-submission RLS and
+  Storage policies matched prerequisites; no conflicting new functions existed.
+- Applied only `202608310001_safe_account_deletion.sql` in its explicit
+  transaction. Deployed both `index.ts` and `handler.js` from commit `548311f`.
+- Reloaded the dashboard and compared both persisted function files with local
+  source. All seven database function body fingerprints matched the migration.
+- Verified intent-table RLS, denied ordinary-user cleanup access, two restrictive
+  upload policies and enabled account/league guards. The existing legacy gateway
+  JWT toggle remained off; the function still validates sessions through Auth.
+- Before and after: 23 accounts, 17 players, 2 leagues, 389 table listings,
+  18 Storage objects and 0 photo submissions. After deployment: 0 deletion intents.
+- Live endpoint: OPTIONS 200, GET 405, POST without authorization 401, POST with
+  an intentionally invalid token 401. Responses include `Cache-Control: no-store`.
+  No actual member session was used, and no account or image was deleted.
+- Repeatable read-only verification: `supabase/checks/account-deletion-post-deploy.sql`.
+- No billing settings, unrelated migrations, website release or phone installation
+  were included in this deployment.
 
 ## What changed
 
@@ -67,7 +94,11 @@ deletion on the account that imported production table data.
   but completed with cached signing; verify account sign-in before the next
   provisioning renewal. The existing development profile expires September 7.
 
-## Approval-gated deployment order
+## Deployment procedure for subsequent environments
+
+The production deployment above was explicitly approved. Do not reapply the
+non-idempotent migration there. Use this procedure for a new test environment or
+future revisions; destructive provider tests still require their own scope.
 
 1. Run `supabase/checks/account-deletion-readiness.sql` against the intended
    project using read-only access. Confirm no missing columns, inspect existing
