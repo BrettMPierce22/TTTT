@@ -2,9 +2,11 @@
 
 Status: **backend deployed to the TTTT Supabase project on August 31, 2026 after
 explicit approval**. Read-only schema/security checks and unauthenticated HTTP
-checks passed. The updated app confirmation panel has not been published or
-installed. Provider-level deletion tests with authorized disposable accounts
-remain outstanding; deployment is not proof that the complete flow passes.
+checks passed. Subsequently, explicitly approved disposable-account tests passed
+against live Auth, Storage and the deletion endpoint; see
+[the detailed test evidence](ACCOUNT_DELETION_LIVE_TEST_20260831.md).
+The updated app confirmation panel has not yet been published or installed.
+Concurrent-fault stress tests and physical-iPhone flow checks remain outstanding.
 
 The local tests use synthetic data in an in-memory PostgreSQL database. They
 remain separate evidence from the live checks recorded below.
@@ -30,6 +32,11 @@ remain separate evidence from the live checks recorded below.
 - Repeatable read-only verification: `supabase/checks/account-deletion-post-deploy.sql`.
 - No billing settings, unrelated migrations, website release or phone installation
   were included in this deployment.
+- Subsequent live tests deleted only three disposable accounts and 206 tiny test
+  images. Existing account/file/league/player/table/match ID inventories matched
+  the baseline exactly after cleanup. Empty accounts, cross-account isolation,
+  league owners, all buckets, pagination, resumed intents, stale-token uploads,
+  actual file retrieval, shared images, chat removal and history were tested.
 
 ## What changed
 

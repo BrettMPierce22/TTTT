@@ -41,7 +41,7 @@ delete accounts, or submit to Apple without the required user authorization.
   League, match, tournament and moderation workflows still need broader coverage.
 - The Supabase deployment log records table imports, moderated photos and the
   August 31 account-deletion backend deployment. Deletion passed non-destructive
-  live checks, not a real deletion test. Unified moderation and league-access
+  checks and scoped live tests with approved disposable accounts. Unified moderation and league-access
   deployment still require inspection; do not infer absence from the log.
 
 ## Schedule and exit conditions
@@ -125,11 +125,16 @@ possible; do not exercise destructive cases on real member accounts.
   and unauthenticated HTTP calls were rejected. All 23 accounts, 18 stored files,
   389 tables, 17 players and 2 leagues remained; no deletion was started.
 - The updated confirmation panel is still local, not published or installed.
+- Approved live tests subsequently passed with three disposable accounts and
+  206 tiny files. Tested real file removal across pagination, durable-intent
+  resumption, ownership/security restrictions, stale-token rejection, chat
+  cleanup and retained anonymized match history. All disposable data was removed;
+  original record counts and ordered-ID fingerprints matched exactly.
 
-Next: follow [the test and recovery checklist](ACCOUNT_DELETION_RELEASE.md) and
-run provider-level tests with explicitly authorized disposable accounts and
-images. Then release the app panel. Do not mark account deletion fully verified
-until these tests pass; never test on real member or catalog-import accounts.
+Next: release the app panel, then perform physical-device flow checks and genuine
+concurrent/provider-fault tests. See [the scoped live evidence](ACCOUNT_DELETION_LIVE_TEST_20260831.md)
+and [recovery checklist](ACCOUNT_DELETION_RELEASE.md). Never use real member or
+catalog-import accounts for destructive testing.
 
 Independent next engineering batch: moderation and league-access regression
 coverage. Paid Apple enrollment is not required for that local work.

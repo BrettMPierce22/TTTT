@@ -94,8 +94,8 @@ navigation item is never the security boundary.
 ## Account deletion setup
 
 The safer deletion backend was deployed to TTTT on August 31 after explicit
-approval and passed non-destructive checks. Disposable-account deletion tests
-and the app-panel release remain pending. Follow `docs/ACCOUNT_DELETION_RELEASE.md`
+approval and passed non-destructive checks plus scoped live disposable-account
+tests. The app-panel release remains pending. Follow `docs/ACCOUNT_DELETION_RELEASE.md`
 for evidence, prerequisites, future deployment order and staging tests. Do not
 reapply the migration to production or deploy future changes without approval.
 The function now requires `202608310001_safe_account_deletion.sql` as well as

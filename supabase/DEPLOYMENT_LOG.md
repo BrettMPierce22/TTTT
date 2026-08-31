@@ -1,5 +1,21 @@
 # Supabase deployment log
 
+## 2026-08-31 — Approved disposable deletion tests
+
+Completed live tests using three newly created reserved-address accounts, one
+isolated test league and 206 tiny synthetic images. Covered empty deletion,
+owner rejection, server-only RPC access, all buckets, pagination, a deliberate
+durable retry checkpoint, old-token rejection, real file retrieval/removal,
+shared-image references, chat removal and retained anonymized match history.
+
+Removed all test accounts, files and the isolated league/history. Original
+account/file/league/player/table/match counts and ordered-ID fingerprints matched
+exactly afterward. No real members/listings were used; no schema/function/billing
+changes were made. Details: `../docs/ACCOUNT_DELETION_LIVE_TEST_20260831.md`.
+
+Actual provider-fault/concurrency stress and physical-device flow testing remain
+separate checks; this run did not force a production outage.
+
 ## 2026-08-31 — Account-deletion safeguards
 
 Target: TTTT production project (`juhdzutghafsiggwtaad`), main/Production.
