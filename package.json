@@ -9,6 +9,7 @@
     "lint": "eslint .",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:account-deletion": "vitest run supabase/functions/delete-account/handler.test.js supabase/tests/account-deletion.test.js src/features/account/AccountDeletionPanel.test.jsx",
     "verify:release": "npm run build && node scripts/verify-release.mjs",
     "check": "npm run lint && npm run test && npm run verify:release",
     "preview": "vite preview",
@@ -28,6 +29,7 @@
   },
   "devDependencies": {
     "@capacitor/cli": "^8.5.0",
+    "@electric-sql/pglite": "^0.5.8",
     "@eslint/js": "^10.0.1",
     "@testing-library/jest-dom": "^7.0.1",
     "@testing-library/react": "^16.3.2",

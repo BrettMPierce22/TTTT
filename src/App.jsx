@@ -2,6 +2,7 @@ import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import "./App.css";
 import tableTalkAppIcon from "./assets/table-talk-app-icon.png";
 import { supabase } from "./lib/supabaseClient";
+import AccountDeletionPanel from "./features/account/AccountDeletionPanel";
 import {
   LEGAL_PAGE_KEYS,
   getLegalPageFromLocation,
@@ -1523,6 +1524,7 @@ function App() {
   const [deleteAccountConfirmation, setDeleteAccountConfirmation] =
     useState("");
   const [accountDeleting, setAccountDeleting] = useState(false);
+  const accountDeletionInFlight = useRef(false);
   const [accountDeletionError, setAccountDeletionError] = useState("");
 
   const [
@@ -2833,6 +2835,7 @@ if (
   }
 
   async function deleteMyAccount() {
+    if (accountDeletionInFlight.current) return;
     if (deleteAccountConfirmation !== "DELETE") {
       setAccountDeletionError(
         "Type DELETE exactly to confirm permanent account deletion."
@@ -2845,6 +2848,7 @@ if (
     );
     if (!confirmed) return;
 
+    accountDeletionInFlight.current = true;
     try {
       setAccountDeleting(true);
       setAccountDeletionError("");
@@ -2869,7 +2873,7 @@ if (
             .map((ownedLeague) => ownedLeague.name)
             .join(", ");
           throw new Error(
-            `Before deleting your account, transfer or permanently delete the leagues you own${
+            `Before deleting your account, delete the leagues you own or contact support about transferring ownership${
               leagueNames ? `: ${leagueNames}` : "."
             }`
           );
@@ -2899,6 +2903,7 @@ if (
           "Your account could not be deleted. Contact support for help."
       );
     } finally {
+      accountDeletionInFlight.current = false;
       setAccountDeleting(false);
     }
   }
@@ -6244,87 +6249,27 @@ if (
                 <LegalLinks onNavigate={openLegalPage} />
               </div>
 
-              <div className="account-deletion-card">
-                <div>
-                  <p className="season-label">DANGER ZONE</p>
-                  <h3>Delete Account</h3>
-                  <p>
-                    Permanently remove your login, profile, messages, table
-                    submissions, ratings, and uploaded account photos. Match
-                    history keeps an anonymous “Deleted Player” entry so league
-                    records remain accurate.
-                  </p>
-                </div>
-
-                {!showDeleteAccount ? (
-                  <button
-                    type="button"
-                    className="danger-outline-button"
-                    onClick={() => {
-                      setShowDeleteAccount(true);
-                      setAccountDeletionError("");
-                    }}
-                  >
-                    Delete My Account
-                  </button>
-                ) : (
-                  <div className="account-deletion-confirmation">
-                    <p>
-                      This cannot be undone. If you own a league, transfer its
-                      ownership or delete the league first.
-                    </p>
-                    <label htmlFor="delete-account-confirmation">
-                      Type <strong>DELETE</strong> to confirm
-                    </label>
-                    <input
-                      id="delete-account-confirmation"
-                      value={deleteAccountConfirmation}
-                      onChange={(event) => {
-                        setDeleteAccountConfirmation(event.target.value);
-                        setAccountDeletionError("");
-                      }}
-                      autoCapitalize="characters"
-                      autoComplete="off"
-                      spellCheck="false"
-                      disabled={accountDeleting}
-                    />
-
-                    {accountDeletionError && (
-                      <div className="error-message">
-                        {accountDeletionError}
-                      </div>
-                    )}
-
-                    <div className="account-deletion-actions">
-                      <button
-                        type="button"
-                        className="delete-account-button"
-                        onClick={deleteMyAccount}
-                        disabled={
-                          accountDeleting ||
-                          deleteAccountConfirmation !== "DELETE"
-                        }
-                      >
-                        {accountDeleting
-                          ? "Deleting Account…"
-                          : "Permanently Delete Account"}
-                      </button>
-                      <button
-                        type="button"
-                        className="secondary-button"
-                        onClick={() => {
-                          setShowDeleteAccount(false);
-                          setDeleteAccountConfirmation("");
-                          setAccountDeletionError("");
-                        }}
-                        disabled={accountDeleting}
-                      >
-                        Cancel
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
+              <AccountDeletionPanel
+                expanded={showDeleteAccount}
+                busy={accountDeleting}
+                confirmation={deleteAccountConfirmation}
+                error={accountDeletionError}
+                onExpand={() => {
+                  setShowDeleteAccount(true);
+                  setAccountDeletionError("");
+                }}
+                onChange={(value) => {
+                  setDeleteAccountConfirmation(value);
+                  setAccountDeletionError("");
+                }}
+                onDelete={deleteMyAccount}
+                onClose={() => {
+                  setShowDeleteAccount(false);
+                  setDeleteAccountConfirmation("");
+                  setAccountDeletionError("");
+                }}
+                onSupport={() => openLegalPage("support")}
+              />
             </div>
           )}
         </main>

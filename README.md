@@ -93,10 +93,15 @@ navigation item is never the security boundary.
 
 ## Account deletion setup
 
-1. Apply `supabase/migrations/202608240005_account_deletion.sql`.
-2. Deploy the authenticated Edge Function in
-   `supabase/functions/delete-account`.
-3. Test the complete flow with a disposable account before release.
+The safer deletion update is prepared locally and must not be deployed without
+approval. Follow `docs/ACCOUNT_DELETION_RELEASE.md` for read-only preflight,
+prerequisites, exact migration/function deployment order and staging tests.
+The function now requires `202608310001_safe_account_deletion.sql` as well as
+the earlier account-deletion and photo migrations. Deploy the entire
+`supabase/functions/delete-account` directory, including `handler.js`.
+
+Run `npm run test:account-deletion` for isolated tests; these never connect to
+production. Do not test deletion using a real member or catalog-import account.
 
 The function performs its own server-side JWT verification, and
 `supabase/config.toml` disables only Supabase's legacy gateway check so modern

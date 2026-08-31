@@ -4,6 +4,10 @@ This is the shipping checklist for the Table Talk Table Tennis iPhone app. It
 is intentionally kept next to the source so product changes and App Store
 requirements can be reviewed together.
 
+Current schedule: [accelerated release plan](RELEASE_PLAN_2026-09.md).
+The August 31 account-deletion safety batch is locally tested but not deployed;
+see [its exact approval/deployment checklist](ACCOUNT_DELETION_RELEASE.md).
+
 ## Implemented in the table locator foundation
 
 - New locations and written ratings default to `pending`.
@@ -27,14 +31,15 @@ requirements can be reviewed together.
 
 ## Required before App Store submission
 
-- Deploy and test the included `delete-account` Edge Function with disposable
+- Approve, deploy and test the included deletion safety migration and complete
+  `delete-account` Edge Function directory with explicitly authorized disposable
   accounts. The in-app flow removes the Auth user and associated content while
   anonymizing player history.
 - Deploy and verify the included public privacy policy, terms of use,
   community standards, and support contact pages. Confirm
   `VITE_SUPPORT_EMAIL` points to a monitored mailbox.
 - Document the moderation response process and test it with realistic reports.
-- Add an admin report queue for chat reports before public release, and verify
+- Verify the implemented admin report queue is deployed and functional, and verify
   that the published support contact can receive urgent safety reports.
 - Add a camera or photo-library purpose string before introducing any feature
   that requests those permissions.
