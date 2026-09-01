@@ -18,8 +18,12 @@ separate checks; this run did not force a production outage.
 
 After those tests, published the matching account panel to the website at
 `b6b24b7` (GitHub Actions run `33429720240`, success). Confirmed the new panel
-copy in the live app bundle and HTTP 200 for privacy/terms/support routes. The
-updated native app was not installed during this batch.
+copy in the live app bundle and HTTP 200 for privacy/terms/support routes.
+
+On September 1, built the matching Release app, installed it over the existing
+`com.tabletalktabletennis.app` on the connected iPhone 16 Pro and launched it.
+The process remained running after launch. No account was deleted during the
+device check; interactive screen/workflow verification remains separate.
 
 ## 2026-08-31 — Account-deletion safeguards
 

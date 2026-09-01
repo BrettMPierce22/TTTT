@@ -6,9 +6,10 @@ checks passed. Subsequently, explicitly approved disposable-account tests passed
 against live Auth, Storage and the deletion endpoint; see
 [the detailed test evidence](ACCOUNT_DELETION_LIVE_TEST_20260831.md).
 The updated confirmation panel was published to the website at `b6b24b7` and
-verified in the served `index-DZnUBAgt.js` bundle. It has not been installed on
-the physical iPhone in this batch.
-Concurrent-fault stress tests and physical-iPhone flow checks remain outstanding.
+verified in the served `index-DZnUBAgt.js` bundle. On September 1, a fresh
+Release build containing that exact tested bundle was installed and launched on
+the connected iPhone 16 Pro; its process remained running after launch.
+Interactive deletion-panel checks and concurrent-fault stress tests remain outstanding.
 
 Website release: [successful GitHub deployment](https://github.com/BrettMPierce22/TTTT/actions/runs/33429720240).
 The public privacy, terms and support routes returned HTTP 200 after release.

@@ -125,15 +125,17 @@ possible; do not exercise destructive cases on real member accounts.
   and unauthenticated HTTP calls were rejected. All 23 accounts, 18 stored files,
   389 tables, 17 players and 2 leagues remained; no deletion was started.
 - The updated confirmation panel is published on the website at `b6b24b7`.
-  GitHub deployment succeeded and the served app bundle was checked. This batch
-  did not install the new panel on the physical iPhone.
+  GitHub deployment succeeded and the served app bundle was checked. On
+  September 1, the matching Release bundle was built, installed and launched on
+  the connected iPhone 16 Pro. The process remained present after launch; this
+  is launch evidence, not an interactive workflow pass.
 - Approved live tests subsequently passed with three disposable accounts and
   206 tiny files. Tested real file removal across pagination, durable-intent
   resumption, ownership/security restrictions, stale-token rejection, chat
   cleanup and retained anonymized match history. All disposable data was removed;
   original record counts and ordered-ID fingerprints matched exactly.
 
-Next: install/test the updated native app, perform physical-device flow checks and genuine
+Next: perform interactive physical-device flow checks and genuine
 concurrent/provider-fault tests. See [the scoped live evidence](ACCOUNT_DELETION_LIVE_TEST_20260831.md)
 and [recovery checklist](ACCOUNT_DELETION_RELEASE.md). Never use real member or
 catalog-import accounts for destructive testing.
