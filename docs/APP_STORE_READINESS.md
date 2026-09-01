@@ -11,6 +11,12 @@ The new account panel is published on the website and its matching Release build
 has been installed/launched on the physical iPhone. Interactive device verification remains pending. See
 [the evidence and checklist](ACCOUNT_DELETION_RELEASE.md).
 
+September 1 moderator and league-access production tests passed with three
+disposable accounts and three isolated leagues. Public, private and invite-only
+joins, independent moderation and private-report visibility were verified; all
+test data was removed and both existing leagues retained an identical full-row
+fingerprint. See [the live evidence](MODERATION_LEAGUE_ACCESS_LIVE_TEST_20260901.md).
+
 ## Implemented in the table locator foundation
 
 - New locations and written ratings default to `pending`.

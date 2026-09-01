@@ -1,5 +1,20 @@
 # Supabase deployment log
 
+## 2026-09-01 — Approved moderator and league-access live tests
+
+Completed the explicitly approved live workflow tests using three new reserved-
+address accounts, three isolated leagues, one disposable table listing/edit,
+one private message and one chat report. Verified public immediate join, private
+admin approval, invite-only enforcement, workflow-table and legacy bypass
+denial, ordinary-user denial, self-moderation denial, independent atomic edit
+approval and chat-report privacy from a non-moderator league admin.
+
+Deleted all three test leagues and accounts. Original accounts, Storage objects,
+leagues, players, matches, table listings, reviews, reports and moderator counts
+and ID fingerprints matched. A full-row league fingerprint also matched, proving
+the two existing leagues were not edited. No schema, billing or real-member data
+was changed. Details: `../docs/MODERATION_LEAGUE_ACCESS_LIVE_TEST_20260901.md`.
+
 ## 2026-09-01 — League access and independent moderation
 
 Target: TTTT production project (`juhdzutghafsiggwtaad`), main/Production.

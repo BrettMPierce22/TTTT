@@ -1,7 +1,8 @@
 # Moderator and league-access release
 
-Status as of September 1, 2026: database migrations deployed and verified;
-disposable-account workflow testing remains separate and is not yet approved.
+Status as of September 1, 2026: database migrations, website, matching iPhone
+Release build and approved disposable-account workflows are deployed and
+verified.
 
 ## What is already live
 
@@ -67,13 +68,14 @@ files, plus lint, production build and packaged-release verification.
 No account, league, player, match, table, review, report, photo or Storage object
 was created or deleted during the deployment.
 
-## Remaining live release sequence
+## Completed live release sequence
 
-1. Test public, private and invite-only flows using newly approved disposable
-   accounts and an isolated test league.
-2. Remove the test accounts and league, and compare the original counts.
-3. Install the matching Release build on the
-   iPhone only after the live checks pass.
+Approved live tests passed public, private and invite-only membership, legacy
+bypass denial, direct workflow-table denial, ordinary-user moderator denial,
+self-review prevention, independent structured-edit moderation and private chat
+report visibility. Three isolated leagues and three disposable accounts were
+removed afterward.
 
-No disposable production test accounts are authorized by this document; they
-require the user's explicit approval.
+The original counts and ID fingerprints matched, and a full-row fingerprint
+proved neither existing league was edited. See
+`MODERATION_LEAGUE_ACCESS_LIVE_TEST_20260901.md`.
