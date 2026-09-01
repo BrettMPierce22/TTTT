@@ -1,5 +1,28 @@
 # Supabase deployment log
 
+## 2026-09-01 — Read-only moderator and league-access audit
+
+Inspected the TTTT production project through the signed-in dashboard without
+running SQL or changing schema, data, policies, triggers, functions or billing.
+
+- Unified moderator queue functions are already present in production.
+- League-access functions and the `league_join_requests` and
+  `league_invitations` tables are not present.
+- The independent-review function/triggers and atomic structured-edit function
+  are not present.
+- The live chat-report policy still allows the reporter or a league admin;
+  the prepared hardening narrows this to the reporter plus the separate trusted
+  app-moderator policy.
+- The live `players` and `leagues` tables show direct Data API changes disabled;
+  administrative writes continue through checked server functions.
+
+Prepared but did not deploy:
+
+- `202608250001_league_access.sql`
+- `202609010001_moderation_privacy_hardening.sql`
+
+Local release evidence: `../docs/MODERATION_LEAGUE_ACCESS_RELEASE.md`.
+
 ## 2026-08-31 — Approved disposable deletion tests
 
 Completed live tests using three newly created reserved-address accounts, one

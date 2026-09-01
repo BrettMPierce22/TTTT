@@ -69,34 +69,6 @@ function displayEditValue(key, value) {
   return String(value);
 }
 
-function buildLocationUpdate(changes) {
-  const update = {};
-
-  Object.entries(changes).forEach(([key, value]) => {
-    const config = EDIT_FIELD_CONFIG[key];
-    if (!config) return;
-
-    if (key === "tableCount") {
-      const count = Number(value);
-      if (!Number.isInteger(count) || count < 1 || count > 50) {
-        throw new Error("The proposed table count must be between 1 and 50.");
-      }
-      update[config.column] = count;
-      return;
-    }
-
-    if (key === "indoor") {
-      update[config.column] = Boolean(value);
-      return;
-    }
-
-    const text = String(value ?? "").trim();
-    update[config.column] = config.optional && !text ? null : text;
-  });
-
-  return update;
-}
-
 function ModeratorQueue() {
   const [items, setItems] = useState([]);
   const [filter, setFilter] = useState("all");
@@ -263,7 +235,7 @@ function ModeratorQueue() {
     setSavingId(null);
   }
 
-  async function applySuggestedEdit(item, suggestion) {
+  async function applySuggestedEdit(item) {
     if (!window.confirm(`Apply these changes to ${item.title}?`)) return;
 
     setSavingId(item.item_id);
@@ -271,32 +243,11 @@ function ModeratorQueue() {
     setNotice("");
 
     try {
-      const update = buildLocationUpdate(suggestion.changes);
-      const { error: updateError } = await supabase
-        .from("table_locations")
-        .update({
-          ...update,
-          last_verified_at: new Date().toISOString(),
-        })
-        .eq("id", item.context.locationId);
-
-      if (updateError) throw updateError;
-
-      const { error: resolveError } = await supabase.rpc("moderate_queue_item", {
-        p_item_type: "location_report",
-        p_item_id: item.item_id,
-        p_action: "resolved",
-        p_note: "Structured listing changes applied.",
+      const { error } = await supabase.rpc("apply_table_location_edit_suggestion", {
+        p_report_id: item.item_id,
       });
-
-      if (resolveError) {
-        console.error("Listing changed but suggestion could not be resolved", resolveError);
-        setErrorMessage(
-          "The listing was updated, but the suggestion could not be removed from the queue. Try Resolve again."
-        );
-      } else {
-        setNotice("Suggested changes applied to the public listing.");
-      }
+      if (error) throw error;
+      setNotice("Suggested changes applied to the public listing.");
       await loadQueue();
     } catch (error) {
       console.error("Could not apply suggested listing changes", error);
@@ -408,7 +359,7 @@ function ModeratorQueue() {
                       {item.item_status === "open" && (
                         <button className="moderator-review" onClick={() => actOnItem(item, "reviewing")} disabled={busy}>Start review</button>
                       )}
-                      <button className="moderator-apply-edit" onClick={() => applySuggestedEdit(item, editSuggestion)} disabled={busy || !item.context?.location}>Apply Changes</button>
+                      <button className="moderator-apply-edit" onClick={() => applySuggestedEdit(item)} disabled={busy || !item.context?.location}>Apply Changes</button>
                       <button className="moderator-dismiss" onClick={() => actOnItem(item, "dismissed")} disabled={busy}>Dismiss</button>
                     </>
                   ) : isSubmission ? (
