@@ -17,6 +17,12 @@ joins, independent moderation and private-report visibility were verified; all
 test data was removed and both existing leagues retained an identical full-row
 fingerprint. See [the live evidence](MODERATION_LEAGUE_ACCESS_LIVE_TEST_20260901.md).
 
+The organizer plan interface and non-live entitlement draft now support Free,
+Plus ($1.99/month) and Pro ($4.99/month). The interface clearly states that it
+cannot charge users, and all paid actions remain disabled. The migration has
+not been applied and no App Store or RevenueCat products exist yet. See
+[the plan and activation sequence](FREE_PAID_PLANS.md).
+
 ## Implemented in the table locator foundation
 
 - New locations and written ratings default to `pending`.
@@ -62,6 +68,11 @@ fingerprint. See [the live evidence](MODERATION_LEAGUE_ACCESS_LIVE_TEST_20260901
   deletion behavior on physical iPhones.
 - Run the release candidate through TestFlight and provide App Review with a
   working demo account and clear review notes.
+- Before enabling paid buttons: approve and deploy the entitlement migration;
+  create the Plus and Pro products in one App Store subscription group; connect
+  RevenueCat; load localized StoreKit prices; add purchase, restore, manage and
+  subscription-disclosure flows; then pass Apple sandbox upgrade, downgrade,
+  renewal, grace-period, expiration and restore tests.
 
 ## Security release checks
 

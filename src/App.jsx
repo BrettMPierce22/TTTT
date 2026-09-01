@@ -3,6 +3,11 @@ import "./App.css";
 import tableTalkAppIcon from "./assets/table-talk-app-icon.png";
 import { supabase } from "./lib/supabaseClient";
 import AccountDeletionPanel from "./features/account/AccountDeletionPanel";
+import SubscriptionPlansPanel from "./features/subscriptions/SubscriptionPlansPanel";
+import {
+  DEFAULT_PLAN_SUMMARY,
+  normalizePlanSummary,
+} from "./features/subscriptions/plans";
 import {
   LEGAL_PAGE_KEYS,
   getLegalPageFromLocation,
@@ -34,6 +39,11 @@ const APP_URL =
   import.meta.env.VITE_APP_URL || "https://tabletalktabletennis.com";
 const SUPPORT_EMAIL =
   import.meta.env.VITE_SUPPORT_EMAIL || "support@tabletalktabletennis.com";
+const SUBSCRIPTIONS_BACKEND_ENABLED =
+  import.meta.env.VITE_SUBSCRIPTIONS_BACKEND_ENABLED === "true";
+// Keep purchases off until App Store products, RevenueCat, and the entitlement
+// migration have all been configured and sandbox-tested.
+const SUBSCRIPTION_PURCHASES_ENABLED = false;
 const ACTIVE_TAB_STORAGE_KEY = "tttt_active_tab";
 const RESTORABLE_ACTIVE_TABS = new Set([
   "leaderboard",
@@ -1527,6 +1537,9 @@ function App() {
   const accountDeletionInFlight = useRef(false);
   const [accountDeletionError, setAccountDeletionError] = useState("");
 
+  const [accountPlan, setAccountPlan] = useState(DEFAULT_PLAN_SUMMARY);
+  const [accountPlanLoading, setAccountPlanLoading] = useState(false);
+
   const [
     rankInfoMode,
     setRankInfoMode,
@@ -1774,6 +1787,7 @@ if (
             setAccountDescriptionDraft("");
             setAccountHeightDraft("");
             setAccountVelocityDraft("");
+            setAccountPlan(DEFAULT_PLAN_SUMMARY);
             setAuthMode("login");
             setLoading(false);
             return;
@@ -2237,6 +2251,29 @@ if (
     return list;
   }
 
+  async function loadAccountPlan() {
+    if (!SUBSCRIPTIONS_BACKEND_ENABLED) {
+      setAccountPlan(DEFAULT_PLAN_SUMMARY);
+      return DEFAULT_PLAN_SUMMARY;
+    }
+
+    try {
+      setAccountPlanLoading(true);
+      const { data, error } = await supabase.rpc("get_my_plan");
+      if (error) throw error;
+
+      const summary = normalizePlanSummary(Array.isArray(data) ? data[0] : data);
+      setAccountPlan(summary);
+      return summary;
+    } catch (error) {
+      console.error("Could not load subscription plan.", error);
+      setAccountPlan(DEFAULT_PLAN_SUMMARY);
+      return DEFAULT_PLAN_SUMMARY;
+    } finally {
+      setAccountPlanLoading(false);
+    }
+  }
+
   async function fetchLeagueDirectory() {
     const { data, error } = await supabase.rpc("get_discoverable_leagues");
 
@@ -2265,6 +2302,8 @@ if (
   ) {
     try {
       await loadAccountProfile(userId);
+
+      await loadAccountPlan();
 
       const list =
         await fetchMyLeagues();
@@ -6213,6 +6252,12 @@ if (
                     : "Save Profile"}
                 </button>
               </form>
+
+              <SubscriptionPlansPanel
+                planSummary={accountPlan}
+                loading={accountPlanLoading}
+                purchasesEnabled={SUBSCRIPTION_PURCHASES_ENABLED}
+              />
 
               <div className="display-settings-card">
                 <div>

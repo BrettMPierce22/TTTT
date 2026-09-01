@@ -2189,6 +2189,207 @@ th {
 }
 
 /* =========================================================
+   ORGANIZER SUBSCRIPTION PLANS
+   ========================================================= */
+
+.subscription-plans-panel {
+  margin-top: 26px;
+  padding: 22px;
+  border: 1px solid var(--liquid-border, var(--border));
+  border-radius: 22px;
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.24), transparent 44%),
+    var(--liquid-surface, var(--surface-alt));
+  box-shadow:
+    0 16px 42px var(--liquid-shadow, var(--shadow)),
+    inset 0 1px 0 var(--liquid-highlight, rgba(255, 255, 255, 0.7));
+  -webkit-backdrop-filter: saturate(165%) blur(24px);
+  backdrop-filter: saturate(165%) blur(24px);
+}
+
+.subscription-plans-heading,
+.subscription-plans-footer,
+.subscription-plan-title-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.subscription-plans-heading h3,
+.subscription-plans-heading p,
+.subscription-plan-card h4,
+.subscription-plan-card p,
+.subscription-plans-footer p {
+  margin: 0;
+}
+
+.subscription-plans-heading > div > p:not(.season-label) {
+  max-width: 520px;
+  margin-top: 5px;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.current-plan-pill,
+.subscription-plan-title-row span {
+  flex: 0 0 auto;
+  padding: 6px 10px;
+  border: 1px solid rgba(35, 125, 178, 0.24);
+  border-radius: 999px;
+  background: rgba(217, 239, 251, 0.72);
+  color: var(--sport-blue-deep);
+  font-size: 11px;
+  font-weight: 800;
+}
+
+:root[data-theme="dark"] .current-plan-pill,
+:root[data-theme="dark"] .subscription-plan-title-row span {
+  border-color: rgba(156, 201, 240, 0.24);
+  background: rgba(35, 81, 107, 0.58);
+  color: #d9effb;
+}
+
+.subscription-preview-note {
+  margin-top: 16px;
+  padding: 11px 13px;
+  border: 1px solid rgba(35, 125, 178, 0.2);
+  border-radius: 13px;
+  background: rgba(217, 239, 251, 0.46);
+  color: var(--sport-blue-deep);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+:root[data-theme="dark"] .subscription-preview-note {
+  background: rgba(35, 81, 107, 0.3);
+  color: #d9effb;
+}
+
+.subscription-plan-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 13px;
+  margin-top: 16px;
+}
+
+.subscription-plan-card {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  padding: 17px;
+  border: 1px solid rgba(105, 124, 153, 0.2);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.36);
+}
+
+:root[data-theme="dark"] .subscription-plan-card {
+  border-color: rgba(255, 255, 255, 0.12);
+  background: rgba(7, 18, 28, 0.24);
+}
+
+.subscription-plan-card.subscription-plan-current {
+  border-color: rgba(35, 125, 178, 0.52);
+  box-shadow: inset 0 0 0 1px rgba(35, 125, 178, 0.12);
+}
+
+.subscription-plan-pro {
+  background:
+    radial-gradient(circle at 100% 0%, rgba(102, 199, 167, 0.18), transparent 42%),
+    rgba(255, 255, 255, 0.42);
+}
+
+:root[data-theme="dark"] .subscription-plan-pro {
+  background:
+    radial-gradient(circle at 100% 0%, rgba(102, 199, 167, 0.12), transparent 42%),
+    rgba(7, 18, 28, 0.28);
+}
+
+.subscription-plan-title-row {
+  align-items: center;
+}
+
+.subscription-plan-title-row h4 {
+  font-size: 18px;
+}
+
+.subscription-plan-price {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  margin-top: 12px;
+}
+
+.subscription-plan-price strong {
+  font-size: 27px;
+  letter-spacing: -0.03em;
+}
+
+.subscription-plan-price span,
+.subscription-plan-card > p {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.subscription-plan-card > p {
+  min-height: 34px;
+  margin-top: 6px;
+  line-height: 1.45;
+}
+
+.subscription-plan-card ul {
+  flex: 1;
+  margin: 15px 0 18px;
+  padding: 0;
+  list-style: none;
+}
+
+.subscription-plan-card li {
+  display: grid;
+  grid-template-columns: 16px 1fr;
+  gap: 5px;
+  margin-top: 8px;
+  color: var(--text);
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.subscription-plan-card li span {
+  color: var(--green);
+  font-weight: 900;
+}
+
+.subscription-plan-card button {
+  width: 100%;
+}
+
+.subscription-plan-card button:disabled {
+  cursor: default;
+  opacity: 0.72;
+}
+
+.subscription-plans-footer {
+  align-items: center;
+  margin-top: 15px;
+}
+
+.subscription-plans-footer p {
+  max-width: 520px;
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 1.45;
+}
+
+.subscription-restore-button {
+  border: 0;
+  background: transparent;
+  color: var(--sport-blue-deep);
+  font-size: 12px;
+  font-weight: 750;
+}
+
+/* =========================================================
    PERFORMANCE CHARTS
    ========================================================= */
 
@@ -3257,9 +3458,19 @@ th {
 
   .display-settings-card,
   .profile-display-setting,
-  .chat-composer-footer {
+  .chat-composer-footer,
+  .subscription-plans-heading,
+  .subscription-plans-footer {
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .subscription-plan-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .subscription-plan-card > p {
+    min-height: 0;
   }
 
   .theme-control {

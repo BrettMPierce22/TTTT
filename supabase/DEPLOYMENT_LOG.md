@@ -1,5 +1,17 @@
 # Supabase deployment log
 
+## 2026-09-01 — Free, Plus and Pro draft only (not deployed)
+
+Expanded the local subscription foundation to Free, League Plus ($1.99/month)
+and League Pro ($4.99/month). Added private Plus/Pro entitlement resolution,
+upgrade precedence, allowlisted plan limits and isolated security tests. The app
+shows the three organizer plans in My Profile, but clearly marks purchases as
+unavailable and keeps every purchase button disabled.
+
+No subscription migration, billing provider, App Store product, webhook, charge
+or production data change was made. Existing leagues remain untouched and no
+plan limit is enforced in production.
+
 ## 2026-09-01 — Approved moderator and league-access live tests
 
 Completed the explicitly approved live workflow tests using three new reserved-

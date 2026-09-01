@@ -20,12 +20,21 @@ async function expectDbError(sql, pattern, values = []) {
   await db.exec("rollback to savepoint expected_error; release savepoint expected_error");
 }
 
-async function entitlement({ user = USER, status = "active", end = "2099-01-01T00:00:00Z", grace = null } = {}) {
+async function entitlement({
+  user = USER,
+  type = "league_pro",
+  status = "active",
+  end = "2099-01-01T00:00:00Z",
+  grace = null,
+} = {}) {
+  const product = `com.tabletalktabletennis.app.${
+    type === "league_plus" ? "leagueplus" : "leaguepro"
+  }.monthly`;
   await db.query(
     `insert into public.account_entitlements(
       user_id,entitlement,status,provider,product_id,current_period_end,grace_period_end
-    ) values ($1,'league_pro',$2,'apple','com.tabletalktabletennis.app.leaguepro.monthly',$3,$4)`,
-    [user, status, end, grace]
+    ) values ($1,$2,$3,'apple',$4,$5,$6)`,
+    [user, type, status, product, end, grace]
   );
 }
 
@@ -60,17 +69,37 @@ describe("subscription entitlement authority", () => {
     expect(plan.features.ownedActiveLeagues).toBe(1);
   });
 
-  it("returns League Pro only while an active entitlement is current", async () => {
+  it("returns League Plus only while a Plus entitlement is current", async () => {
+    await entitlement({ type: "league_plus" });
+    await role("authenticated");
+    expect((await rows("select public.has_active_entitlement('league_plus') as active"))[0].active).toBe(true);
+    expect((await rows("select public.has_active_entitlement('league_pro') as active"))[0].active).toBe(false);
+    const [plan] = await rows("select * from public.get_my_plan()");
+    expect(plan.plan).toBe("plus");
+    expect(plan.features.activePlayersPerLeague).toBe(32);
+    expect(plan.features.activeTournaments).toBe(2);
+  });
+
+  it("returns League Pro and lets Pro satisfy Plus checks", async () => {
     await entitlement();
     await role("authenticated");
     expect((await rows("select public.has_active_entitlement('league_pro') as active"))[0].active).toBe(true);
+    expect((await rows("select public.has_active_entitlement('league_plus') as active"))[0].active).toBe(true);
     const [plan] = await rows("select * from public.get_my_plan()");
     expect(plan.plan).toBe("pro");
     expect(plan.features.activePlayersPerLeague).toBe(100);
+    expect(plan.features.tournamentEntrants).toBe(128);
+  });
+
+  it("resolves a provider transition with two active rows to Pro", async () => {
+    await entitlement({ type: "league_plus" });
+    await entitlement({ type: "league_pro" });
+    await role("authenticated");
+    expect((await rows("select * from public.get_my_plan()"))[0].plan).toBe("pro");
   });
 
   it("falls back to free after an entitlement expires", async () => {
-    await entitlement({ status: "expired", end: "2020-01-01T00:00:00Z" });
+    await entitlement({ type: "league_plus", status: "expired", end: "2020-01-01T00:00:00Z" });
     await role("authenticated");
     const [plan] = await rows("select * from public.get_my_plan()");
     expect(plan.plan).toBe("free");
@@ -101,7 +130,7 @@ describe("subscription entitlement authority", () => {
   it("does not let clients grant or extend their own Pro access", async () => {
     await role("authenticated");
     await expectDbError(
-      "insert into public.account_entitlements(user_id,entitlement,status,provider) values ($1,'league_pro','active','apple')",
+      "insert into public.account_entitlements(user_id,entitlement,status,provider) values ($1,'league_plus','active','apple')",
       /permission denied/,
       [USER]
     );

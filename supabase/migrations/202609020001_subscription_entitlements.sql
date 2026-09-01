@@ -1,10 +1,12 @@
--- DRAFT: authoritative free/League Pro entitlement foundation.
+-- DRAFT: authoritative Free/Plus/Pro entitlement foundation.
 -- Do not apply to production without explicit migration approval. This does not
 -- create Apple products, charge a user, or enable a paywall by itself.
 
 create table if not exists public.account_entitlements (
   user_id uuid not null references auth.users(id) on delete cascade,
-  entitlement text not null check (entitlement in ('league_pro')),
+  entitlement text not null check (
+    entitlement in ('league_plus', 'league_pro')
+  ),
   status text not null check (
     status in ('trialing', 'active', 'grace_period', 'expired', 'revoked')
   ),
@@ -54,14 +56,22 @@ begin
   if (select auth.uid()) is null then
     return false;
   end if;
-  if p_entitlement <> 'league_pro' then
+  if p_entitlement not in ('league_plus', 'league_pro') then
     return false;
   end if;
+
   return exists (
     select 1
     from public.account_entitlements entitlements
     where entitlements.user_id = (select auth.uid())
-      and entitlements.entitlement = p_entitlement
+      -- Pro includes every Plus capability. Plus never satisfies a Pro check.
+      and (
+        entitlements.entitlement = p_entitlement
+        or (
+          p_entitlement = 'league_plus'
+          and entitlements.entitlement = 'league_pro'
+        )
+      )
       and (
         (
           entitlements.status in ('trialing', 'active')
@@ -93,38 +103,85 @@ set search_path = ''
 as $$
 declare
   v_entitlement public.account_entitlements%rowtype;
-  v_is_pro boolean;
+  v_plan text := 'free';
 begin
   if (select auth.uid()) is null then
     raise exception 'Authentication is required.' using errcode = '42501';
   end if;
 
+  -- If provider transitions briefly leave two active rows, always resolve to
+  -- the higher plan and never expose provider/customer identifiers.
   select * into v_entitlement
   from public.account_entitlements entitlements
   where entitlements.user_id = (select auth.uid())
-    and entitlements.entitlement = 'league_pro';
+    and (
+      (
+        entitlements.status in ('trialing', 'active')
+        and (
+          entitlements.current_period_end is null
+          or entitlements.current_period_end > now()
+        )
+      )
+      or (
+        entitlements.status = 'grace_period'
+        and entitlements.grace_period_end > now()
+      )
+    )
+  order by
+    case entitlements.entitlement when 'league_pro' then 2 else 1 end desc,
+    entitlements.updated_at desc
+  limit 1;
 
-  v_is_pro := public.has_active_entitlement('league_pro');
+  if v_entitlement.user_id is not null then
+    v_plan := case
+      when v_entitlement.entitlement = 'league_pro' then 'pro'
+      else 'plus'
+    end;
+  else
+    -- Preserve a useful expired/revoked status without granting paid access.
+    select * into v_entitlement
+    from public.account_entitlements entitlements
+    where entitlements.user_id = (select auth.uid())
+    order by entitlements.updated_at desc
+    limit 1;
+  end if;
 
   return query select
-    case when v_is_pro then 'pro' else 'free' end,
-    case when v_entitlement.user_id is null then 'not_subscribed' else v_entitlement.status end,
+    v_plan,
+    case
+      when v_entitlement.user_id is null then 'not_subscribed'
+      else v_entitlement.status
+    end,
     v_entitlement.current_period_end,
-    case when v_is_pro then jsonb_build_object(
-      'ownedActiveLeagues', 5,
-      'activePlayersPerLeague', 100,
-      'activeTournaments', 10,
-      'analytics', true,
-      'exports', true,
-      'customBranding', true
-    ) else jsonb_build_object(
-      'ownedActiveLeagues', 1,
-      'activePlayersPerLeague', 16,
-      'activeTournaments', 1,
-      'analytics', false,
-      'exports', false,
-      'customBranding', false
-    ) end;
+    case v_plan
+      when 'pro' then jsonb_build_object(
+        'ownedActiveLeagues', 5,
+        'activePlayersPerLeague', 100,
+        'activeTournaments', 10,
+        'tournamentEntrants', 128,
+        'analytics', 'advanced',
+        'exports', true,
+        'customBranding', true
+      )
+      when 'plus' then jsonb_build_object(
+        'ownedActiveLeagues', 2,
+        'activePlayersPerLeague', 32,
+        'activeTournaments', 2,
+        'tournamentEntrants', 32,
+        'analytics', 'expanded',
+        'exports', false,
+        'customBranding', false
+      )
+      else jsonb_build_object(
+        'ownedActiveLeagues', 1,
+        'activePlayersPerLeague', 16,
+        'activeTournaments', 1,
+        'tournamentEntrants', 16,
+        'analytics', 'basic',
+        'exports', false,
+        'customBranding', false
+      )
+    end;
 end;
 $$;
 
@@ -134,6 +191,6 @@ grant execute on function public.has_active_entitlement(text) to authenticated;
 grant execute on function public.get_my_plan() to authenticated;
 
 comment on table public.account_entitlements is
-  'Server-maintained digital entitlements. Provider metadata is private; clients receive only an allowlisted plan summary.';
+  'Server-maintained Plus and Pro entitlements. Provider metadata is private; clients receive only an allowlisted plan summary.';
 comment on table public.billing_webhook_events is
   'Idempotency ledger for verified provider webhooks; never exposed to app clients.';

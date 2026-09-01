@@ -21,14 +21,21 @@ paywall.
 - One active tournament with up to 16 entrants.
 - Standard league appearance and basic statistics.
 
+### League Plus
+
+Launch price: **$1.99/month**.
+
+- Own up to two active leagues with up to 32 active players each.
+- Two simultaneous tournaments with up to 32 entrants each.
+- Expanded organizer statistics.
+- Basic league branding.
+
 ### League Pro
 
-Suggested launch price: **$4.99/month** or **$39.99/year**. Apple supplies the
-localized price shown in the iPhone app; prices should not be hard-coded into
-the purchase screen.
+Launch price: **$4.99/month**.
 
 - Own up to five active leagues with up to 100 active players each.
-- Multiple simultaneous tournaments and larger brackets.
+- Up to ten simultaneous tournaments with up to 128 entrants each.
 - Advanced seeding, formats and season tools as those features ship.
 - Full league and player analytics.
 - CSV exports and shareable reports.
@@ -36,19 +43,25 @@ the purchase screen.
 - Additional co-admin and organizer controls.
 - Priority support.
 
+Apple supplies the localized prices shown in the iPhone app; the real purchase
+screen must load those prices from StoreKit rather than trusting the fallback
+display copy in the web bundle. Annual products are deliberately deferred to
+keep the first release understandable.
+
 Safety, privacy, account deletion, joining a league and access to a user's own
-records must remain free. Existing leagues should be grandfathered before any
-limit is enforced so a plan launch never disables current production data.
+records remain free. Existing leagues must be grandfathered before any limit is
+enforced so a plan launch never disables current production data.
 
 ## App Store-safe purchase design
 
 Premium functionality consumed inside the iPhone app is a digital service, so
 the iOS purchase button should use Apple's In-App Purchase system. Use one
-auto-renewable subscription group named **League Pro**, with two products at the
-same entitlement level:
+auto-renewable subscription group named **Table Talk Organizer Plans**, with two
+monthly products at different levels. Pro is the higher level so Apple can
+offer an upgrade from Plus:
 
+- `com.tabletalktabletennis.app.leagueplus.monthly`
 - `com.tabletalktabletennis.app.leaguepro.monthly`
-- `com.tabletalktabletennis.app.leaguepro.annual`
 
 The recommended implementation is RevenueCat's official Capacitor SDK over
 StoreKit. It keeps Apple subscription state, restoration, renewals, billing
@@ -71,8 +84,9 @@ external-purchase links add review complexity and are deliberately deferred.
 3. RevenueCat sends signed/idempotent webhook events to a Supabase Edge Function.
 4. The Edge Function validates the webhook secret and writes the authoritative
    entitlement with a service-role client.
-5. Clients can read only their own plan summary. They cannot insert, extend or
-   edit an entitlement.
+5. Clients can read only their own Free/Plus/Pro plan summary. They cannot
+   insert, extend or edit an entitlement. Pro satisfies Plus capability checks;
+   Plus never satisfies a Pro check.
 6. League/tournament limits are enforced again inside guarded database
    functions. Hiding a button in React is never the security boundary.
 7. Cancellation keeps Pro through the paid period. Expiration or failed billing
@@ -85,9 +99,10 @@ external-purchase links add review complexity and are deliberately deferred.
    billing code before that approval.
 2. Join the paid Apple Developer Program and create the app in App Store Connect.
 3. Add the In-App Purchase capability, subscription group and both product IDs.
-4. Create the RevenueCat project and entitlement `league_pro`; connect the Apple
-   products. Do not add a payment card unless the user knowingly chooses a paid
-   service after reviewing current pricing.
+4. Create the RevenueCat project and entitlements `league_plus` and
+   `league_pro`; connect the matching Apple products. Do not add a payment card
+   unless the user knowingly chooses a paid service after reviewing current
+   pricing.
 5. Add the SDK, native paywall, Restore Purchases and Manage Subscription links.
 6. Deploy and test the webhook in Apple sandbox with disposable accounts.
 7. Add server-side feature limits, grandfather existing leagues, and test
@@ -97,9 +112,10 @@ external-purchase links add review complexity and are deliberately deferred.
 
 The local draft is `supabase/migrations/202609020001_subscription_entitlements.sql`.
 It exposes only an allowlisted plan summary, keeps provider/customer identifiers
-server-only, gives clients no write path, handles active/expired/grace-period
-states and includes an idempotent webhook ledger. Seven isolated PostgreSQL
-tests cover those boundaries. It has not been applied to Supabase.
+server-only, gives clients no write path, handles Plus, Pro, upgrades,
+active/expired/grace-period states and includes an idempotent webhook ledger.
+Isolated PostgreSQL tests cover those boundaries. It has not been applied to
+Supabase.
 
 ## Current external rules checked September 1, 2026
 
