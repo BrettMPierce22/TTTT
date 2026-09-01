@@ -1,5 +1,33 @@
 # Supabase deployment log
 
+## 2026-09-01 — League access and independent moderation
+
+Target: TTTT production project (`juhdzutghafsiggwtaad`), main/Production.
+
+After explicit approval, applied together in one transaction:
+
+- `202608250001_league_access.sql`
+- `202609010001_moderation_privacy_hardening.sql`
+
+The transaction completed successfully. The read-only post-deploy check passed
+guarded-function availability, five independent-review triggers, chat-report
+privacy, workflow-table permissions and legacy join bypass denial.
+
+Before/after ordered-ID fingerprints matched exactly for 2 leagues, 17 players,
+66 matches and 389 table locations. Counts remained 1 table review, 1 location
+report, 0 chat reports and 0 photo submissions. The two existing leagues now
+use the intended `private` default. New tables contained 0 join requests and 0
+invitations. No existing account, content record or Storage object was created
+or deleted.
+
+Migration SHA-256 fingerprints:
+
+- league access: `9b02b6de088630d062203019dbfa59112cbbc16dd85a8df6a0b8771758bbc91e`
+- moderation hardening: `2e4d93d24ea0d4d437023d0842f2927b7dc2548901b6667bb9eb87bb58e30872`
+
+Disposable-account workflow tests remain separate and were not performed.
+Details: `../docs/MODERATION_LEAGUE_ACCESS_RELEASE.md`.
+
 ## 2026-09-01 — Read-only moderator and league-access audit
 
 Inspected the TTTT production project through the signed-in dashboard without

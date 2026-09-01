@@ -20,6 +20,18 @@ begin
     raise exception 'League access objects are incomplete.';
   end if;
 
+  if exists (
+    select 1
+    from pg_class
+    where oid in (
+      'public.league_join_requests'::regclass,
+      'public.league_invitations'::regclass
+    )
+      and not relrowsecurity
+  ) then
+    raise exception 'League workflow table row-level security is disabled.';
+  end if;
+
   if (
     select count(*)
     from pg_trigger
