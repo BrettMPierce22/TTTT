@@ -50,8 +50,29 @@ describe("subscription plan catalog", () => {
     ).toMatchObject({
       plan: "plus",
       subscriptionStatus: "active",
-      currentPeriodEnd: "2099-01-01T00:00:00Z",
+      currentPeriodEnd: "2099-01-01T00:00:00.000Z",
       features: { ownedActiveLeagues: 2, activePlayersPerLeague: 32 },
     });
+  });
+  it("does not accept arbitrary feature overrides or private provider metadata", () => {
+    const summary = normalizePlanSummary({ plan: "free", subscription_status: "not_subscribed",
+      features: { exports: true, ownedActiveLeagues: 999, secret: "private" }, provider_customer_id: "private" });
+    expect(summary.features).toMatchObject({ exports: false, ownedActiveLeagues: 1, analytics: "basic" });
+    expect(summary.features).not.toHaveProperty("secret");
+    expect(summary).not.toHaveProperty("provider_customer_id");
+    expect(normalizePlanSummary({ plan: "plus", subscription_status: "active", features: { exports: true } }).features.exports).toBe(false);
+  });
+  it.each(["expired", "revoked", "unknown", undefined])("does not display paid access for %s status", (status) => {
+    expect(normalizePlanSummary({ plan: "pro", subscription_status: status }).plan).toBe("free");
+  });
+  it("handles invalid dates and preserves a server-approved grace period", () => {
+    const summary = normalizePlanSummary({ plan: "pro", subscription_status: "grace_period", current_period_end: "bad" });
+    expect(summary).toMatchObject({ plan: "pro", currentPeriodEnd: null });
+    expect(normalizePlanSummary({ plan: "pro", subscriptionStatus: "active" }).features.exports).toBe(true);
+  });
+  it("prevents one screen from mutating the shared plan catalog", () => {
+    expect(Object.isFrozen(getPlan("pro").limits)).toBe(true);
+    expect(Object.isFrozen(getPlan("pro").features)).toBe(true);
+    expect(Object.isFrozen(getPlan("pro"))).toBe(true);
   });
 });

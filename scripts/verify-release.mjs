@@ -1,4 +1,19 @@
-import { readFile, stat } from "node:fs/promises";
+import { readFile, readdir, stat } from "node:fs/promises";
+import { loadEnv } from "vite";
+import { assertSafePublicAsset, validateReleaseEnvironment } from "./release-safety.mjs";
+
+validateReleaseEnvironment(loadEnv("production", process.cwd(), "VITE_"));
+
+async function scanPublicAssets(directory) {
+  for (const entry of await readdir(directory, { withFileTypes: true })) {
+    const path = `${directory}/${entry.name}`;
+    if (entry.isDirectory()) await scanPublicAssets(path);
+    else if (/\.(?:js|css|html|json|map|txt|svg)$/.test(entry.name)) {
+      assertSafePublicAsset(path, await readFile(path, "utf8"));
+    }
+  }
+}
+await scanPublicAssets("dist");
 
 const requiredFiles = [
   "dist/index.html",

@@ -23,6 +23,52 @@ cannot charge users, and all paid actions remain disabled. The migration has
 not been applied and no App Store or RevenueCat products exist yet. See
 [the plan and activation sequence](FREE_PAID_PLANS.md).
 
+September 2 local development adds a simulator-only StoreKit test harness
+(native transaction verification is blocked by unavailable local products in the
+installed simulator) and read-only organizer activity/CSV reports. Paid billing and limits are still off;
+the entitlement migration remains unapplied. See
+[local subscription testing](SUBSCRIPTIONS_LOCAL_TESTING.md).
+The matching signed Release build was installed and launched on the physical
+iPhone on September 2 after user approval. Organizer report/share-sheet
+interaction checks remain pending; the local signing profile expires September 7.
+September 3 adds independent paginated reports with cancellation/retry and
+incomplete-export protection. Subscription expiration/capability hardening is
+tested locally only; the entitlement migration still requires approval.
+All 161 automated checks passed, and the matching September 3 signed Release
+build was installed and launched on the connected iPhone. Native report
+interaction checks still require confirmation; no website release was made.
+The user subsequently described seeing login on first launch and restoring their
+profile/league only after reopening. Startup now has one coordinated restoration
+flow, retryable errors and stale-response protection; all 183 checks pass.
+The user confirmed the first-launch fix on their physical iPhone. See
+[the startup fix and test evidence](SESSION_STARTUP_20260903.md).
+
+The next local account-access batch preserves password recovery across reloads,
+adds safe expired-link explanations and confirmation-email resend, prevents
+duplicate auth submissions and confirms password-update success. All 201 checks
+pass. Real email delivery/callbacks and native universal-link setup are still
+outstanding; this is not end-to-end production verification. See
+[account-access evidence](ACCOUNT_ACCESS_20260903.md).
+
+The match/tournament reliability batch adds explicit-retry duplicate protection,
+bracket navigation guards, complete schedule loading and score/bye validation.
+All 297 local checks pass, including actual SQL tournament completion tests.
+The server score-guard migration was approved, applied and verified September 3;
+before/after fingerprints confirm existing leagues/events/results are unchanged.
+The matching signed Release app was installed and launched on the iPhone.
+Website publication and hands-on phone checks remain outstanding. See
+[scope, evidence and limits](MATCH_TOURNAMENT_RELIABILITY_20260903.md).
+
+Recovery/release preflight now passes **337 tests in 29 files**, lint, build,
+asset/configuration safeguards and a production dependency audit (zero known
+vulnerabilities). Auth input labels, feedback announcements, busy-state navigation
+and website-handoff instructions are improved. Read-only inspection confirmed
+the canonical redirect, enabled Resend SMTP and standard recovery-link template.
+Actual email delivery, website publication, native links and hands-on recovery
+remain unverified. The matching signed Release was installed and launched on
+the connected iPhone at 16:00 Central. See
+[preflight evidence](RECOVERY_RELEASE_PREFLIGHT_20260903.md).
+
 ## Implemented in the table locator foundation
 
 - New locations and written ratings default to `pending`.

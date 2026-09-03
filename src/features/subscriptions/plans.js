@@ -70,11 +70,24 @@ export const PLAN_CATALOG = Object.freeze([
   },
 ]);
 
+for (const plan of PLAN_CATALOG) {
+  Object.freeze(plan.limits);
+  Object.freeze(plan.features);
+  Object.freeze(plan);
+}
+
+const CAPABILITIES = Object.freeze({
+  free: Object.freeze({ analytics: "basic", exports: false, customBranding: false }),
+  plus: Object.freeze({ analytics: "expanded", exports: false, customBranding: false }),
+  pro: Object.freeze({ analytics: "advanced", exports: true, customBranding: true }),
+});
+const STATUSES = new Set(["not_subscribed", "trialing", "active", "grace_period", "expired", "revoked"]);
+
 export const DEFAULT_PLAN_SUMMARY = Object.freeze({
   plan: PLAN_IDS.FREE,
   subscriptionStatus: "not_subscribed",
   currentPeriodEnd: null,
-  features: PLAN_CATALOG[0].limits,
+  features: Object.freeze({ ...PLAN_CATALOG[0].limits, ...CAPABILITIES.free }),
 });
 
 export function getPlan(planId) {
@@ -84,21 +97,21 @@ export function getPlan(planId) {
 }
 
 export function normalizePlanSummary(summary) {
-  const plan = getPlan(summary?.plan);
+  // Only display a recognized server decision. Client normalization is not an
+  // entitlement authority; expiration/grace decisions belong to get_my_plan().
+  const knownPlan = PLAN_CATALOG.find((item) => item.id === summary?.plan);
+  const incomingStatus = summary?.subscription_status ?? summary?.subscriptionStatus;
+  const subscriptionStatus = knownPlan && STATUSES.has(incomingStatus) ? incomingStatus : "not_subscribed";
+  const plan = knownPlan && ["trialing", "active", "grace_period"].includes(subscriptionStatus)
+    ? knownPlan : getPlan("free");
+  const date = summary?.current_period_end ?? summary?.currentPeriodEnd;
+  const currentPeriodEnd = knownPlan && typeof date === "string" && Number.isFinite(Date.parse(date))
+    ? new Date(date).toISOString() : null;
 
   return {
     plan: plan.id,
-    subscriptionStatus:
-      typeof summary?.subscription_status === "string"
-        ? summary.subscription_status
-        : typeof summary?.subscriptionStatus === "string"
-          ? summary.subscriptionStatus
-          : DEFAULT_PLAN_SUMMARY.subscriptionStatus,
-    currentPeriodEnd:
-      summary?.current_period_end || summary?.currentPeriodEnd || null,
-    features: {
-      ...plan.limits,
-      ...(summary?.features || {}),
-    },
+    subscriptionStatus,
+    currentPeriodEnd,
+    features: { ...plan.limits, ...CAPABILITIES[plan.id] },
   };
 }

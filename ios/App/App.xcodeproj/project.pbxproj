@@ -7,6 +7,9 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		B52026090200000000000006 /* LocalBillingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B52026090200000000000005; };
+		B52026090200000000000002 /* LocalSubscriptionStorePlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = B52026090200000000000001 /* LocalSubscriptionStorePlugin.swift */; };
+		B52026090200000000000004 /* TableTalkPlans.storekit in Resources */ = {isa = PBXBuildFile; fileRef = B52026090200000000000003 /* TableTalkPlans.storekit */; };
 		2FAD9763203C412B000D30F8 /* config.xml in Resources */ = {isa = PBXBuildFile; fileRef = 2FAD9762203C412B000D30F8 /* config.xml */; };
 		4D22ABE92AF431CB00220026 /* CapApp-SPM in Frameworks */ = {isa = PBXBuildFile; productRef = 4D22ABE82AF431CB00220026 /* CapApp-SPM */; };
 		50379B232058CBB4000EE86E /* capacitor.config.json in Resources */ = {isa = PBXBuildFile; fileRef = 50379B222058CBB4000EE86E /* capacitor.config.json */; };
@@ -26,6 +29,10 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		B52026090200000000000005 /* LocalBillingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalBillingTests/LocalBillingTests.swift; sourceTree = "<group>"; };
+		B52026090200000000000007 /* LocalBillingTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; path = LocalBillingTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		B52026090200000000000001 /* LocalSubscriptionStorePlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalSubscriptionStorePlugin.swift; sourceTree = "<group>"; };
+		B52026090200000000000003 /* TableTalkPlans.storekit */ = {isa = PBXFileReference; lastKnownFileType = text; path = TableTalkPlans.storekit; sourceTree = "<group>"; };
 		2FAD9762203C412B000D30F8 /* config.xml */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = config.xml; sourceTree = "<group>"; };
 		50379B222058CBB4000EE86E /* capacitor.config.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = capacitor.config.json; sourceTree = "<group>"; };
 		504EC3041FED79650016851F /* App.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = App.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -47,6 +54,7 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		B52026090200000000000008 = {isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
 		504EC3011FED79650016851F /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -62,6 +70,7 @@
 			isa = PBXGroup;
 			children = (
 				958DCC722DB07C7200EA8C5F /* debug.xcconfig */,
+				B52026090200000000000005 /* LocalBillingTests.swift */,
 				504EC3061FED79650016851F /* App */,
 				504EC3051FED79650016851F /* Products */,
 			);
@@ -71,6 +80,7 @@
 			isa = PBXGroup;
 			children = (
 				504EC3041FED79650016851F /* App.app */,
+				B52026090200000000000007 /* LocalBillingTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -79,6 +89,8 @@
 			isa = PBXGroup;
 			children = (
 				A4F3F4603000000000000001 /* AddressGeocoderPlugin.swift */,
+				B52026090200000000000001 /* LocalSubscriptionStorePlugin.swift */,
+				B52026090200000000000003 /* TableTalkPlans.storekit */,
 				A4F3F46030000000000000B /* AppleTableMapPlugin.swift */,
 				A4F3F4603000000000000005 /* NativeShellPlugin.swift */,
 				A4F3F4603000000000000007 /* TableTalkTabBarController.swift */,
@@ -101,6 +113,17 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		B52026090200000000000009 /* LocalBillingTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = B5202609020000000000000A;
+			buildPhases = (B5202609020000000000000B, B52026090200000000000008);
+			buildRules = ();
+			dependencies = (B5202609020000000000000C);
+			name = LocalBillingTests;
+			productName = LocalBillingTests;
+			productReference = B52026090200000000000007;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 		504EC3031FED79650016851F /* App */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 504EC3161FED79650016851F /* Build configuration list for PBXNativeTarget "App" */;
@@ -154,6 +177,7 @@
 			projectRoot = "";
 			targets = (
 				504EC3031FED79650016851F /* App */,
+				B52026090200000000000009 /* LocalBillingTests */,
 			);
 		};
 /* End PBXProject section */
@@ -165,6 +189,7 @@
 			files = (
 				504EC3121FED79650016851F /* LaunchScreen.storyboard in Resources */,
 				50B271D11FEDC1A000F3C39B /* public in Resources */,
+				B52026090200000000000004 /* TableTalkPlans.storekit in Resources */,
 				504EC30F1FED79650016851F /* Assets.xcassets in Resources */,
 				A4F3F4603000000000000009 /* AppIcon.icon in Resources */,
 				50379B232058CBB4000EE86E /* capacitor.config.json in Resources */,
@@ -177,11 +202,13 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		B5202609020000000000000B = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (B52026090200000000000006); runOnlyForDeploymentPostprocessing = 0; };
 		504EC3001FED79650016851F /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
 				504EC3081FED79650016851F /* AppDelegate.swift in Sources */,
+				B52026090200000000000002 /* LocalSubscriptionStorePlugin.swift in Sources */,
 				9582B6832FE993A70072D4E8 /* SceneDelegate.swift in Sources */,
 				A4F3F4603000000000000002 /* AddressGeocoderPlugin.swift in Sources */,
 				A4F3F46030000000000000C /* AppleTableMapPlugin.swift in Sources */,
@@ -212,7 +239,31 @@
 		};
 /* End PBXVariantGroup section */
 
+/* Begin PBXContainerItemProxy section */
+		B5202609020000000000000D = {isa = PBXContainerItemProxy; containerPortal = 504EC2FC1FED79650016851F; proxyType = 1; remoteGlobalIDString = 504EC3031FED79650016851F; remoteInfo = App; };
+/* End PBXContainerItemProxy section */
+/* Begin PBXTargetDependency section */
+		B5202609020000000000000C = {isa = PBXTargetDependency; target = 504EC3031FED79650016851F; targetProxy = B5202609020000000000000D; };
+/* End PBXTargetDependency section */
+
 /* Begin XCBuildConfiguration section */
+		B5202609020000000000000E = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.tabletalktabletennis.local.billingtests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_VERSION = 5.0;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				TARGETED_DEVICE_FAMILY = 1;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/App.app/App";
+				FRAMEWORK_SEARCH_PATHS = ("$(inherited)", "$(SDKROOT)/Developer/Library/Frameworks", "$(BUILT_PRODUCTS_DIR)/PackageFrameworks");
+				LD_RUNPATH_SEARCH_PATHS = ("$(inherited)", "@executable_path/Frameworks", "@loader_path/Frameworks");
+			};
+			name = Debug;
+		};
 		504EC3141FED79650016851F /* Debug */ = {
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 958DCC722DB07C7200EA8C5F /* debug.xcconfig */;
@@ -326,6 +377,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 958DCC722DB07C7200EA8C5F /* debug.xcconfig */;
 			buildSettings = {
+				FRAMEWORK_SEARCH_PATHS = ("$(inherited)", "$(SDKROOT)/Developer/Library/Frameworks");
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
@@ -349,6 +401,7 @@
 		504EC3181FED79650016851F /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				EXCLUDED_SOURCE_FILE_NAMES = TableTalkPlans.storekit;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
@@ -371,6 +424,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		B5202609020000000000000A = {isa = XCConfigurationList; buildConfigurations = (B5202609020000000000000E); defaultConfigurationIsVisible = 0; defaultConfigurationName = Debug; };
 		504EC2FF1FED79650016851F /* Build configuration list for PBXProject "App" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (

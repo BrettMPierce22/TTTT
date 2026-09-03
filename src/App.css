@@ -2207,6 +2207,12 @@ th {
   backdrop-filter: saturate(165%) blur(24px);
 }
 
+.subscription-test-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+.subscription-test-lab p { font-size: 13px; line-height: 1.5; }
+@media (max-width: 600px) {
+  .subscription-test-actions { flex-direction: column; }
+}
+
 .subscription-plans-heading,
 .subscription-plans-footer,
 .subscription-plan-title-row {

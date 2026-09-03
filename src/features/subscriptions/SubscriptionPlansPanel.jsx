@@ -4,8 +4,11 @@ export default function SubscriptionPlansPanel({
   planSummary,
   loading = false,
   purchasesEnabled = false,
+  storeProducts = {},
+  busy = false,
   onChoosePlan,
   onRestorePurchases,
+  onManageSubscription,
 }) {
   const currentPlan = getPlan(planSummary?.plan);
 
@@ -36,7 +39,11 @@ export default function SubscriptionPlansPanel({
         {PLAN_CATALOG.map((plan) => {
           const isCurrent = currentPlan.id === plan.id;
           const isPaid = Boolean(plan.productId);
-          const canChoose = purchasesEnabled && isPaid && !isCurrent;
+          const product = storeProducts[plan.id];
+          const priceReady = product?.productId === plan.productId &&
+            typeof product?.displayPrice === "string" && product.displayPrice.trim() !== "";
+          const canChoose = purchasesEnabled && isPaid && !isCurrent && priceReady &&
+            typeof onChoosePlan === "function" && !loading && !busy;
 
           return (
             <article
@@ -50,7 +57,7 @@ export default function SubscriptionPlansPanel({
                 {isCurrent && <span>Current</span>}
               </div>
               <div className="subscription-plan-price">
-                <strong>{plan.price}</strong>
+                <strong>{purchasesEnabled && isPaid ? (priceReady ? product.displayPrice : "Unavailable") : plan.price}</strong>
                 <span>{plan.cadence}</span>
               </div>
               <p>{plan.description}</p>
@@ -66,11 +73,13 @@ export default function SubscriptionPlansPanel({
                 type="button"
                 className={plan.id === "pro" ? "primary-button" : "secondary-button"}
                 disabled={!canChoose}
-                onClick={() => canChoose && onChoosePlan?.(plan)}
+                onClick={() => canChoose && onChoosePlan({ ...plan, price: product.displayPrice, productId: product.productId })}
               >
                 {isCurrent
                   ? "Current plan"
-                  : purchasesEnabled && isPaid
+                  : purchasesEnabled && isPaid && !priceReady
+                    ? "Price unavailable"
+                    : purchasesEnabled && isPaid
                     ? `Choose ${plan.name}`
                     : isPaid
                       ? "Available at launch"
@@ -86,13 +95,19 @@ export default function SubscriptionPlansPanel({
           Upgrading never removes your league data. Apple will show the final
           localized price before any purchase is confirmed.
         </p>
-        {purchasesEnabled && (
+        {purchasesEnabled && typeof onRestorePurchases === "function" && (
           <button
             type="button"
             className="subscription-restore-button"
+            disabled={busy || loading}
             onClick={onRestorePurchases}
           >
             Restore Purchases
+          </button>
+        )}
+        {purchasesEnabled && currentPlan.id !== "free" && typeof onManageSubscription === "function" && (
+          <button type="button" className="subscription-restore-button" disabled={busy || loading} onClick={onManageSubscription}>
+            Manage subscription
           </button>
         )}
       </div>

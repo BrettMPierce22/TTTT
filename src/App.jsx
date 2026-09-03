@@ -1,9 +1,15 @@
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import "./App.css";
 import tableTalkAppIcon from "./assets/table-talk-app-icon.png";
-import { supabase } from "./lib/supabaseClient";
+import { authRedirect, supabase } from "./lib/supabaseClient";
+import { startSessionStartup } from "./features/auth/sessionStartup";
+import { calculateLeagueAnalytics, getMatchResult, validateMatchScores } from "./features/matches/scoring";
+import { createMatchWriter } from "./features/matches/matchWriter";
+import { authActionError, clearFailedAuthRedirect, createRecoveryIntent } from "./features/auth/emailRecovery";
+import { getAuthRedirectUrl } from "./features/auth/redirectUrl";
 import AccountDeletionPanel from "./features/account/AccountDeletionPanel";
 import SubscriptionPlansPanel from "./features/subscriptions/SubscriptionPlansPanel";
+import { canUseLocalSubscriptionStore } from "./native/localSubscriptionStore";
 import {
   DEFAULT_PLAN_SUMMARY,
   normalizePlanSummary,
@@ -32,11 +38,12 @@ const ModeratorQueue = lazy(() =>
   import("./features/moderation/ModeratorQueue")
 );
 const LegalCenter = lazy(() => import("./features/legal/LegalCenter"));
+const LocalSubscriptionLab = lazy(() => import("./features/subscriptions/LocalSubscriptionLab"));
+const OrganizerInsights = lazy(() => import("./features/organizer/LeagueOrganizerReports"));
 
 // Authentication emails must open a real HTTPS page. A Capacitor build runs
 // from capacitor://localhost, which is not a valid email callback URL.
-const APP_URL =
-  import.meta.env.VITE_APP_URL || "https://tabletalktabletennis.com";
+const APP_URL = getAuthRedirectUrl(import.meta.env.VITE_APP_URL);
 const SUPPORT_EMAIL =
   import.meta.env.VITE_SUPPORT_EMAIL || "support@tabletalktabletennis.com";
 const SUBSCRIPTIONS_BACKEND_ENABLED =
@@ -277,522 +284,6 @@ function StatusBadge({ status }) {
   );
 }
 
-function getMatchResult(match) {
-  let aWins = 0;
-  let bWins = 0;
-
-  const games = Array.isArray(match?.games)
-    ? match.games
-    : [];
-
-  games.forEach((game) => {
-    if (Number(game.a) > Number(game.b)) {
-      aWins++;
-    } else {
-      bWins++;
-    }
-  });
-
-  return {
-    aWins,
-    bWins,
-    winnerId:
-      aWins > bWins
-        ? match.player_a_id
-        : match.player_b_id,
-  };
-}
-
-function validateMatchScores(format, scoreRows) {
-  const rows = scoreRows.slice(0, format);
-
-  const usableGames = [];
-
-  rows.forEach((game) => {
-    const aBlank =
-      game.a === "" ||
-      game.a === null ||
-      game.a === undefined;
-
-    const bBlank =
-      game.b === "" ||
-      game.b === null ||
-      game.b === undefined;
-
-    if (aBlank && bBlank) {
-      return;
-    }
-
-    if (aBlank || bBlank) {
-      throw new Error(
-        "Enter both scores for every game you use."
-      );
-    }
-
-    const scoreA = Number(game.a);
-    const scoreB = Number(game.b);
-
-    if (
-      !Number.isInteger(scoreA) ||
-      !Number.isInteger(scoreB) ||
-      scoreA < 0 ||
-      scoreB < 0
-    ) {
-      throw new Error(
-        "Game scores must be whole numbers of 0 or greater."
-      );
-    }
-
-    if (scoreA === scoreB) {
-      throw new Error(
-        "Games cannot end in a tie."
-      );
-    }
-
-    usableGames.push({
-      a: scoreA,
-      b: scoreB,
-    });
-  });
-
-  if (usableGames.length === 0) {
-    throw new Error(
-      "Enter at least one game score."
-    );
-  }
-
-  const winsNeeded =
-    format === 1
-      ? 1
-      : format === 3
-      ? 2
-      : 3;
-
-  let aWins = 0;
-  let bWins = 0;
-
-  usableGames.forEach((game, index) => {
-    if (
-      aWins >= winsNeeded ||
-      bWins >= winsNeeded
-    ) {
-      throw new Error(
-        `Game ${index + 1} comes after the match was already decided. Remove the extra game.`
-      );
-    }
-
-    if (game.a > game.b) {
-      aWins++;
-    } else {
-      bWins++;
-    }
-  });
-
-  if (
-    Math.max(aWins, bWins) !==
-    winsNeeded
-  ) {
-    throw new Error(
-      format === 1
-        ? "Enter the final score."
-        : `A Best of ${format} match needs a player to win ${winsNeeded} games.`
-    );
-  }
-
-  return usableGames;
-}
-
-
-function expectedScore(rating, opponentRating) {
-  return (
-    1 /
-    (1 +
-      Math.pow(
-        10,
-        (opponentRating - rating) / 400
-      ))
-  );
-}
-
-function getQualification(matchesPlayed) {
-  if (matchesPlayed === 0) {
-    return "unranked";
-  }
-
-  if (matchesPlayed < 5) {
-    return "provisional";
-  }
-
-  return "ranked";
-}
-
-function getRatingExchangePoints(
-  differential,
-  higherRatedWon
-) {
-  const spread = Math.abs(
-    Math.round(differential)
-  );
-
-  const rows = [
-    [12, 8, 8],
-    [37, 7, 10],
-    [62, 6, 13],
-    [87, 5, 16],
-    [112, 4, 20],
-    [137, 3, 25],
-    [162, 2, 30],
-    [187, 2, 35],
-    [212, 1, 40],
-    [237, 1, 45],
-    [Infinity, 0, 50],
-  ];
-
-  const row = rows.find(
-    ([max]) => spread <= max
-  );
-
-  return higherRatedWon
-    ? row[1]
-    : row[2];
-}
-
-function calculateLeagueAnalytics(players, matches) {
-  const stats = {};
-  const playerHistory = {};
-  const matchAnalytics = {};
-
-  players.forEach((player) => {
-    stats[player.id] = {
-      ...player,
-      rating: 1000,
-      powerRating: 1000,
-      wins: 0,
-      losses: 0,
-      gamesWon: 0,
-      gamesLost: 0,
-      pointsFor: 0,
-      pointsAgainst: 0,
-      winStreak: 0,
-    };
-
-    playerHistory[player.id] = [];
-  });
-
-  const orderedMatches = [...matches].sort(
-    (a, b) =>
-      new Date(a.created_at) -
-      new Date(b.created_at)
-  );
-
-  orderedMatches.forEach((match) => {
-    const a = stats[match.player_a_id];
-    const b = stats[match.player_b_id];
-
-    if (!a || !b) return;
-
-    let aGames = 0;
-    let bGames = 0;
-    let aPoints = 0;
-    let bPoints = 0;
-
-    const games = Array.isArray(match.games)
-      ? match.games
-      : [];
-
-    games.forEach((game) => {
-      const scoreA = Number(game.a);
-      const scoreB = Number(game.b);
-
-      aPoints += scoreA;
-      bPoints += scoreB;
-
-      if (scoreA > scoreB) {
-        aGames++;
-      } else {
-        bGames++;
-      }
-    });
-
-    const aWon = aGames > bGames;
-    const ratingBeforeA = a.rating;
-    const ratingBeforeB = b.rating;
-    const expectedA = expectedScore(
-      ratingBeforeA,
-      ratingBeforeB
-    );
-    const expectedB = 1 - expectedA;
-
-    const differential =
-      Math.abs(
-        ratingBeforeA -
-        ratingBeforeB
-      );
-
-    const higherRatedWon = aWon
-      ? ratingBeforeA >= ratingBeforeB
-      : ratingBeforeB >= ratingBeforeA;
-    const exchange = getRatingExchangePoints(
-      differential,
-      higherRatedWon
-    );
-
-    if (aWon) {
-      a.rating =
-        ratingBeforeA + exchange;
-      b.rating =
-        ratingBeforeB - exchange;
-    } else {
-      b.rating =
-        ratingBeforeB + exchange;
-      a.rating =
-        ratingBeforeA - exchange;
-    }
-
-    // Keep the legacy power fields synchronized with the
-    // league rating so older UI/history references remain safe.
-    a.powerRating = a.rating;
-    b.powerRating = b.rating;
-
-    a.gamesWon += aGames;
-    a.gamesLost += bGames;
-    b.gamesWon += bGames;
-    b.gamesLost += aGames;
-
-    a.pointsFor += aPoints;
-    a.pointsAgainst += bPoints;
-    b.pointsFor += bPoints;
-    b.pointsAgainst += aPoints;
-
-    if (aWon) {
-      a.wins++;
-      b.losses++;
-      a.winStreak++;
-      b.winStreak = 0;
-    } else {
-      b.wins++;
-      a.losses++;
-      b.winStreak++;
-      a.winStreak = 0;
-    }
-
-    const totalPoints = aPoints + bPoints;
-    const pointShareA =
-      totalPoints === 0
-        ? 0.5
-        : aPoints / totalPoints;
-    const pointShareB = 1 - pointShareA;
-
-    const aSnapshot = {
-      matchId: match.id,
-      createdAt: match.created_at,
-      opponentId: b.id,
-      won: aWon,
-      gamesFor: aGames,
-      gamesAgainst: bGames,
-      pointsFor: aPoints,
-      pointsAgainst: bPoints,
-      pointDifferential: aPoints - bPoints,
-      pointShare: pointShareA,
-      opponentRatingBefore:
-        ratingBeforeB,
-      eloBefore: ratingBeforeA,
-      eloAfter: a.rating,
-      eloChange:
-        a.rating - ratingBeforeA,
-      powerBefore: ratingBeforeA,
-      powerAfter: a.rating,
-      powerChange:
-        a.rating - ratingBeforeA,
-      expectedElo: expectedA,
-      expectedPower: expectedA,
-      ratingExchange:
-        aWon ? exchange : -exchange,
-    };
-
-    const bSnapshot = {
-      matchId: match.id,
-      createdAt: match.created_at,
-      opponentId: a.id,
-      won: !aWon,
-      gamesFor: bGames,
-      gamesAgainst: aGames,
-      pointsFor: bPoints,
-      pointsAgainst: aPoints,
-      pointDifferential: bPoints - aPoints,
-      pointShare: pointShareB,
-      opponentRatingBefore:
-        ratingBeforeA,
-      eloBefore: ratingBeforeB,
-      eloAfter: b.rating,
-      eloChange:
-        b.rating - ratingBeforeB,
-      powerBefore: ratingBeforeB,
-      powerAfter: b.rating,
-      powerChange:
-        b.rating - ratingBeforeB,
-      expectedElo: expectedB,
-      expectedPower: expectedB,
-      ratingExchange:
-        !aWon ? exchange : -exchange,
-    };
-
-    playerHistory[a.id].push(aSnapshot);
-    playerHistory[b.id].push(bSnapshot);
-
-    matchAnalytics[match.id] = {
-      a: aSnapshot,
-      b: bSnapshot,
-      aGames,
-      bGames,
-      aPoints,
-      bPoints,
-      winnerId: aWon ? a.id : b.id,
-      loserId: aWon ? b.id : a.id,
-    };
-  });
-
-  const standings = Object.values(stats).map(
-    (player) => {
-      const matchesPlayed =
-        player.wins + player.losses;
-
-      const winPercentage =
-        matchesPlayed === 0
-          ? 0
-          : Math.round(
-              (player.wins /
-                matchesPlayed) *
-                100
-            );
-
-      const totalPoints =
-        player.pointsFor +
-        player.pointsAgainst;
-
-      const pointsWonPercentage =
-        totalPoints === 0
-          ? 0
-          : Math.round(
-              (player.pointsFor /
-                totalPoints) *
-                1000
-            ) / 10;
-
-      const history =
-        playerHistory[player.id] || [];
-
-      const averageOpponentRating =
-        history.length === 0
-          ? null
-          : Math.round(
-              history.reduce(
-                (sum, item) =>
-                  sum +
-                  Number(
-                    item.opponentRatingBefore ||
-                      1000
-                  ),
-                0
-              ) / history.length
-            );
-
-      return {
-        ...player,
-        rating: Math.round(player.rating),
-        powerRating: Math.round(
-          player.rating
-        ),
-        matchesPlayed,
-        qualification:
-          getQualification(matchesPlayed),
-        gamesPlayed:
-          player.gamesWon +
-          player.gamesLost,
-        winPercentage,
-        pointsWonPercentage,
-        averageOpponentRating,
-        pointDifferential:
-          player.pointsFor -
-          player.pointsAgainst,
-      };
-    }
-  );
-
-  const order = {
-    ranked: 0,
-    provisional: 1,
-    unranked: 2,
-  };
-
-  const leagueStandings =
-    [...standings].sort((a, b) => {
-      if (
-        order[a.qualification] !==
-        order[b.qualification]
-      ) {
-        return (
-          order[a.qualification] -
-          order[b.qualification]
-        );
-      }
-
-      if (b.rating !== a.rating) {
-        return b.rating - a.rating;
-      }
-
-      if (
-        b.averageOpponentRating !==
-        a.averageOpponentRating
-      ) {
-        return (
-          (b.averageOpponentRating || 0) -
-          (a.averageOpponentRating || 0)
-        );
-      }
-
-      if (
-        b.matchesPlayed !==
-        a.matchesPlayed
-      ) {
-        return (
-          b.matchesPlayed -
-          a.matchesPlayed
-        );
-      }
-
-      return a.name.localeCompare(b.name);
-    });
-
-  let officialRank = 0;
-
-  const rankedStandings =
-    leagueStandings.map((player) => {
-      if (
-        player.qualification === "ranked"
-      ) {
-        officialRank++;
-
-        return {
-          ...player,
-          officialRank,
-        };
-      }
-
-      return {
-        ...player,
-        officialRank: null,
-      };
-    });
-
-  return {
-    standings: rankedStandings,
-    eloStandings: rankedStandings,
-    powerStandings: rankedStandings,
-    playerHistory,
-    matchAnalytics,
-  };
-}
 
 function LeagueLandscapeChart({
   players,
@@ -1268,8 +759,19 @@ function PointDifferentialChart({ data }) {
 }
 
 function App() {
-  const [, setSession] =
-    useState(null);
+  const authActionBusy = useRef(false);
+  const matchSaveBusy = useRef(false);
+  const [matchWriter] = useState(() => createMatchWriter(supabase));
+  const currentAuthUser = useRef(null);
+  const currentLeagueId = useRef(null);
+  const [linkError, setLinkError] = useState(authRedirect.error);
+  const [recoveryIntent] = useState(() => createRecoveryIntent({ storage: {
+    getItem: (key) => window.sessionStorage.getItem(key),
+    setItem: (key, value) => window.sessionStorage.setItem(key, value),
+    removeItem: (key) => window.sessionStorage.removeItem(key),
+  } }));
+  const startupController = useRef(null);
+  const [startupStatus, setStartupStatus] = useState("restoring");
 
   const [user, setUser] =
     useState(null);
@@ -1642,12 +1144,16 @@ function App() {
   }, []);
 
   useEffect(() => {
+    currentLeagueId.current = league?.id || null;
+  }, [league?.id]);
+
+  useEffect(() => {
     if (!canUseNativeShell()) return;
 
-    setNativeTabsVisible(Boolean(league) && !legalPage).catch((error) => {
+    setNativeTabsVisible(Boolean(user && league) && startupStatus === "ready" && !legalPage && !linkError && !["reset", "forgot", "confirm", "reset-done"].includes(authMode)).catch((error) => {
       console.warn("Could not update native tab visibility", error);
     });
-  }, [league, legalPage]);
+  }, [user, league, legalPage, startupStatus, authMode, linkError]);
 
   useEffect(() => {
     if (!canUseNativeShell()) return;
@@ -1693,125 +1199,46 @@ function App() {
   }, []);
 
   useEffect(() => {
-    let mounted = true;
-
-    async function startApp() {
-      try {
-        const {
-          data,
-          error,
-        } =
-          await supabase.auth.getSession();
-
-        if (error) throw error;
-
-        if (!mounted) return;
-
-        const currentSession =
-  data.session || null;
-
-if (
-  currentSession?.user?.is_anonymous
-) {
-  await supabase.auth.signOut();
-
-  setSession(null);
-  setUser(null);
-  setAuthMode("login");
-} else {
-  setSession(currentSession);
-
-  setUser(
-    currentSession?.user || null
-  );
-
-  if (currentSession?.user) {
-    await bootstrapAuthenticatedUser(
-      currentSession.user.id
-    );
-  }
-}
-      } catch (error) {
-        console.error(error);
-
-        if (mounted) {
-          setAuthError(
-            error.message ||
-              "Could not start Table Talk Table Tennis."
-          );
-        }
-      } finally {
-        if (mounted) {
-          setLoading(false);
-        }
-      }
-    }
-
-    startApp();
-
-    const {
-      data: { subscription },
-    } =
-      supabase.auth.onAuthStateChange(
-        (event, nextSession) => {
-          if (!mounted) return;
-
-          setSession(
-            nextSession || null
-          );
-
-          setUser(
-            nextSession?.user || null
-          );
-
-          if (
-            event ===
-            "PASSWORD_RECOVERY"
-          ) {
-            setAuthMode("reset");
-            setAuthError("");
-            setAuthMessage(
-              "Choose a new password for your account."
-            );
-            setLoading(false);
-            return;
-          }
-
-          if (
-            event === "SIGNED_OUT"
-          ) {
-            resetLeagueState();
-            setMemberships([]);
-            setAccountProfile(null);
-            setAccountNameDraft("");
-            setAccountDescriptionDraft("");
-            setAccountHeightDraft("");
-            setAccountVelocityDraft("");
-            setAccountPlan(DEFAULT_PLAN_SUMMARY);
-            setAuthMode("login");
-            setLoading(false);
-            return;
-          }
-
-          if (
-            event === "SIGNED_IN" &&
-            nextSession?.user
-          ) {
-            setTimeout(() => {
-              bootstrapAuthenticatedUser(
-                nextSession.user.id
-              ).catch(
-                console.error
-              );
-            }, 0);
-          }
-        }
-      );
-
-    return () => {
-      mounted = false;
-      subscription.unsubscribe();
-    };
+    const controller = startSessionStartup({
+      auth: supabase.auth,
+      bootstrap: bootstrapAuthenticatedUser,
+      shouldResumeRecovery: recoveryIntent.shouldResume,
+      onStatus: (status) => {
+        setStartupStatus(status);
+        if (status === "ready") setLoading(false);
+      },
+      onSession: (session) => {
+        currentAuthUser.current = session?.user?.id || null;
+        setUser(session?.user || null);
+      },
+      onClear: () => {
+        recoveryIntent.clear();
+        setNewPassword("");
+        setConfirmNewPassword("");
+        resetLeagueState();
+        setMemberships([]);
+        setLeagueDirectory([]);
+        setAccountProfile(null);
+        setAccountNameDraft("");
+        setAccountDescriptionDraft("");
+        setAccountHeightDraft("");
+        setAccountVelocityDraft("");
+        setAccountPlan(DEFAULT_PLAN_SUMMARY);
+        setAccountPlanLoading(false);
+        setJoinName("");
+        setCreateName("");
+        setErrorMessage("");
+        setAuthMode("login");
+      },
+      onRecovery: (session) => {
+        recoveryIntent.begin(session.user.id);
+        setAuthMode("reset");
+        setAuthError("");
+        setAuthMessage("Choose a new password for your account.");
+      },
+    });
+    startupController.current = controller;
+    return () => controller.dispose();
   // The authentication subscription is intentionally installed once.
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -1843,24 +1270,29 @@ if (
   }, [user?.id]);
 
   useEffect(() => {
-    if (!league?.id || !user?.id) {
+    if (!league?.id || !user?.id || startupStatus !== "ready") {
       return;
     }
-
+    let cancelled = false;
     const interval =
       setInterval(() => {
         loadLeagueData(
           league.id,
-          user.id
-        );
+          user.id,
+          () => !cancelled
+        ).catch((error) => {
+          if (!cancelled) console.warn("Could not refresh league", error);
+        });
       }, 10000);
 
-    return () =>
+    return () => {
+      cancelled = true;
       clearInterval(interval);
+    };
   // The interval reads the latest server state; recreating it every render would
   // interrupt polling because loadLeagueData is intentionally component-scoped.
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [league?.id, user?.id]);
+  }, [league?.id, user?.id, startupStatus]);
 
   useEffect(() => {
     if (!league?.id || !currentPlayer?.id) {
@@ -1948,7 +1380,7 @@ if (
     setActiveTab("leaderboard");
   }
 
-  async function loadAccountProfile(userId) {
+  async function loadAccountProfile(userId, isCurrent = () => true) {
     if (!userId) return null;
 
     const { data, error } = await supabase
@@ -1969,6 +1401,7 @@ if (
 
     if (error) throw error;
 
+    if (!isCurrent()) return null;
     const profile = data || {
       user_id: userId,
       display_name: "",
@@ -2234,7 +1667,7 @@ if (
     }
   }
 
-  async function fetchMyLeagues() {
+  async function fetchMyLeagues(isCurrent = () => true) {
     const {
       data,
       error,
@@ -2246,12 +1679,13 @@ if (
 
     const list = data || [];
 
-    setMemberships(list);
+    if (isCurrent()) setMemberships(list);
 
     return list;
   }
 
-  async function loadAccountPlan() {
+  async function loadAccountPlan(isCurrent = () => true) {
+    if (!isCurrent()) return DEFAULT_PLAN_SUMMARY;
     if (!SUBSCRIPTIONS_BACKEND_ENABLED) {
       setAccountPlan(DEFAULT_PLAN_SUMMARY);
       return DEFAULT_PLAN_SUMMARY;
@@ -2263,19 +1697,20 @@ if (
       if (error) throw error;
 
       const summary = normalizePlanSummary(Array.isArray(data) ? data[0] : data);
-      setAccountPlan(summary);
+      if (isCurrent()) setAccountPlan(summary);
       return summary;
     } catch (error) {
       console.error("Could not load subscription plan.", error);
-      setAccountPlan(DEFAULT_PLAN_SUMMARY);
+      if (isCurrent()) setAccountPlan(DEFAULT_PLAN_SUMMARY);
       return DEFAULT_PLAN_SUMMARY;
     } finally {
-      setAccountPlanLoading(false);
+      if (isCurrent()) setAccountPlanLoading(false);
     }
   }
 
-  async function fetchLeagueDirectory() {
+  async function fetchLeagueDirectory(isCurrent = () => true) {
     const { data, error } = await supabase.rpc("get_discoverable_leagues");
+    if (!isCurrent()) return [];
 
     if (error) {
       const migrationMissing =
@@ -2298,17 +1733,24 @@ if (
   }
 
   async function bootstrapAuthenticatedUser(
-    userId
+    userId,
+    isCurrent = () => true
   ) {
     try {
-      await loadAccountProfile(userId);
+      await loadAccountProfile(userId, isCurrent);
+      if (!isCurrent()) return;
 
-      await loadAccountPlan();
+      await loadAccountPlan(isCurrent);
+      if (!isCurrent()) return;
 
       const list =
-        await fetchMyLeagues();
+        await fetchMyLeagues(isCurrent);
+      if (!isCurrent()) return;
 
-      await fetchLeagueDirectory();
+      // Discovery is optional: an outage must not prevent opening an existing league.
+      void fetchLeagueDirectory(isCurrent).catch((error) => {
+        if (isCurrent()) console.warn("Could not load league discovery", error);
+      });
 
       if (list.length === 0) {
         resetLeagueState();
@@ -2333,7 +1775,7 @@ if (
           remembered.league_id,
           userId,
           list,
-          { preserveActiveTab: true }
+          { preserveActiveTab: true, isCurrent, propagateError: true }
         );
         return;
       }
@@ -2343,7 +1785,7 @@ if (
           list[0].league_id,
           userId,
           list,
-          { preserveActiveTab: true }
+          { preserveActiveTab: true, isCurrent, propagateError: true }
         );
         return;
       }
@@ -2351,12 +1793,14 @@ if (
       resetLeagueState();
       setHubMode("list");
     } catch (error) {
+      if (!isCurrent()) return;
       console.error(error);
 
       setErrorMessage(
         error.message ||
           "Could not load your leagues."
       );
+      throw error;
     }
   }
 
@@ -2364,9 +1808,9 @@ if (
     leagueId,
     userId = user?.id,
     membershipList = memberships,
-    { preserveActiveTab = false } = {}
+    { preserveActiveTab = false, isCurrent = () => true, propagateError = false } = {}
   ) {
-    if (!leagueId || !userId) {
+    if (!leagueId || !userId || !isCurrent()) {
       return;
     }
 
@@ -2377,8 +1821,10 @@ if (
 
       await loadLeagueData(
         leagueId,
-        userId
+        userId,
+        isCurrent
       );
+      if (!isCurrent()) return;
 
       const membership =
         membershipList.find(
@@ -2405,20 +1851,23 @@ if (
       setSelectedPlayerId(null);
       setHubMode("list");
     } catch (error) {
+      if (!isCurrent()) return;
       console.error(error);
 
       setErrorMessage(
         error.message ||
           "Could not open that league."
       );
+      if (propagateError) throw error;
     } finally {
-      setLoading(false);
+      if (isCurrent()) setLoading(false);
     }
   }
 
   async function loadLeagueData(
     leagueId,
-    currentUserId = user?.id
+    currentUserId = user?.id,
+    isCurrent = () => true
   ) {
     const [
       leagueResult,
@@ -2488,6 +1937,7 @@ if (
           ascending: false,
         }),
     ]);
+    if (!isCurrent()) return;
 
     if (leagueResult.error) {
       throw leagueResult.error;
@@ -2516,7 +1966,8 @@ if (
       resetLeagueState();
 
       const newMemberships =
-        await fetchMyLeagues();
+        await fetchMyLeagues(isCurrent);
+      if (!isCurrent()) return;
 
       if (
         newMemberships.length === 0
@@ -2554,6 +2005,8 @@ if (
     event
   ) {
     event.preventDefault();
+    if (authActionBusy.current) return;
+    authActionBusy.current = true;
 
     try {
       setAuthLoading(true);
@@ -2590,24 +2043,17 @@ if (
 
       if (error) throw error;
 
-      if (data.user) {
-        setUser(data.user);
-        setSession(data.session);
-
-        await bootstrapAuthenticatedUser(
-          data.user.id
-        );
-      }
+      if (data.session) startupController.current?.acceptSession(data.session);
 
       setAuthPassword("");
     } catch (error) {
       console.error(error);
 
       setAuthError(
-        error.message ||
-          "Could not sign in."
+        authActionError(error, "Could not sign in. Check your email, password and connection, then try again.")
       );
     } finally {
+      authActionBusy.current = false;
       setAuthLoading(false);
       setLoading(false);
     }
@@ -2617,6 +2063,8 @@ if (
     event
   ) {
     event.preventDefault();
+    if (authActionBusy.current) return;
+    authActionBusy.current = true;
 
     try {
       setAuthLoading(true);
@@ -2671,12 +2119,7 @@ if (
       setAuthConfirmPassword("");
 
       if (data.session) {
-        setSession(data.session);
-        setUser(data.user);
-
-        await bootstrapAuthenticatedUser(
-          data.user.id
-        );
+        startupController.current?.acceptSession(data.session);
 
         setAuthMessage(
           "Account created."
@@ -2685,7 +2128,7 @@ if (
         setAuthMode("login");
 
         setAuthMessage(
-          "Account created. Check your email and confirm your address, then come back here and sign in."
+        "Check your inbox for a confirmation email, then return here to sign in. If you already have an account, you can sign in or reset your password."
         );
       }
     } catch (error) {
@@ -2696,6 +2139,7 @@ if (
           "Could not create your account."
       );
     } finally {
+      authActionBusy.current = false;
       setAuthLoading(false);
     }
   }
@@ -2704,6 +2148,8 @@ if (
     event
   ) {
     event.preventDefault();
+    if (authActionBusy.current) return;
+    authActionBusy.current = true;
 
     try {
       setAuthLoading(true);
@@ -2734,16 +2180,16 @@ if (
       if (error) throw error;
 
       setAuthMessage(
-        "Password reset email sent. Check your inbox and use the link to choose a new password."
+        "If that address has an account, a password-reset email is on its way. Check your inbox and spam folder, and use the newest link."
       );
     } catch (error) {
       console.error(error);
 
       setAuthError(
-        error.message ||
-          "Could not send the password reset email."
+        authActionError(error, "Could not send the reset email. Check your email address and connection, then try again.")
       );
     } finally {
+      authActionBusy.current = false;
       setAuthLoading(false);
     }
   }
@@ -2752,6 +2198,8 @@ if (
     event
   ) {
     event.preventDefault();
+    if (authActionBusy.current) return;
+    authActionBusy.current = true;
 
     try {
       setAuthLoading(true);
@@ -2784,8 +2232,11 @@ if (
             newPassword,
         });
 
+      if (currentAuthUser.current !== user?.id) return;
       if (error) throw error;
-
+      if (!data?.user || data.user.id !== user?.id) throw new Error("Could not confirm the password update.");
+      recoveryIntent.clear();
+      startupController.current?.endRecovery();
       setNewPassword("");
       setConfirmNewPassword("");
 
@@ -2794,20 +2245,17 @@ if (
       );
 
       if (data.user) {
-        setAuthMode("login");
-
-        await bootstrapAuthenticatedUser(
-          data.user.id
-        );
+        setAuthMode("reset-done");
       }
     } catch (error) {
+      if (currentAuthUser.current !== user?.id) return;
       console.error(error);
 
       setAuthError(
-        error.message ||
-          "Could not update your password."
+        authActionError(error, error.code ? "Could not update your password. Check your connection and try again." : error.message || "Could not update your password.")
       );
     } finally {
+      authActionBusy.current = false;
       setAuthLoading(false);
     }
   }
@@ -2816,6 +2264,8 @@ if (
     if (!user?.email) {
       return;
     }
+    if (authActionBusy.current) return;
+    authActionBusy.current = true;
 
     try {
       setSaving(true);
@@ -2833,17 +2283,38 @@ if (
       if (error) throw error;
 
       alert(
-        "Password reset email sent to your account email."
+        "If your address has an account, a password-reset email is on its way. Check your inbox and spam folder, and use the newest link."
       );
     } catch (error) {
       console.error(error);
 
       alert(
-        error.message ||
-          "Could not send password reset email."
+        authActionError(error, "Could not send password reset email. Check your connection and try again.")
       );
     } finally {
+      authActionBusy.current = false;
       setSaving(false);
+    }
+  }
+
+  async function resendConfirmation(event) {
+    event.preventDefault();
+    if (authActionBusy.current) return;
+    authActionBusy.current = true;
+    setAuthLoading(true);
+    setAuthError("");
+    setAuthMessage("");
+    try {
+      const email = authEmail.trim().toLowerCase();
+      if (!email) throw new Error("Email required");
+      const { error } = await supabase.auth.resend({ type: "signup", email, options: { emailRedirectTo: APP_URL } });
+      if (error) throw error;
+      setAuthMessage("If that address needs confirmation, a new email is on its way. Check your inbox and spam folder, and use the newest link.");
+    } catch (error) {
+      setAuthError(authActionError(error, "Could not resend the confirmation email. Check your address and connection, then try again."));
+    } finally {
+      authActionBusy.current = false;
+      setAuthLoading(false);
     }
   }
 
@@ -2858,7 +2329,8 @@ if (
     if (!confirmed) return;
 
     try {
-      await supabase.auth.signOut();
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
 
       window.localStorage.removeItem(
         "tttt_last_league_id"
@@ -4465,9 +3937,11 @@ if (
   ) {
     event.preventDefault();
 
-    if (!league || !user) {
+    if (!league || !user || matchSaveBusy.current) {
       return;
     }
+    matchSaveBusy.current = true;
+    const isCurrent = () => currentAuthUser.current === user.id && currentLeagueId.current === league.id;
 
     try {
       setSaving(true);
@@ -4493,10 +3967,7 @@ if (
           gameScores
         );
 
-      const { error } =
-        await supabase
-          .from("matches")
-          .insert({
+      await matchWriter.save({
             league_id:
               league.id,
 
@@ -4515,8 +3986,7 @@ if (
               user.id,
           });
 
-      if (error) throw error;
-
+      if (!isCurrent()) return;
       setPlayerA(
         recordMode === "mine"
           ? currentPlayer?.id || ""
@@ -4526,15 +3996,18 @@ if (
 
       resetScores();
 
-      await loadLeagueData(
-        league.id,
-        user.id
-      );
+      try {
+        await loadLeagueData(league.id, user.id, isCurrent);
+      } catch {
+        if (isCurrent()) setErrorMessage("Your match was saved, but the standings could not refresh. Do not submit it again; refresh the league when your connection returns.");
+      }
 
+      if (!isCurrent()) return;
       setActiveTab(
         "leaderboard"
       );
     } catch (error) {
+      if (!isCurrent()) return;
       console.error(error);
 
       setErrorMessage(
@@ -4542,6 +4015,7 @@ if (
           "Could not save the match."
       );
     } finally {
+      matchSaveBusy.current = false;
       setSaving(false);
     }
   }
@@ -5103,7 +4577,42 @@ if (
     );
   }
 
-  if (loading) {
+  if (linkError) {
+    return (
+      <main className="fatal-error-page" role="alert">
+        <img src={tableTalkAppIcon} alt="" />
+        <h1>Let’s get you a fresh link.</h1>
+        <p>{linkError}</p>
+        <div className="fatal-error-actions">
+          {[ ["forgot", "New password-reset email"], ["confirm", "Resend confirmation email"], ["login", "Back to Table Talk"] ].map(([mode, label]) => (
+            <button type="button" key={mode} onClick={async () => {
+              clearFailedAuthRedirect();
+              setLinkError("");
+              await startupController.current?.retry();
+              setAuthError("");
+              setAuthMessage("");
+              setAuthMode(mode);
+            }}>{label}</button>
+          ))}
+        </div>
+      </main>
+    );
+  }
+
+  if (startupStatus === "error") {
+    return (
+      <main className="fatal-error-page" role="alert">
+        <img src={tableTalkAppIcon} alt="" />
+        <h1>Let’s reconnect.</h1>
+        <p>Table Talk couldn’t finish restoring your account and leagues. Check your connection and try again—you don’t need to close the app.</p>
+        <div className="fatal-error-actions">
+          <button type="button" onClick={() => startupController.current?.retry()}>Try again</button>
+        </div>
+      </main>
+    );
+  }
+
+  if (loading || startupStatus === "restoring") {
     return (
       <div className="loading-screen">
         <div className="loading-logo">
@@ -5115,7 +4624,7 @@ if (
         </h1>
 
         <p>
-          Loading...
+          {startupStatus === "restoring" ? "Restoring your session…" : "Loading…"}
         </p>
       </div>
     );
@@ -5143,9 +4652,18 @@ if (
     );
   }
 
-  if (
-    authMode === "reset"
-  ) {
+  if (authMode === "reset-done") {
+    return (
+      <main className="fatal-error-page" role="status">
+        <img src={tableTalkAppIcon} alt="" />
+        <h1>Password updated.</h1>
+        <p>Your new password is ready. If you opened this link in your browser, you can return to the Table Talk app and sign in there.</p>
+        <div className="fatal-error-actions"><button type="button" onClick={() => { setAuthMode("login"); void startupController.current?.retry(); }}>Continue to Table Talk</button></div>
+      </main>
+    );
+  }
+
+  if (authMode === "reset") {
     return (
       <div className="auth-page">
         <div className="auth-shell">
@@ -5175,13 +4693,15 @@ if (
                 handleResetPassword
               }
             >
-              <label>
+              <label htmlFor="reset-password">
                 New Password
               </label>
 
               <input
+                id="reset-password"
                 type="password"
                 autoComplete="new-password"
+                disabled={authLoading}
                 value={
                   newPassword
                 }
@@ -5194,13 +4714,15 @@ if (
                 placeholder="At least 8 characters"
               />
 
-              <label>
+              <label htmlFor="reset-confirm-password">
                 Confirm New Password
               </label>
 
               <input
+                id="reset-confirm-password"
                 type="password"
                 autoComplete="new-password"
+                disabled={authLoading}
                 value={
                   confirmNewPassword
                 }
@@ -5214,7 +4736,7 @@ if (
               />
 
               {authError && (
-                <div className="error-message">
+                <div className="error-message" role="alert">
                   {
                     authError
                   }
@@ -5222,7 +4744,7 @@ if (
               )}
 
               {authMessage && (
-                <div className="success-message">
+                <div className="success-message" role="status">
                   {
                     authMessage
                   }
@@ -5240,13 +4762,22 @@ if (
                   : "Update Password"}
               </button>
             </form>
+            <button type="button" className="back-auth-link" disabled={authLoading} onClick={() => {
+              recoveryIntent.clear();
+              startupController.current?.endRecovery();
+              setNewPassword("");
+              setConfirmNewPassword("");
+              setAuthMode("forgot");
+              setAuthError("");
+              setAuthMessage("");
+            }}>Need a new reset email?</button>
           </div>
         </div>
       </div>
     );
   }
 
-  if (!user) {
+  if (!user || authMode === "forgot" || authMode === "confirm") {
     return (
       <div className="auth-page">
         <div className="auth-shell">
@@ -5265,6 +4796,7 @@ if (
           <div className="auth-card">
             <div className="auth-tabs">
               <button
+                disabled={authLoading}
                 className={
                   authMode ===
                   "login"
@@ -5283,6 +4815,7 @@ if (
               </button>
 
               <button
+                disabled={authLoading}
                 className={
                   authMode ===
                   "signup"
@@ -5301,6 +4834,18 @@ if (
               </button>
             </div>
 
+            {authMode === "confirm" && (
+              <form onSubmit={resendConfirmation}>
+                <h2>Confirm your email</h2>
+                <p className="auth-card-copy">Enter the address you used to create your account. The email link opens our website; afterward, return to the app to sign in.</p>
+                <label htmlFor="confirmation-email">Email</label>
+                <input id="confirmation-email" type="email" autoComplete="email" autoCapitalize="none" spellCheck={false} disabled={authLoading} required value={authEmail} onChange={(event) => setAuthEmail(event.target.value)} placeholder="you@example.com" />
+                {authError && <div className="error-message" role="alert">{authError}</div>}
+                {authMessage && <div className="success-message" role="status">{authMessage}</div>}
+                <button className="primary-button big-button" disabled={authLoading}>{authLoading ? "Sending..." : "Resend Confirmation Email"}</button>
+              </form>
+            )}
+
             {authMode ===
               "login" && (
               <form
@@ -5316,13 +4861,17 @@ if (
                   Log in and your leagues will still be here.
                 </p>
 
-                <label>
+                <label htmlFor="login-email">
                   Email
                 </label>
 
                 <input
+                  id="login-email"
                   type="email"
                   autoComplete="email"
+                  autoCapitalize="none"
+                  spellCheck={false}
+                  disabled={authLoading}
                   value={
                     authEmail
                   }
@@ -5335,13 +4884,15 @@ if (
                   placeholder="you@example.com"
                 />
 
-                <label>
+                <label htmlFor="login-password">
                   Password
                 </label>
 
                 <input
+                  id="login-password"
                   type="password"
                   autoComplete="current-password"
+                  disabled={authLoading}
                   value={
                     authPassword
                   }
@@ -5357,6 +4908,7 @@ if (
                 <button
                   type="button"
                   className="forgot-link"
+                  disabled={authLoading}
                   onClick={() => {
                     setAuthMode(
                       "forgot"
@@ -5367,9 +4919,10 @@ if (
                 >
                   Forgot password?
                 </button>
+                <button type="button" className="forgot-link" disabled={authLoading} onClick={() => { setAuthMode("confirm"); setAuthError(""); setAuthMessage(""); }}>Need a confirmation email?</button>
 
                 {authError && (
-                  <div className="error-message">
+                  <div className="error-message" role="alert">
                     {
                       authError
                     }
@@ -5377,7 +4930,7 @@ if (
                 )}
 
                 {authMessage && (
-                  <div className="success-message">
+                  <div className="success-message" role="status">
                     {
                       authMessage
                     }
@@ -5412,13 +4965,17 @@ if (
                   Your email is used only for your private account login and recovery. It is not shown on your player profile.
                 </p>
 
-                <label>
+                <label htmlFor="signup-email">
                   Email
                 </label>
 
                 <input
+                  id="signup-email"
                   type="email"
                   autoComplete="email"
+                  autoCapitalize="none"
+                  spellCheck={false}
+                  disabled={authLoading}
                   value={
                     authEmail
                   }
@@ -5431,13 +4988,15 @@ if (
                   placeholder="you@example.com"
                 />
 
-                <label>
+                <label htmlFor="signup-password">
                   Password
                 </label>
 
                 <input
+                  id="signup-password"
                   type="password"
                   autoComplete="new-password"
+                  disabled={authLoading}
                   value={
                     authPassword
                   }
@@ -5450,13 +5009,15 @@ if (
                   placeholder="At least 8 characters"
                 />
 
-                <label>
+                <label htmlFor="signup-confirm-password">
                   Confirm Password
                 </label>
 
                 <input
+                  id="signup-confirm-password"
                   type="password"
                   autoComplete="new-password"
+                  disabled={authLoading}
                   value={
                     authConfirmPassword
                   }
@@ -5470,7 +5031,7 @@ if (
                 />
 
                 {authError && (
-                  <div className="error-message">
+                  <div className="error-message" role="alert">
                     {
                       authError
                     }
@@ -5478,7 +5039,7 @@ if (
                 )}
 
                 {authMessage && (
-                  <div className="success-message">
+                  <div className="success-message" role="status">
                     {
                       authMessage
                     }
@@ -5520,6 +5081,7 @@ if (
                 <button
                   type="button"
                   className="back-auth-link"
+                  disabled={authLoading}
                   onClick={() => {
                     setAuthMode(
                       "login"
@@ -5536,16 +5098,20 @@ if (
                 </h2>
 
                 <p className="auth-card-copy">
-                  Enter the email connected to your TTTT account and we will send you a reset link.
+                  Enter the email connected to your TTTT account. The reset link opens our website, where you can choose a new password. Then return to the app to sign in.
                 </p>
 
-                <label>
+                <label htmlFor="forgot-email">
                   Email
                 </label>
 
                 <input
+                  id="forgot-email"
                   type="email"
                   autoComplete="email"
+                  autoCapitalize="none"
+                  spellCheck={false}
+                  disabled={authLoading}
                   value={
                     authEmail
                   }
@@ -5559,7 +5125,7 @@ if (
                 />
 
                 {authError && (
-                  <div className="error-message">
+                  <div className="error-message" role="alert">
                     {
                       authError
                     }
@@ -5567,7 +5133,7 @@ if (
                 )}
 
                 {authMessage && (
-                  <div className="success-message">
+                  <div className="success-message" role="status">
                     {
                       authMessage
                     }
@@ -6258,6 +5824,11 @@ if (
                 loading={accountPlanLoading}
                 purchasesEnabled={SUBSCRIPTION_PURCHASES_ENABLED}
               />
+              {canUseLocalSubscriptionStore() && (
+                <Suspense fallback={<p>Loading local purchase tests…</p>}>
+                  <LocalSubscriptionLab key={user.id} />
+                </Suspense>
+              )}
 
               <div className="display-settings-card">
                 <div>
@@ -7147,6 +6718,7 @@ if (
         {activeTab === "tournaments" && (
           <Suspense fallback={<div className="card">Loading tournaments…</div>}>
             <TournamentCenter
+              key={`${user.id}:${league.id}`}
               league={league}
               currentPlayer={currentPlayer}
               players={activeStandings}
@@ -8526,6 +8098,10 @@ if (
               </div>
             )}
 
+            <Suspense fallback={<p>Loading organizer insights…</p>}>
+              <OrganizerInsights key={`${user.id}:${league.id}`} league={league} isAdmin={isAdmin} />
+            </Suspense>
+
             <div className="card">
               <h3>
                 League Profile
@@ -9172,14 +8748,11 @@ if (
                 value={
                   editFormat
                 }
-                onChange={(e) =>
-                  setEditFormat(
-                    Number(
-                      e.target
-                        .value
-                    )
-                  )
-                }
+                onChange={(e) => {
+                  const nextFormat = Number(e.target.value);
+                  setEditFormat(nextFormat);
+                  setEditGameScores((rows) => rows.map((score, index) => index < nextFormat ? score : { a: "", b: "" }));
+                }}
               >
                 <option value={1}>
                   Single Game

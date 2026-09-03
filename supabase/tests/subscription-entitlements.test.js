@@ -2,6 +2,7 @@
 import { readFile } from "node:fs/promises";
 import { PGlite } from "@electric-sql/pglite";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from "vitest";
+import { normalizePlanSummary } from "../../src/features/subscriptions/plans.js";
 
 const USER = "10000000-0000-4000-8000-000000000001";
 const OTHER = "10000000-0000-4000-8000-000000000002";
@@ -26,6 +27,7 @@ async function entitlement({
   status = "active",
   end = "2099-01-01T00:00:00Z",
   grace = null,
+  provider = "apple",
 } = {}) {
   const product = `com.tabletalktabletennis.app.${
     type === "league_plus" ? "leagueplus" : "leaguepro"
@@ -33,8 +35,8 @@ async function entitlement({
   await db.query(
     `insert into public.account_entitlements(
       user_id,entitlement,status,provider,product_id,current_period_end,grace_period_end
-    ) values ($1,$2,$3,'apple',$4,$5,$6)`,
-    [user, type, status, product, end, grace]
+    ) values ($1,$2,$3,$7,$4,$5,$6)`,
+    [user, type, status, product, end, grace, provider]
   );
 }
 
@@ -61,6 +63,45 @@ afterEach(async () => {
 });
 
 describe("subscription entitlement authority", () => {
+  it.each(["free", "plus", "pro"])("keeps the %s client capability display aligned with the server policy", async (planId) => {
+    if (planId !== "free") await entitlement({ type: "league_" + planId });
+    await role("authenticated");
+    const [summary] = await rows("select * from public.get_my_plan()");
+    expect(normalizePlanSummary(summary).features).toEqual(summary.features);
+  });
+  it.each(["apple", "stripe"])("does not grant indefinite %s access when the provider omits expiration", async (provider) => {
+    await entitlement({ provider, end: null });
+    await role("authenticated");
+    expect((await rows("select public.has_active_entitlement('league_pro') as active"))[0].active).toBe(false);
+    expect((await rows("select * from public.get_my_plan()"))[0]).toMatchObject({ plan: "free", subscription_status: "expired" });
+  });
+  it("keeps explicit server-managed indefinite promotions separate from paid products", async () => {
+    await entitlement({ provider: "promotional", end: null });
+    await role("authenticated");
+    expect((await rows("select * from public.get_my_plan()"))[0].plan).toBe("pro");
+  });
+  it("expires an active row by time even before a provider webhook arrives", async () => {
+    await entitlement({ end: "2020-01-01T00:00:00Z" });
+    await role("authenticated");
+    expect((await rows("select * from public.get_my_plan()"))[0]).toMatchObject({ plan: "free", subscription_status: "expired" });
+  });
+  it("falls back from revoked Pro to a still-valid Plus subscription", async () => {
+    await entitlement({ status: "revoked" });
+    await entitlement({ type: "league_plus" });
+    await role("authenticated");
+    expect((await rows("select * from public.get_my_plan()"))[0].plan).toBe("plus");
+    expect((await rows("select public.has_active_entitlement('league_pro') as active"))[0].active).toBe(false);
+  });
+  it("refuses grace-period access without a future grace deadline", async () => {
+    await entitlement({ status: "grace_period", grace: null });
+    await role("authenticated");
+    expect((await rows("select * from public.get_my_plan()"))[0]).toMatchObject({ plan: "free", subscription_status: "expired" });
+  });
+  it("denies anonymous plan-summary and provider-ledger reads", async () => {
+    await role("anon", "");
+    await expectDbError("select * from public.get_my_plan()", /permission denied/);
+    await expectDbError("select * from public.billing_webhook_events", /permission denied/);
+  });
   it("defaults an account with no entitlement to the free plan", async () => {
     await role("authenticated");
     const [plan] = await rows("select * from public.get_my_plan()");

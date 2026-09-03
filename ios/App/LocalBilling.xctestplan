@@ -1,0 +1,27 @@
+{
+  "configurations": [
+    { "id": "DCDAB420-2BD5-43A7-B2C0-64AB92FE2177", "name": "Local StoreKit", "options": {} }
+  ],
+  "defaultOptions": {
+    "storeKitConfigurationFilePath": {
+      "containerPath": "container:App.xcodeproj",
+      "path": "App/TableTalkPlans.storekit"
+    },
+    "targetForVariableExpansion": {
+      "containerPath": "container:App.xcodeproj",
+      "identifier": "504EC3031FED79650016851F",
+      "name": "App"
+    }
+  },
+  "testTargets": [
+    {
+      "parallelizable": false,
+      "target": {
+        "containerPath": "container:App.xcodeproj",
+        "identifier": "B52026090200000000000009",
+        "name": "LocalBillingTests"
+      }
+    }
+  ],
+  "version": 1
+}

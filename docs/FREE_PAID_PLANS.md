@@ -4,6 +4,18 @@ Status: product decision and non-live engineering foundation. No billing,
 subscription, App Store product, Stripe account or production database change
 has been enabled.
 
+September 2: a local Apple purchase test harness and a free preview of organizer
+activity reports/CSV exports are implemented. Native transaction tests still
+need a working local StoreKit environment; they are not yet verified. See
+[local subscription testing](SUBSCRIPTIONS_LOCAL_TESTING.md) for exact isolation,
+capabilities and remaining production requirements.
+
+September 3: reports now paginate independently of the league screen's cached
+rows and block incomplete exports. The unapplied entitlement draft rejects
+indefinite paid-provider access when expiration is missing; the client accepts
+only canonical capabilities. See the same testing notes for scope and evidence.
+No existing league is changed or newly paywalled.
+
 ## Recommended model
 
 Keep Table Talk free for players. Charge organizers only when they need to run
@@ -81,7 +93,8 @@ external-purchase links add review complexity and are deliberately deferred.
 1. The signed-in Supabase user ID becomes the RevenueCat App User ID.
 2. The Capacitor SDK loads Apple's localized offerings and performs purchases or
    restores.
-3. RevenueCat sends signed/idempotent webhook events to a Supabase Edge Function.
+3. RevenueCat sends webhook events to a Supabase Edge Function protected by the
+   configured authorization secret; processing must be idempotent.
 4. The Edge Function validates the webhook secret and writes the authoritative
    entitlement with a service-role client.
 5. Clients can read only their own Free/Plus/Pro plan summary. They cannot

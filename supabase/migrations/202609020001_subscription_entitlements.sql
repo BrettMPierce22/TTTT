@@ -1,6 +1,8 @@
 -- DRAFT: authoritative Free/Plus/Pro entitlement foundation.
 -- Do not apply to production without explicit migration approval. This does not
 -- create Apple products, charge a user, or enable a paywall by itself.
+-- September 3 draft hardening: a missing paid-provider expiration never grants
+-- indefinite access. Only deliberately server-issued promotions may omit it.
 
 create table if not exists public.account_entitlements (
   user_id uuid not null references auth.users(id) on delete cascade,
@@ -76,7 +78,7 @@ begin
         (
           entitlements.status in ('trialing', 'active')
           and (
-            entitlements.current_period_end is null
+            (entitlements.provider = 'promotional' and entitlements.current_period_end is null)
             or entitlements.current_period_end > now()
           )
         )
@@ -118,7 +120,7 @@ begin
       (
         entitlements.status in ('trialing', 'active')
         and (
-          entitlements.current_period_end is null
+          (entitlements.provider = 'promotional' and entitlements.current_period_end is null)
           or entitlements.current_period_end > now()
         )
       )
@@ -150,6 +152,7 @@ begin
     v_plan,
     case
       when v_entitlement.user_id is null then 'not_subscribed'
+      when v_plan = 'free' and v_entitlement.status in ('active', 'trialing', 'grace_period') then 'expired'
       else v_entitlement.status
     end,
     v_entitlement.current_period_end,

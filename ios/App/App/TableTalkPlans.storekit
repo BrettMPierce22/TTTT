@@ -1,0 +1,56 @@
+{
+  "identifier": "A3E42E70-EC44-4E42-9CAE-53A3D53C6A77",
+  "nonRenewingSubscriptions": [],
+  "products": [],
+  "settings": {
+    "_failTransactionsEnabled": false,
+    "_locale": "en_US",
+    "_storefront": "USA"
+  },
+  "subscriptionGroups": [
+    {
+      "id": "9000202609",
+      "localizations": [
+        { "description": "Local testing only", "displayName": "Table Talk Test Plans", "locale": "en_US" }
+      ],
+      "name": "Table Talk Test Plans",
+      "subscriptions": [
+        {
+          "adHocOffers": [],
+          "codeOffers": [],
+          "displayPrice": "4.99",
+          "familyShareable": false,
+          "groupNumber": 1,
+          "internalID": "9000202602",
+          "introductoryOffer": null,
+          "localizations": [
+            { "description": "No charge. Local Pro test subscription.", "displayName": "Pro (Local Test)", "locale": "en_US" }
+          ],
+          "productID": "com.tabletalktabletennis.local.leaguepro.monthly",
+          "recurringSubscriptionPeriod": "P1M",
+          "referenceName": "Pro Local Test",
+          "subscriptionGroupID": "9000202609",
+          "type": "RecurringSubscription"
+        },
+        {
+          "adHocOffers": [],
+          "codeOffers": [],
+          "displayPrice": "1.99",
+          "familyShareable": false,
+          "groupNumber": 2,
+          "internalID": "9000202601",
+          "introductoryOffer": null,
+          "localizations": [
+            { "description": "No charge. Local Plus test subscription.", "displayName": "Plus (Local Test)", "locale": "en_US" }
+          ],
+          "productID": "com.tabletalktabletennis.local.leagueplus.monthly",
+          "recurringSubscriptionPeriod": "P1M",
+          "referenceName": "Plus Local Test",
+          "subscriptionGroupID": "9000202609",
+          "type": "RecurringSubscription"
+        }
+      ]
+    }
+  ],
+  "version": { "major": 3, "minor": 0 }
+}

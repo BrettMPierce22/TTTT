@@ -1,0 +1,24 @@
+.organizer-insights { margin-bottom: 22px; }
+.organizer-insights-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; }
+.organizer-insights-heading h3, .organizer-insights-heading p { margin: 0 0 7px; }
+.organizer-insights-heading p:not(.season-label) { color: var(--muted); font-size: 13px; }
+.organizer-insights-heading label { margin: 0; min-width: 150px; }
+.organizer-insights-heading select { margin-top: 6px; width: 100%; }
+.organizer-metrics { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+.organizer-metrics div { padding: 15px; border: 1px solid var(--liquid-border); border-radius: 18px; background: var(--liquid-surface); }
+.organizer-metrics dt { color: var(--muted); font-size: 12px; }
+.organizer-metrics dd { margin: 6px 0 0; font-size: 28px; font-weight: 800; }
+.organizer-activity-list { padding: 0; list-style: none; }
+.organizer-activity-list li { display: flex; justify-content: space-between; gap: 15px; padding: 12px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
+.organizer-activity-list li span { overflow-wrap: anywhere; min-width: 0; }
+.organizer-activity-list li strong { flex-shrink: 0; }
+.organizer-export-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+.organizer-report-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin: 16px 0; }
+.organizer-report-controls p { margin: 0; color: var(--muted); font-size: 13px; }
+@media (max-width: 600px) {
+  .organizer-insights-heading { flex-direction: column; }
+  .organizer-insights-heading label { width: 100%; }
+  .organizer-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .organizer-export-actions { flex-direction: column; }
+  .organizer-activity-list li { flex-direction: column; gap: 4px; }
+}
